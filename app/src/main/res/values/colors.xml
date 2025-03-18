@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="nav_item_color">#0163DA</color>
+    <color name="nav_text_color">#757575</color>
+    <color name="boxColor">#DEF3FD</color>
 </resources>
