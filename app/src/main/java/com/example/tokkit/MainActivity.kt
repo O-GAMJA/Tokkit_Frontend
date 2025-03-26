@@ -94,7 +94,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setupSearchFab() {
         val searchFab = findViewById<FloatingActionButton>(R.id.searchFab)
         searchFab.setOnClickListener {
-            // FAB 클릭 시 동작 구현
+            // FAB 클릭 시 OCRTestFragment로 전환
+            replaceFragment(OCRTestFragment())
         }
     }
 
@@ -134,4 +135,5 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
+
 }
