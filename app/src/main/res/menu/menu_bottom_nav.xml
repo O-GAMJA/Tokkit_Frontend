@@ -19,8 +19,8 @@
 
     <item
         android:id="@+id/fragment_review"
-        android:title="리뷰"
-        android:icon="@drawable/ic_review"/>
+        android:icon="@drawable/ic_review"
+        android:title="복습" />
 
     <item
         android:id="@+id/fragment_settings"
