@@ -1,11 +1,11 @@
-package com.example.tokkit.entities
+package com.example.tokkit.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "otherUserNote",
+    tableName = "bookmark",
     foreignKeys = [
         ForeignKey(
             entity = NoteMetadata::class,
@@ -15,7 +15,9 @@ import androidx.room.PrimaryKey
         )
     ]
 )
-data class OtherUserNote(
-    @PrimaryKey val note_id: String, // NoteMetadata의 id 참조
-    val note_author_id: String       // 외부 유저 ID
+data class Bookmark(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val note_id: String,
+    val bookmark_folder: String?,
+    val created_at: String
 )

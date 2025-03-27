@@ -1,4 +1,4 @@
-package com.example.tokkit.entities
+package com.example.tokkit.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
