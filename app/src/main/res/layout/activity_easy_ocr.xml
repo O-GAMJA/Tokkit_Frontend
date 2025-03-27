@@ -1,0 +1,35 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="이미지 미리보기" />
+
+    <Button
+        android:id="@+id/btnSelectImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="이미지 선택" />
+
+    <Button
+        android:id="@+id/btnExtractText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="텍스트 추출"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:id="@+id/textResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="인식 결과가 여기에 표시됩니다."
+        android:textSize="16sp"
+        android:paddingTop="16dp" />
+</LinearLayout>

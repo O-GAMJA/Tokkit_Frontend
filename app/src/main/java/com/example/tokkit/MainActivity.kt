@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -94,9 +95,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setupSearchFab() {
         val searchFab = findViewById<FloatingActionButton>(R.id.searchFab)
         searchFab.setOnClickListener {
-            // FAB 클릭 시 동작 구현
+            // FAB 클릭 시 EasyOCRActivity 실행
+            val intent = Intent(this, EasyOCRActivity::class.java)
+            startActivity(intent)
         }
     }
+
 
     // 프래그먼트 교체 함수
     private fun replaceFragment(fragment: Fragment) {
