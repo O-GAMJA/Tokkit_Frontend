@@ -95,6 +95,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val searchFab = findViewById<FloatingActionButton>(R.id.searchFab)
         searchFab.setOnClickListener {
             // FAB 클릭 시 동작 구현
+            replaceFragment(OcrFragment())
+
         }
     }
 
