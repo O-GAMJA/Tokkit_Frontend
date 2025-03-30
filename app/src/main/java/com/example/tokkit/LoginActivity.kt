@@ -30,7 +30,7 @@ class LoginActivity : AppCompatActivity() {
         // 다른 방법으로 로그인 버튼
         binding.btnOtherLogin.setOnClickListener {
             // 이메일/비밀번호 로그인 화면으로 이동
-            //startActivity(Intent(this, LoginEmailActivity::class.java))
+            startActivity(Intent(this, LoginEmailActivity::class.java))
         }
 
         // 회원가입 텍스트
