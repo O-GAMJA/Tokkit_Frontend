@@ -6,4 +6,6 @@
     <color name="bottom_nav_selected">#0163DA</color>
     <color name="nav_text_color">#757575</color>
     <color name="boxColor">#DEF3FD</color>
+    <color name="background">#FBF8FE</color>
+    <color name="main">#C89AFF</color>
 </resources>
