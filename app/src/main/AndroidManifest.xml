@@ -59,6 +59,21 @@
             android:exported="false">
         </activity>
 
+        <activity
+            android:name=".RegisterIdActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterPasswordActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterNicknameActivity"
+            android:exported="false">
+        </activity>
+
 
 
     </application>

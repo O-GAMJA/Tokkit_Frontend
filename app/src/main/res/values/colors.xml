@@ -6,10 +6,12 @@
     <color name="dark_gray">#757575</color>
 <!--    메인 백그라운드 색-->
     <color name="main_backgound">#FBF8FE</color>
+    <color name="main">#C89AFF</color>
 
 <!--    그레이 컬러-->
     <color name="gray200">#D4D4D4</color>
     <color name="gray400">#9E9E9E</color>
+
 
 
     <color name="nav_item_color">#0163DA</color>

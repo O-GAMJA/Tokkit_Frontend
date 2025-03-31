@@ -82,7 +82,7 @@ class RegisterPhoneVarificationActivity : AppCompatActivity() {
 
     private fun proceedToNextStep() {
         // 회원가입 화면으로 이동
-       // val intent = Intent(this, RegisterActivity::class.java)
+        val intent = Intent(this, RegisterIdActivity::class.java)
         intent.putExtra("PHONE_NUMBER", phoneNumber)
         intent.putExtra("IS_VERIFIED", true)
         startActivity(intent)
