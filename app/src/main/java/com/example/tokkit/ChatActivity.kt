@@ -73,8 +73,8 @@ class ChatActivity : AppCompatActivity() {
         // 📒 노트 생성 버튼
         binding.btnCreateNote.setOnClickListener {
             // TODO: 생성된 노트를 저장하고 다음 화면으로 넘김
-//            val intent = Intent(this, NoteResultActivity::class.java)
-//            startActivity(intent)
+            val intent = Intent(this, NoteMarkdownActivity::class.java)
+            startActivity(intent)
         }
     }
 }

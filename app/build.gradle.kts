@@ -61,4 +61,9 @@ dependencies {
 
     // Lottie
     implementation("com.airbnb.android:lottie:6.1.0")
+
+    // markdown
+    implementation ("io.noties.markwon:core:4.6.2")
+    implementation ("io.noties.markwon:editor:4.6.2")
+
 }
