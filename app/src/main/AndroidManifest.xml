@@ -22,6 +22,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".AttachReferenceActivity"/>
+        <activity android:name=".ChatActivity"/>
+        <activity android:name=".ChatTextActivity"/>
     </application>
 
 </manifest>

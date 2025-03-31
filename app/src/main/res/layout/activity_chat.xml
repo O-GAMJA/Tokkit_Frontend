@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient">
+
+    <!-- 뒤로가기 버튼 -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
+        android:contentDescription="뒤로가기"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- 캐릭터 이미지 (중앙) -->
+    <ImageView
+        android:id="@+id/iv_character"
+        android:layout_width="500dp"
+        android:layout_height="500dp"
+        android:src="@drawable/rabbit"
+        app:layout_constraintTop_toBottomOf="@id/btn_back"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="60dp"
+        android:layout_marginBottom="60dp" />
+
+    <!-- 마이크 버튼 (중앙 하단) -->
+    <ImageButton
+        android:id="@+id/btn_mic"
+        android:layout_width="115dp"
+        android:layout_height="115dp"
+        android:src="@drawable/mic"
+        android:contentDescription="마이크"
+        android:scaleType="fitCenter"
+        android:visibility="visible"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="40dp" />
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottie_mic"
+        android:layout_width="270dp"
+        android:layout_height="155dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="25dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:lottie_rawRes="@raw/mic_anim"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true"
+        android:scaleType="fitXY"/>
+
+    <!-- 채팅모드 전환 버튼 (좌하단) -->
+    <ImageButton
+        android:id="@+id/btn_chat_mode"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="채팅 모드 전환"
+        android:src="@drawable/chat"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
+        app:layout_constraintEnd_toStartOf="@+id/btn_mic"
+        app:layout_constraintTop_toTopOf="@+id/btn_mic"
+        android:layout_marginEnd="25dp"/>
+
+    <!-- 노트 생성 버튼 (우하단) -->
+    <Button
+        android:id="@+id/btn_create_note"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#B58EFF"
+        android:text="노트생성"
+        android:textColor="#ffffff"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
+        app:layout_constraintStart_toEndOf="@+id/btn_mic"
+        app:layout_constraintTop_toTopOf="@+id/btn_mic"
+        android:layout_marginStart="25dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
