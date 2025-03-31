@@ -5,22 +5,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:padding="16dp">
+    android:background="@color/background">
 
-    <!-- 뒤로가기 -->
+    <!-- 뒤로가기 버튼 -->
     <ImageButton
         android:id="@+id/btn_back"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_back"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="32dp"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
         android:contentDescription="뒤로가기"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"/>
 
     <!-- 노트 제목 -->
     <TextView
+        android:padding="16dp"
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -39,7 +40,7 @@
         android:background="@android:color/transparent"
         android:textSize="16sp"
         android:textColor="#222222"
-        android:padding="8dp"
+        android:padding="24dp"
         android:gravity="top|start"
         android:inputType="textMultiLine"
         android:scrollbars="vertical"
@@ -56,9 +57,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="노트 저장"
+        android:layout_marginEnd="16dp"
         android:textColor="@android:color/white"
         android:backgroundTint="#B58EFF"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
