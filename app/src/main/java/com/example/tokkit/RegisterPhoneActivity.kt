@@ -45,7 +45,7 @@ class RegisterPhoneActivity : AppCompatActivity() {
         }
 
         // 인증번호 화면으로 이동
-//        val intent = Intent(this, VerificationCodeActivity::class.java)
+        val intent = Intent(this, RegisterPhoneVarificationActivity::class.java)
         intent.putExtra("PHONE_NUMBER", phoneNumber)
         startActivity(intent)
     }

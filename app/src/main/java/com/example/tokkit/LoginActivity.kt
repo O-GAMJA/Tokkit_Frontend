@@ -36,7 +36,7 @@ class LoginActivity : AppCompatActivity() {
         // 회원가입 텍스트
         binding.tvSignUp.setOnClickListener {
             // 회원가입 화면으로 이동
-            // startActivity(Intent(this, SignUpActivity::class.java))
+            startActivity(Intent(this, RegisterPhoneActivity::class.java))
         }
     }
 }

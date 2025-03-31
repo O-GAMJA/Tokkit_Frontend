@@ -5,9 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".RegisterActivity">
-
-    <!-- 상단 로그인 텍스트 -->
+    tools:context=".RegisterPhoneVarificationActivity">
 
     <!-- 뒤로가기 버튼 -->
     <ImageButton
@@ -22,83 +20,74 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 이메일과 비밀번호 입력해주세요 텍스트 -->
+    <!-- 인증번호를 입력해주세요 텍스트 -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
+        android:layout_marginTop="100dp"
         android:layout_marginEnd="24dp"
-        android:text="이메일과 비밀번호를 입력해주세요"
+        android:text="인증번호를 입력해주세요"
         android:textColor="@color/black"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginTop="120dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 이메일 라벨 -->
+    <!-- 안내 텍스트 -->
     <TextView
-        android:id="@+id/tvEmailLabel"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvPhoneInfo"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="40dp"
-        android:text="이메일"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
+        android:text="01000000000로 인증번호를 보냈어요"
         android:textColor="@color/dark_gray"
         android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
 
-    <!-- 이메일 입력 필드 -->
+    <!-- 인증번호 입력 필드 -->
     <EditText
-        android:id="@+id/etEmail"
+        android:id="@+id/etVerificationCode"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="40dp"
         android:layout_marginEnd="24dp"
         android:background="@drawable/rounded_edit_text"
-        android:hint=""
-        android:inputType="textEmailAddress"
+        android:hint="인증번호"
+        android:inputType="number"
+        android:maxLength="4"
         android:padding="16dp"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvEmailLabel" />
+        app:layout_constraintTop_toBottomOf="@+id/tvPhoneInfo" />
 
-    <!-- 비밀번호 라벨 -->
+    <!-- 오류 메시지 -->
     <TextView
-        android:id="@+id/tvPasswordLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:text="비밀번호"
-        android:textColor="@color/dark_gray"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etEmail" />
-
-    <!-- 비밀번호 입력 필드 -->
-    <EditText
-        android:id="@+id/etPassword"
+        android:id="@+id/tvErrorMessage"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="24dp"
-        android:background="@drawable/rounded_edit_text"
-        android:hint=""
-        android:inputType="textPassword"
-        android:padding="16dp"
+        android:text="인증 번호가 일치하지않습니다."
+        android:textColor="#FF0000"
+        android:textSize="12sp"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvPasswordLabel" />
+        app:layout_constraintTop_toBottomOf="@+id/etVerificationCode" />
 
-    <!-- 로그인 버튼 -->
+    <!-- 다음 버튼 -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnLogin"
+        android:id="@+id/btnNext"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"

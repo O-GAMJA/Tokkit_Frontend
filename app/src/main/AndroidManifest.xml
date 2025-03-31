@@ -49,6 +49,16 @@
             android:exported="false">
         </activity>
 
+        <activity
+            android:name=".RegisterPhoneActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterPhoneVarificationActivity"
+            android:exported="false">
+        </activity>
+
 
 
     </application>
