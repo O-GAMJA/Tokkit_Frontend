@@ -6,4 +6,8 @@
     <color name="bottom_nav_selected">#0163DA</color>
     <color name="nav_text_color">#757575</color>
     <color name="boxColor">#DEF3FD</color>
+
+    <color name="purple">#9C70FF</color>
+    <color name="gray">#CCCCCC</color>
+    <color name="light_blue">#00ACC1</color>
 </resources>
