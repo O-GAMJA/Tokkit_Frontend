@@ -13,29 +13,40 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <!-- 툴바 추가 -->
-        <com.google.android.material.appbar.AppBarLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-
-        </com.google.android.material.appbar.AppBarLayout>
-
-        <!-- 프래그먼트가 변경될 영역 - 툴바 아래로 이동 -->
-        <FrameLayout
-            android:id="@+id/fragment_container"
+        <!-- 상단 레이아웃을 ConstraintLayout으로 변경 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginBottom="56dp"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+            android:background="@color/main_backgound"
+            >
+
+            <!-- 햄버거 메뉴 아이콘 -->
+            <ImageView
+                android:id="@+id/btn_menu"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginStart="25dp"
+                android:layout_marginTop="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="메뉴"
+                android:src="@drawable/ic_menu"
+                android:backgroundTint="@color/main_backgound"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- 프래그먼트가 변경될 영역 - 햄버거 버튼 아래에 배치 -->
+            <FrameLayout
+                android:id="@+id/fragment_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="56dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btn_menu" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- 바텀 앱바 -->
         <com.google.android.material.bottomappbar.BottomAppBar
