@@ -56,4 +56,17 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    // ViewPager2
+    implementation ("androidx.viewpager2:viewpager2:1.0.0")
+
+    // RecyclerView
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
+
+    // Material Design
+    implementation ("com.google.android.material:material:1.6.0")
+
+    // Glide (이미지 로딩)
+    implementation ("com.github.bumptech.glide:glide:4.13.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.13.0")
 }
