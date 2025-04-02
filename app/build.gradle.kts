@@ -1,8 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.ksp)
-}
+    alias(libs.plugins.ksp)}
 
 android {
     namespace = "com.example.tokkit"
@@ -17,6 +16,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    // 데이터 바인딩
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+    }
 
     buildTypes {
         release {
@@ -27,12 +31,10 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
         jvmTarget = "1.8"
     }

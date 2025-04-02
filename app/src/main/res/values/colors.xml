@@ -2,6 +2,18 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="light_gray">#D4D4D4</color>
+    <color name="dark_gray">#757575</color>
+<!--    메인 백그라운드 색-->
+    <color name="main_backgound">#FBF8FE</color>
+    <color name="main">#C89AFF</color>
+
+<!--    그레이 컬러-->
+    <color name="gray200">#D4D4D4</color>
+    <color name="gray400">#9E9E9E</color>
+
+
+
     <color name="nav_item_color">#0163DA</color>
     <color name="bottom_nav_selected">#0163DA</color>
     <color name="nav_text_color">#757575</color>
