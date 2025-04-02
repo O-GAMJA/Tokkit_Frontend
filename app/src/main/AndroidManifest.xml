@@ -77,6 +77,11 @@
             android:name=".RegisterNicknameActivity"
             android:exported="false">
         </activity>
+
+        <activity
+            android:name=".SaveLocationActivity"
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>

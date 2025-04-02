@@ -38,6 +38,13 @@ class NoteDetailsActivity : AppCompatActivity() {
                 }
                 .show()
         }
+
+        //저장 위치 화살표 버튼
+        binding.storageForward.setOnClickListener{
+            val intent = Intent(this, SaveLocationActivity::class.java)
+            startActivity(intent)
+        }
+
     }
 
     private fun openGallery() {
