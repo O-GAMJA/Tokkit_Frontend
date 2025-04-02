@@ -17,15 +17,66 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+<!--        <activity-->
+<!--            android:name=".MainActivity"-->
+<!--            android:exported="false">-->
+<!--        </activity>-->
+
+<!--        <activity-->
+<!--            android:name=".SplashActivity"-->
+<!--            android:exported="true"-->
+<!--            android:theme="@style/SplashTheme">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false">
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
         </activity>
         <activity android:name=".AttachReferenceActivity"/>
         <activity android:name=".ChatActivity"/>
         <activity android:name=".ChatTextActivity"/>
         <activity android:name=".NoteMarkdownActivity"/>
         <activity android:name=".NoteDetailsActivity"/>
+        <activity
+            android:name=".LoginEmailActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterPhoneActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterPhoneVarificationActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterIdActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterPasswordActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".RegisterNicknameActivity"
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>
