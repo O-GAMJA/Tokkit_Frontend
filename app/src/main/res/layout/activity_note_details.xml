@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <!-- 뒤로가기 버튼 -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
+        android:contentDescription="뒤로가기"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- 이미지 업로드 아이콘 -->
+    <ImageView
+        android:id="@+id/imageUpload"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:src="@drawable/image_upload"
+        android:backgroundTint="#DAB8FF"
+        android:scaleType="centerInside"
+        app:layout_constraintTop_toBottomOf="@+id/btn_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="64dp"/>
+
+    <View
+        android:id="@+id/dividerLine1"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toBottomOf="@id/imageUpload"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="32dp" />
+
+    <!-- 공개 설정 텍스트 -->
+    <TextView
+        android:id="@+id/publicSettingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="공개 설정"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/dividerLine1"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"/>
+
+    <!-- 공개/비공개 라디오 그룹 -->
+    <RadioGroup
+        android:id="@+id/visibilityRadioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/publicSettingText"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp">
+
+        <RadioButton
+            android:id="@+id/publicOption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="전체 공개"
+            android:checked="true"/>
+
+        <RadioButton
+            android:id="@+id/privateOption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="나만 보기"
+            android:layout_marginStart="16dp"/>
+    </RadioGroup>
+
+    <View
+        android:id="@+id/dividerLine2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toBottomOf="@id/visibilityRadioGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <!-- 태그 관리 항목 -->
+    <TextView
+        android:id="@+id/tagManagement"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="태그 관리"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerLine2" />
+
+    <TextView
+        android:id="@+id/tagContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="태그 자동 추천, 태그 추가 및 수정"
+        android:textSize="14sp"
+        android:layout_marginStart="24dp"
+        android:padding="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tagManagement" />
+
+    <ImageButton
+        android:id="@+id/tagForward"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="태그 상세 설정"
+        android:src="@drawable/ic_forward"
+        app:layout_constraintBottom_toBottomOf="@+id/dividerLine3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerLine2" />
+
+    <View
+        android:id="@+id/dividerLine3"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tagContent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <!-- 저장 위치 항목 -->
+    <TextView
+        android:id="@+id/storageLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="저장 위치"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerLine3" />
+
+    <TextView
+        android:id="@+id/storageDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="노트가 저장될 파일 선택"
+        android:textSize="14sp"
+        android:layout_marginStart="24dp"
+        android:padding="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/storageLocation" />
+
+    <ImageButton
+        android:id="@+id/storageForward"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="저장위치 상세 설정"
+        android:src="@drawable/ic_forward"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerLine3" />
+
+    <!-- 저장 버튼 -->
+    <Button
+        android:id="@+id/saveNoteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="노트저장"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#DAB8FF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

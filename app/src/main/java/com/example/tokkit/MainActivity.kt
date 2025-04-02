@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -95,6 +96,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val searchFab = findViewById<FloatingActionButton>(R.id.searchFab)
         searchFab.setOnClickListener {
             // FAB 클릭 시 동작 구현
+            val intent = Intent(this, AttachReferenceActivity::class.java)
+            startActivity(intent)
         }
     }
 
