@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+
 android {
     namespace = "com.example.tokkit"
     compileSdk = 35
@@ -16,6 +17,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    // 데이터 바인딩
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
     }
 
     buildTypes {
