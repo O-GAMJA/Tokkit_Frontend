@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -56,6 +57,9 @@ class NoteMarkdownActivity : AppCompatActivity() {
             val noteContent = binding.markdownEditor.text.toString()
             Toast.makeText(this, "노트가 저장되었습니다.", Toast.LENGTH_SHORT).show()
             // TODO: 저장 로직 구현
+
+            val intent = Intent(this, NoteDetailsActivity::class.java)
+            startActivity(intent)
         }
     }
 }

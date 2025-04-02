@@ -17,6 +17,7 @@ class ChatTextActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityChatTextBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         //  뒤로가기 버튼
         binding.btnBack.setOnClickListener {
             finish()
@@ -66,6 +67,13 @@ class ChatTextActivity : AppCompatActivity() {
                 binding.btnMic.visibility = View.VISIBLE
                 isListening = false
             }
+        }
+
+        // 📒 노트 생성 버튼
+        binding.btnCreateNote.setOnClickListener {
+            // TODO: 생성된 노트를 저장하고 다음 화면으로 넘김
+            val intent = Intent(this, NoteMarkdownActivity::class.java)
+            startActivity(intent)
         }
 
         val dummyMessages = listOf(

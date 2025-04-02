@@ -25,6 +25,7 @@
         <activity android:name=".ChatActivity"/>
         <activity android:name=".ChatTextActivity"/>
         <activity android:name=".NoteMarkdownActivity"/>
+        <activity android:name=".NoteDetailsActivity"/>
     </application>
 
 </manifest>
