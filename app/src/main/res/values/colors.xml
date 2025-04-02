@@ -9,9 +9,14 @@
     <color name="main">#C89AFF</color>
 
 <!--    그레이 컬러-->
+    <color name="gray">#858585</color>
+    <color name="gray2">#D7D7D7</color>
     <color name="gray200">#D4D4D4</color>
     <color name="gray400">#9E9E9E</color>
 
+<!--    청록-->
+    <color name="chunglok">#29B3BB</color>
+    <color name="chunglokclean">#EAF8F9</color>
 
 
     <color name="nav_item_color">#0163DA</color>
@@ -20,6 +25,6 @@
     <color name="boxColor">#DEF3FD</color>
 
     <color name="purple">#9C70FF</color>
-    <color name="gray">#CCCCCC</color>
+<!--    <color name="gray">#CCCCCC</color>-->
     <color name="light_blue">#00ACC1</color>
 </resources>

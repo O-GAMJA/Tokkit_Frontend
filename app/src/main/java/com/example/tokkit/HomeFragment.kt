@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.tokkit.adapter.HomePagerAdapter
@@ -25,6 +27,9 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 상태바 투명하게 설정
+        makeStatusBarTransparent()
 
         // ViewPager 설정
         val pagerAdapter = HomePagerAdapter(this)
@@ -56,15 +61,29 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun makeStatusBarTransparent() {
+        activity?.window?.apply {
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            statusBarColor = android.graphics.Color.TRANSPARENT
+
+            // API 30 이상에서는 다음 코드도 추가
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                WindowCompat.setDecorFitsSystemWindows(this, false)
+            }
+        }
+    }
+
     private fun updateTabs(position: Int) {
         when (position) {
             0 -> {
-                binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.purple, requireActivity().theme)
-                binding.tabList.backgroundTintList = resources.getColorStateList(R.color.gray, requireActivity().theme)
+                binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
+                binding.tabList.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
             }
             1 -> {
-                binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.gray, requireActivity().theme)
-                binding.tabList.backgroundTintList = resources.getColorStateList(R.color.purple, requireActivity().theme)
+                binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
+                binding.tabList.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
             }
         }
     }
