@@ -1,17 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:background="@color/white">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="홈프래그먼트"
-        android:textSize="50dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <!-- 검색 바 -->
+    <EditText
+        android:id="@+id/etSearch"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rounded_search_bg"
+        android:drawableStart="@drawable/ic_search"
+        android:drawableEnd="@drawable/ic_close"
+        android:hint="검색어를 입력하세요"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 해시태그 영역 -->
+    <HorizontalScrollView
+        android:id="@+id/scrollTags"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etSearch">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:id="@+id/tagDataTransmission"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/rounded_tag_bg"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:text="# 데이터 통신"
+                android:textColor="#00ACC1" />
+
+            <TextView
+                android:id="@+id/tagTcpIp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_tag_bg"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:text="# TCP/IP"
+                android:textColor="#00ACC1" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 탭 레이아웃 (카드뷰와 리스트뷰 전환) -->
+    <LinearLayout
+        android:id="@+id/tabContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scrollTags">
+
+        <View
+            android:id="@+id/tabCard"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ic_card_view"
+            android:backgroundTint="#9C70FF" />
+
+        <View
+            android:id="@+id/tabList"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/ic_list_view"
+            android:backgroundTint="#CCCCCC" />
+    </LinearLayout>
+
+    <!-- ViewPager for Fragments -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
