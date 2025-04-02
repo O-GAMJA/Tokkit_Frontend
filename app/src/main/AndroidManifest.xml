@@ -43,7 +43,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".AttachReferenceActivity"/>
+        <activity android:name=".ChatActivity"/>
+        <activity android:name=".ChatTextActivity"/>
+        <activity android:name=".NoteMarkdownActivity"/>
+        <activity android:name=".NoteDetailsActivity"/>
         <activity
             android:name=".LoginEmailActivity"
             android:exported="false">
@@ -73,9 +77,6 @@
             android:name=".RegisterNicknameActivity"
             android:exported="false">
         </activity>
-
-
-
     </application>
 
 </manifest>
