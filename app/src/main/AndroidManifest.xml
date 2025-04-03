@@ -80,6 +80,11 @@
         </activity>
 
         <activity
+            android:name=".TagManageActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
             android:name=".LoginEmailActivity"
             android:exported="false">
         </activity>

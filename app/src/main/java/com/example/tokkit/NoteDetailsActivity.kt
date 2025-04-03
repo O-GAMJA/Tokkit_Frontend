@@ -60,6 +60,11 @@ class NoteDetailsActivity : AppCompatActivity() {
             }
             true
         }
+
+        binding.tagForward.setOnClickListener {
+            val intent = Intent(this, TagManageActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun showImageChoicePopupAt(x: Int, y: Int) {
