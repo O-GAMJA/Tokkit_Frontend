@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.tokkit.adapter.ArticleCardAdapter
 import com.example.tokkit.adapter.ArticleListAdapter
+import com.example.tokkit.adapter.ReviewArticleAdapter
 import com.example.tokkit.databinding.FragmentReviewBinding
 import com.example.tokkit.model.Article
 
@@ -193,7 +194,7 @@ class ReviewFragment : Fragment() {
         }
 
         // 어댑터 설정
-        val adapter = ArticleCardAdapter(filteredArticles)
+        val adapter = ReviewArticleAdapter(filteredArticles)
         binding.recyclerReviewArticles.adapter = adapter
     }
 
