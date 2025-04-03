@@ -1,0 +1,30 @@
+<!-- layout/item_folder.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/ivExpandIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_expand" />
+
+    <ImageView
+        android:id="@+id/ivFolderIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="15dp"
+        android:src="@drawable/ic_folder" />
+
+    <TextView
+        android:id="@+id/tvFolderName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:textSize="16sp"
+        android:textColor="#000000" />
+
+</LinearLayout>
