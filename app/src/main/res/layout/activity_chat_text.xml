@@ -32,7 +32,8 @@
         app:layout_constraintBottom_toTopOf="@id/btn_mic"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_chat_ai" />
+        tools:listitem="@layout/item_chat_ai"
+        android:contentDescription="ai와의 채팅 메시지 목록입니다"/>
 
     <!-- 마이크 버튼 (중앙 하단) -->
     <ImageButton
@@ -83,7 +84,7 @@
         android:id="@+id/btn_create_note"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="#B58EFF"
+        android:backgroundTint="@color/main"
         android:text="노트생성"
         android:textColor="#ffffff"
         app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
