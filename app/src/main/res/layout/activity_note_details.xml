@@ -26,7 +26,7 @@
         android:layout_width="180dp"
         android:layout_height="180dp"
         android:src="@drawable/image_upload"
-        android:backgroundTint="#DAB8FF"
+        android:backgroundTint="@color/main"
         android:scaleType="centerInside"
         app:layout_constraintTop_toBottomOf="@+id/btn_back"
         app:layout_constraintStart_toStartOf="parent"
@@ -188,14 +188,16 @@
     <!-- 저장 버튼 -->
     <Button
         android:id="@+id/saveNoteButton"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="노트저장"
-        android:textColor="#FFFFFF"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="75dp"
         android:backgroundTint="@color/main"
+        android:text="노트 저장"
+        android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="75dp"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

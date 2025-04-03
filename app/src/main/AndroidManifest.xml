@@ -43,11 +43,42 @@
 <!--                <category android:name="android.intent.category.LAUNCHER" />-->
 <!--            </intent-filter>-->
         </activity>
-        <activity android:name=".AttachReferenceActivity"/>
-        <activity android:name=".ChatActivity"/>
-        <activity android:name=".ChatTextActivity"/>
-        <activity android:name=".NoteMarkdownActivity"/>
-        <activity android:name=".NoteDetailsActivity"/>
+
+        <activity
+            android:name=".AttachReferenceActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".ChatTextActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".NoteMarkdownActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".NoteDetailsActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".LoadingActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".GeneratedResultActivity"
+            android:exported="false">
+        </activity>
+
         <activity
             android:name=".LoginEmailActivity"
             android:exported="false">

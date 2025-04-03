@@ -1,14 +1,17 @@
 package com.example.tokkit
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 
 class NoteDetailsActivity : AppCompatActivity() {
@@ -20,6 +23,28 @@ class NoteDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNoteDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val byteArray = intent.getByteArrayExtra("generatedImage")
+        if (byteArray != null) {
+            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            binding.imageUpload.setImageBitmap(bitmap)
+
+            // 크기 조정
+            val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+            layoutParams.width = dpToPx(300)
+            layoutParams.height = dpToPx(300)
+
+            // marginTop 24dp로 변경
+            layoutParams.topMargin = dpToPx(0)
+
+            binding.imageUpload.layoutParams = layoutParams
+
+            // 스케일 설정
+            binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+            binding.imageUpload.adjustViewBounds = true
+            binding.imageUpload.requestLayout()
+        }
+
 
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener {
@@ -58,8 +83,10 @@ class NoteDetailsActivity : AppCompatActivity() {
         }
 
         popupView.findViewById<LinearLayout>(R.id.btn_generate).setOnClickListener {
-            // startActivity(Intent(this, ImageGeneratingActivity::class.java))
+            // TODO: 이미지 생성 로직 구현 ( Stable Diffusion )
+            startActivity(Intent(this, LoadingActivity::class.java))
             popupWindow.dismiss()
+            finish()
         }
 
         // 터치한 좌표를 기준으로 팝업 띄우기 (왼쪽 상단 정렬)
@@ -70,5 +97,10 @@ class NoteDetailsActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         startActivityForResult(intent, REQUEST_GALLERY_IMAGE)
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        val density = resources.displayMetrics.density
+        return (dp * density).toInt()
     }
 }
