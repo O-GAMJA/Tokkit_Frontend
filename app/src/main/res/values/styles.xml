@@ -18,5 +18,14 @@
         <item name="android:windowBackground">#FBF8FE</item>
     </style>
 
+    <!-- 둥근 모서리 카드뷰  (20dp 라운드, 그림자 있음) -->
+    <style name="RoundedCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="cardBackgroundColor">@color/white</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
 </resources>
 
