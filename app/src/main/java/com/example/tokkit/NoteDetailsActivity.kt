@@ -26,6 +26,13 @@ class NoteDetailsActivity : AppCompatActivity() {
         binding = ActivityNoteDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val tagList = intent.getStringArrayListExtra("selectedTags")
+        if (!tagList.isNullOrEmpty()) {
+            binding.tagContent.visibility = View.INVISIBLE
+            binding.tagContainerInNote.visibility = View.VISIBLE
+            renderSelectedTags(tagList)
+        }
+
         val byteArray = intent.getByteArrayExtra("generatedImage")
         if (byteArray != null) {
             val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
@@ -92,8 +99,10 @@ class NoteDetailsActivity : AppCompatActivity() {
 
         popupView.findViewById<LinearLayout>(R.id.btn_generate).setOnClickListener {
             // TODO: 이미지 생성 로직 구현 ( Stable Diffusion )
-            startActivity(Intent(this, LoadingActivity::class.java))
+            val intent = Intent(this, LoadingActivity::class.java)
+            intent.putStringArrayListExtra("selectedTags", ArrayList(currentTagList))
             popupWindow.dismiss()
+            startActivity(intent)
             finish()
         }
 

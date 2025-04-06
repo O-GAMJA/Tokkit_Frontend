@@ -14,8 +14,11 @@ class LoadingActivity : AppCompatActivity() {
         binding = ActivityLoadingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val tagList = intent.getStringArrayListExtra("selectedTags") ?: arrayListOf()
+
         binding.imageGenerate.setOnClickListener {
             val intent = Intent(this, GeneratedResultActivity::class.java)
+            intent.putStringArrayListExtra("selectedTags", tagList)
             startActivity(intent)
             finish()
         }

@@ -17,6 +17,8 @@ class GeneratedResultActivity : AppCompatActivity() {
         binding = ActivityGeneratedResultBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val tagList = intent.getStringArrayListExtra("selectedTags") ?: arrayListOf()
+
         binding.saveText.setOnClickListener {
             // ImageView에서 Bitmap 추출
             val drawable = binding.generatedImage.drawable
@@ -30,6 +32,7 @@ class GeneratedResultActivity : AppCompatActivity() {
             // Intent로 전달
             val intent = Intent(this, NoteDetailsActivity::class.java)
             intent.putExtra("generatedImage", byteArray)
+            intent.putStringArrayListExtra("selectedTags", tagList)
             startActivity(intent)
             finish()
         }
@@ -37,6 +40,7 @@ class GeneratedResultActivity : AppCompatActivity() {
 
         binding.regenerateButton.setOnClickListener{
             val intent = Intent(this, LoadingActivity::class.java)
+            intent.putStringArrayListExtra("selectedTags", tagList)
             startActivity(intent)
             finish()
         }
