@@ -19,6 +19,7 @@ class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
 
     private var currentTagList = mutableListOf<String>()
+    private var selectedPath: String? = null
     private val REQUEST_GALLERY_IMAGE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,11 +27,19 @@ class NoteDetailsActivity : AppCompatActivity() {
         binding = ActivityNoteDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+        // 태그 초기화
         val tagList = intent.getStringArrayListExtra("selectedTags")
         if (!tagList.isNullOrEmpty()) {
             binding.tagContent.visibility = View.INVISIBLE
             binding.tagContainerInNote.visibility = View.VISIBLE
             renderSelectedTags(tagList)
+        }
+
+        // 경로 초기화
+        selectedPath = intent.getStringExtra("selectedPath")
+        if (!selectedPath.isNullOrEmpty()) {
+            binding.storageDetail.text = selectedPath
         }
 
         val byteArray = intent.getByteArrayExtra("generatedImage")
@@ -75,6 +84,12 @@ class NoteDetailsActivity : AppCompatActivity() {
             intent.putStringArrayListExtra("existingTags", ArrayList(currentTagList))
             startActivityForResult(intent, 101)
         }
+
+        //저장 위치 화살표 버튼
+        binding.storageForward.setOnClickListener{
+            val intent = Intent(this, SaveLocationActivity::class.java)
+            startActivityForResult(intent, 102)
+        }
     }
 
     private fun showImageChoicePopupAt(x: Int, y: Int) {
@@ -101,6 +116,7 @@ class NoteDetailsActivity : AppCompatActivity() {
             // TODO: 이미지 생성 로직 구현 ( Stable Diffusion )
             val intent = Intent(this, LoadingActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", ArrayList(currentTagList))
+            intent.putExtra("selectedPath", selectedPath)
             popupWindow.dismiss()
             startActivity(intent)
             finish()
@@ -108,13 +124,6 @@ class NoteDetailsActivity : AppCompatActivity() {
 
         // 터치한 좌표를 기준으로 팝업 띄우기 (왼쪽 상단 정렬)
         popupWindow.showAtLocation(binding.root, 0, x, y)
-
-        //저장 위치 화살표 버튼
-        binding.storageForward.setOnClickListener{
-            val intent = Intent(this, SaveLocationActivity::class.java)
-            startActivity(intent)
-        }
-
     }
 
     private fun openGallery() {
@@ -136,6 +145,13 @@ class NoteDetailsActivity : AppCompatActivity() {
                 binding.tagContent.visibility = View.INVISIBLE      // 안내 문구 숨김 (공간 유지)
                 binding.tagContainerInNote.visibility = View.VISIBLE  // 칩 영역 표시
                 renderSelectedTags(tagList)
+            }
+        }
+        if (requestCode == 102 && resultCode == RESULT_OK) {
+            val path = data?.getStringExtra("selectedPath")
+            if (!path.isNullOrEmpty()) {
+                binding.storageDetail.text = path
+                selectedPath = path
             }
         }
     }

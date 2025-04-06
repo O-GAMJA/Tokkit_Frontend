@@ -18,6 +18,7 @@ class GeneratedResultActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val tagList = intent.getStringArrayListExtra("selectedTags") ?: arrayListOf()
+        val selectedPath = intent.getStringExtra("selectedPath")
 
         binding.saveText.setOnClickListener {
             // ImageView에서 Bitmap 추출
@@ -33,6 +34,7 @@ class GeneratedResultActivity : AppCompatActivity() {
             val intent = Intent(this, NoteDetailsActivity::class.java)
             intent.putExtra("generatedImage", byteArray)
             intent.putStringArrayListExtra("selectedTags", tagList)
+            intent.putExtra("selectedPath", selectedPath)
             startActivity(intent)
             finish()
         }
@@ -41,6 +43,7 @@ class GeneratedResultActivity : AppCompatActivity() {
         binding.regenerateButton.setOnClickListener{
             val intent = Intent(this, LoadingActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", tagList)
+            intent.putExtra("selectedPath", selectedPath)
             startActivity(intent)
             finish()
         }

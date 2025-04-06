@@ -15,10 +15,12 @@ class LoadingActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val tagList = intent.getStringArrayListExtra("selectedTags") ?: arrayListOf()
+        val selectedPath = intent.getStringExtra("selectedPath")
 
         binding.imageGenerate.setOnClickListener {
             val intent = Intent(this, GeneratedResultActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", tagList)
+            intent.putExtra("selectedPath", selectedPath)
             startActivity(intent)
             finish()
         }
