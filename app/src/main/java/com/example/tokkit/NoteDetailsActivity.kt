@@ -99,6 +99,13 @@ class NoteDetailsActivity : AppCompatActivity() {
 
         // 터치한 좌표를 기준으로 팝업 띄우기 (왼쪽 상단 정렬)
         popupWindow.showAtLocation(binding.root, 0, x, y)
+
+        //저장 위치 화살표 버튼
+        binding.storageForward.setOnClickListener{
+            val intent = Intent(this, SaveLocationActivity::class.java)
+            startActivity(intent)
+        }
+
     }
 
     private fun openGallery() {

@@ -1,62 +1,43 @@
 package com.example.tokkit
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.GravityCompat
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.Fragment
-import com.example.tokkit.databinding.ActivityMainBinding
-import com.google.android.material.navigation.NavigationView
+import com.example.tokkit.databinding.ActivitySavelocationBinding
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class SaveLocationActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding: ActivitySavelocationBinding
     private lateinit var navigationContainer: LinearLayout
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 상태바 투명하게 설정
-        setStatusBarTransparent()
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivitySavelocationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 커스텀 네비게이션 드로어 설정
-        setupCustomNavigationDrawer()
-
-        // 햄버거 메뉴 버튼 클릭 이벤트 설정
-        binding.btnMenu.setOnClickListener {
-            binding.drawerLayout.openDrawer(GravityCompat.START)
+        // 뒤로가기 버튼
+        binding.btnBack.setOnClickListener {
+            finish()
         }
 
-        // 초기 프래그먼트 설정
-        if (savedInstanceState == null) {
-            replaceFragment(HomeFragment())
+        // 저장 버튼
+        binding.btnSave.setOnClickListener {
+            // 선택된 폴더에 저장 처리
+            setResult(RESULT_OK)
+            finish()
         }
 
-        // 바텀 네비게이션 설정
-        setupBottomNavigation()
-
-        // FAB 이벤트 설정
-        setupSearchFab()
+        // 폴더 구조 설정
+        setupFolderStructure()
     }
 
-    private fun setupCustomNavigationDrawer() {
-        // 커스텀 네비게이션 드로어 레이아웃 인플레이트
-        val navigationView = binding.navigationView
-        val customNavView = layoutInflater.inflate(R.layout.layout_custom_navigation, navigationView, false)
-        navigationView.addView(customNavView)
-
-        navigationContainer = customNavView.findViewById(R.id.navigationItemsContainer)
+    private fun setupFolderStructure() {
+        navigationContainer = binding.folderContainer
 
         // 데이터 통신 구조 폴더, 하위 폴더, 페이지
         addMainFolder("데이터 통신", listOf(
@@ -93,9 +74,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         ))
 
         // 컴퓨터 구조 폴더
-        addMainFolder("컴퓨터 구조", emptyList())
+        addMainFolder("데이터 통신", emptyList())
+        addMainFolder("데이터 통신", emptyList())
+        addMainFolder("데이터 통신", emptyList())
     }
-
 
     private fun addMainFolder(folderName: String, subItems: List<Any>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, navigationContainer, false)
@@ -192,12 +174,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         container.addView(subItemsContainer)
     }
 
-    // dp를 픽셀로 변환하는 확장 함수
-    private fun Int.dpToPx(): Int {
-        val scale = resources.displayMetrics.density
-        return (this * scale + 0.5f).toInt()
-    }
-
     private fun addPage(page: PageItem, container: LinearLayout) {
         val pageView = layoutInflater.inflate(R.layout.item_page, container, false)
         val pageNameTv = pageView.findViewById<TextView>(R.id.tvPageName)
@@ -205,113 +181,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         pageNameTv.text = page.name
         pageIcon.setImageResource(R.drawable.ic_page)
+
         pageView.setOnClickListener {
-            // 페이지 클릭 처리 - 페이지로 이동
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            // 여기에 페이지 이동 로직 추가 예정
+            // 페이지 클릭 처리 - 이 페이지를 저장 위치로 선택
         }
 
         container.addView(pageView)
     }
 
-
-    //상태 바 투명하게
-    private fun setStatusBarTransparent() {
-        window.apply {
-            setFlags(
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            )
-        }
-        if (android.os.Build.VERSION.SDK_INT >= 30) {
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-        }
-    }
-
-    override fun onBackPressed() {
-        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
-        }
-    }
-
-    private fun setupBottomNavigation() {
-        // 바텀 네비게이션 배경 제거
-        binding.bottomNavigationView.background = null
-
-        // 가운데 아이템 비활성화
-        binding.bottomNavigationView.menu.getItem(2).isEnabled = false
-
-        binding.bottomNavigationView.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.fragment_home -> {
-                    replaceFragment(HomeFragment())
-                    binding.navigationView.setCheckedItem(R.id.nav_home)
-                }
-                R.id.fragment_search -> {
-                    replaceFragment(SearchFragment())
-                    binding.navigationView.setCheckedItem(R.id.nav_search)
-                }
-                R.id.fragment_review -> {
-                    replaceFragment(ReviewFragment())
-                    binding.navigationView.setCheckedItem(R.id.nav_review)
-                }
-                R.id.fragment_settings -> {
-                    replaceFragment(MypageFragment())
-                    binding.navigationView.setCheckedItem(R.id.nav_mypage)
-                }
-            }
-            true
-        }
-    }
-
-    private fun setupSearchFab() {
-        binding.searchFab.setOnClickListener {
-            // FAB 클릭 시 동작 구현
-            val intent = Intent(this, AttachReferenceActivity::class.java)
-            startActivity(intent)
-        }
-    }
-
-    // 프래그먼트 교체 함수
-    private fun replaceFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
-    }
-
-    // NavigationView 아이템 클릭 이벤트 처리
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.nav_home -> {
-                replaceFragment(HomeFragment())
-                binding.bottomNavigationView.selectedItemId = R.id.fragment_home
-            }
-            R.id.nav_search -> {
-                replaceFragment(SearchFragment())
-                binding.bottomNavigationView.selectedItemId = R.id.fragment_search
-            }
-            R.id.nav_review -> {
-                replaceFragment(ReviewFragment())
-                binding.bottomNavigationView.selectedItemId = R.id.fragment_review
-            }
-            R.id.nav_mypage -> {
-                replaceFragment(MypageFragment())
-                binding.bottomNavigationView.selectedItemId = R.id.fragment_settings
-            }
-            R.id.nav_settings -> {
-                // 설정 화면으로 이동하는 코드 (필요시 추가)
-            }
-            R.id.nav_logout -> {
-                // 로그아웃 기능 구현 (필요시 추가)
-            }
-        }
-        binding.drawerLayout.closeDrawer(GravityCompat.START)
-        return true
+    // dp를 픽셀로 변환하는 확장 함수
+    private fun Int.dpToPx(): Int {
+        val scale = resources.displayMetrics.density
+        return (this * scale + 0.5f).toInt()
     }
 }
-
-// 네비게이션 구조를 위한 데이터 클래스
-data class FolderItem(val name: String, val subItems: List<Any>)
-data class PageItem(val name: String, val pageId: String?)

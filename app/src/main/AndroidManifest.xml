@@ -113,6 +113,15 @@
             android:name=".RegisterNicknameActivity"
             android:exported="false">
         </activity>
+
+        <activity
+            android:name=".SaveLocationActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".ForgettingCurveActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

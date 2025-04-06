@@ -1,0 +1,28 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:layout_marginStart="24dp">
+
+    <!-- 빈 공간으로 화살표 자리 맞춤 -->
+    <View
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="invisible" />
+
+    <ImageView
+        android:id="@+id/ivPageIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_page" />
+
+    <TextView
+        android:id="@+id/tvPageName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="16sp"
+        android:textColor="#000000" />
+</LinearLayout>
