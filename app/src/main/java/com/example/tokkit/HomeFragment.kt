@@ -51,6 +51,10 @@ class HomeFragment : Fragment() {
             binding.viewPager.currentItem = 1
         }
 
+        binding.tabBubble.setOnClickListener {
+            binding.viewPager.currentItem = 2
+        }
+
         // 태그 리스너 설정
         binding.tagDataTransmission.setOnClickListener {
             // 데이터 통신 태그 클릭 처리
@@ -80,10 +84,17 @@ class HomeFragment : Fragment() {
             0 -> {
                 binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
                 binding.tabList.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
+                binding.tabBubble.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
             }
             1 -> {
                 binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
                 binding.tabList.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
+                binding.tabBubble.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
+            }
+            2 -> {
+                binding.tabCard.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
+                binding.tabList.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
+                binding.tabBubble.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
             }
         }
     }
