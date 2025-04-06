@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/background"
+    tools:context=".TagManageActivity">
 
     <!-- 뒤로가기 버튼 -->
     <ImageButton
@@ -19,9 +20,9 @@
         android:src="@drawable/ic_back"
         android:contentDescription="뒤로가기"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- 저장 텍스트 -->
+    <!-- 저장 버튼 -->
     <TextView
         android:id="@+id/btnSave"
         android:layout_width="wrap_content"
@@ -30,9 +31,9 @@
         android:text="저장"
         android:textColor="#000000"
         android:textSize="18sp"
+        app:layout_constraintTop_toTopOf="@+id/title"
         app:layout_constraintBottom_toBottomOf="@+id/title"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/title" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- 타이틀 -->
     <TextView
@@ -43,83 +44,99 @@
         android:textColor="#000000"
         android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/btn_back"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/btn_back" />
+        app:layout_constraintTop_toTopOf="@+id/btn_back"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_back" />
 
-    <!-- 검색창 -->
+    <!-- 검색창 + Chip 묶인 CardView -->
     <androidx.cardview.widget.CardView
         android:id="@+id/searchBar"
         android:layout_width="0dp"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:cardCornerRadius="24dp"
         app:cardElevation="2dp"
         app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <ImageView
-                android:id="@+id/iconSearch"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="16dp"
-                android:src="@drawable/ic_search" />
-
-            <EditText
-                android:id="@+id/searchInput"
+            <!-- 검색 입력 영역 -->
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_toEndOf="@id/iconSearch"
-                android:layout_toStartOf="@+id/iconClear"
-                android:hint="태그를 입력하세요"
-                android:paddingStart="8dp"
-                android:background="@null"
-                android:textColor="#000000"
-                android:textSize="14sp"
-                android:inputType="text" />
+                android:layout_height="48dp">
 
-            <ImageView
-                android:id="@+id/iconClear"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="16dp"
-                android:src="@drawable/ic_close" />
-        </RelativeLayout>
+                <ImageView
+                    android:id="@+id/iconSearch"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:src="@drawable/ic_search" />
+
+                <EditText
+                    android:id="@+id/searchInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_toEndOf="@id/iconSearch"
+                    android:layout_toStartOf="@+id/iconClear"
+                    android:hint="태그를 입력하세요"
+                    android:paddingStart="8dp"
+                    android:background="@null"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:inputType="text" />
+
+                <ImageView
+                    android:id="@+id/iconClear"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_close" />
+            </RelativeLayout>
+
+            <!-- 추천 태그 Chip -->
+            <com.google.android.flexbox.FlexboxLayout
+                android:id="@+id/tagContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:flexWrap="wrap"
+                app:justifyContent="flex_start" />
+
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 추천 태그 텍스트 -->
-    <TextView
-        android:id="@+id/recommendLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="추천 태그"
-        android:textColor="#777777"
-        android:textSize="14sp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/searchBar"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <!-- 자동완성 리스트 (추천 태그 검색 결과) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardRecyclerWrapper"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/recommendLabel"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" />
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

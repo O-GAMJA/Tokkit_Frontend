@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
@@ -17,6 +18,7 @@ import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
 
+    private var currentTagList = mutableListOf<String>()
     private val REQUEST_GALLERY_IMAGE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +65,8 @@ class NoteDetailsActivity : AppCompatActivity() {
 
         binding.tagForward.setOnClickListener {
             val intent = Intent(this, TagManageActivity::class.java)
-            startActivity(intent)
+            intent.putStringArrayListExtra("existingTags", ArrayList(currentTagList))
+            startActivityForResult(intent, 101)
         }
     }
 
@@ -107,5 +110,30 @@ class NoteDetailsActivity : AppCompatActivity() {
     private fun dpToPx(dp: Int): Int {
         val density = resources.displayMetrics.density
         return (dp * density).toInt()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 101 && resultCode == RESULT_OK) {
+            val tagList = data?.getStringArrayListExtra("selectedTags") ?: return
+            if (tagList.isNotEmpty()) {
+                binding.tagContent.visibility = View.INVISIBLE      // 안내 문구 숨김 (공간 유지)
+                binding.tagContainerInNote.visibility = View.VISIBLE  // 칩 영역 표시
+                renderSelectedTags(tagList)
+            }
+        }
+    }
+
+    private fun renderSelectedTags(tags: List<String>) {
+        currentTagList = tags.toMutableList()
+        val tagContainer = binding.tagContainerInNote
+        tagContainer.removeAllViews()
+
+        val inflater = LayoutInflater.from(this)
+        for (tag in tags) {
+            val chip = inflater.inflate(R.layout.item_chip, tagContainer, false) as TextView
+            chip.text = "# $tag"
+            tagContainer.addView(chip)
+        }
     }
 }

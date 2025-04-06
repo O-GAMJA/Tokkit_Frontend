@@ -4,7 +4,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.data.local.entities.Tag
 import com.example.tokkit.databinding.ItemTagTextBinding
 
-class TagListAdapter : RecyclerView.Adapter<TagListAdapter.TagViewHolder>() {
+class TagListAdapter(private val onTagClick: (Tag) -> Unit) :
+    RecyclerView.Adapter<TagListAdapter.TagViewHolder>() {
 
     private var tagList: List<Tag> = listOf()
 
@@ -12,6 +13,9 @@ class TagListAdapter : RecyclerView.Adapter<TagListAdapter.TagViewHolder>() {
         RecyclerView.ViewHolder(binding.root) {
         fun bind(tag: Tag) {
             binding.tagName.text = "# ${tag.name}"
+            binding.root.setOnClickListener {
+                onTagClick(tag)
+            }
         }
     }
 
