@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.tokkit.adapter.ChatAdapter
 import com.example.tokkit.databinding.ActivityChatTextBinding
+import com.example.tokkit.model.ChatMessage
 
 
 class ChatTextActivity : AppCompatActivity() {

@@ -1,10 +1,12 @@
-package com.example.tokkit
+package com.example.tokkit.adapter
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tokkit.R
+import com.example.tokkit.model.ChatMessage
 
 class ChatAdapter(private val messages: List<ChatMessage>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -51,8 +53,3 @@ class ChatAdapter(private val messages: List<ChatMessage>) :
         }
     }
 }
-
-data class ChatMessage(
-    val message: String,
-    val isUser: Boolean // true면 사용자, false면 AI
-)
