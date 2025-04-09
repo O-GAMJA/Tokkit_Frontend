@@ -121,7 +121,15 @@
 
         <activity
             android:name=".ForgettingCurveActivity"
-            android:exported="false" />
+            android:exported="false">
+
+        </activity>
+
+        <activity android:name="AlarmSettingActivity"
+            android:exported="false">
+
+        </activity>
+
     </application>
 
 </manifest>
