@@ -85,7 +85,7 @@
             android:contentDescription="노트생성"
             android:src="@drawable/ic_voice"
             android:scaleType="center"
-            app:backgroundTint="#5B9BFF"
+            app:backgroundTint="@color/main"
             app:tint="@android:color/white"
             app:maxImageSize="50dp"
             app:fabCustomSize="100dp"
