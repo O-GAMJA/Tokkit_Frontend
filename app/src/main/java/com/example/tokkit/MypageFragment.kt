@@ -27,7 +27,8 @@ class MypageFragment : Fragment() {
 
         // 프로필 수정 클릭
         binding.editProfile.setOnClickListener {
-            // TODO: 프로필 수정 Activity로 이동
+            val intent = Intent(requireContext(), EditProfileActivity::class.java)
+            startActivity(intent)
         }
 
         // 알림 설정 클릭

@@ -134,6 +134,21 @@
             android:exported="false">
         </activity>
 
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".EditNicknameActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".EditPasswordActivity"
+            android:exported="false">
+        </activity>
+
     </application>
 
 </manifest>
