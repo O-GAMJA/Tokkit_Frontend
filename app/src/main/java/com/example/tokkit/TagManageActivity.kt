@@ -1,6 +1,6 @@
 package com.example.tokkit
 
-import TagListAdapter
+import com.example.tokkit.adapter.TagListAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
