@@ -24,12 +24,7 @@ class BubbleChartFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // 버블 차트 초기화 및 설정
-        setupBubbleChart()
-    }
 
-    private fun setupBubbleChart() {
-        // 버블 차트 데이터 및 시각화 설정
     }
 
     override fun onDestroyView() {

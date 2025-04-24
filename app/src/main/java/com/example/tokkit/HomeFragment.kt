@@ -39,6 +39,8 @@ class HomeFragment : Fragment() {
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updateTabs(position)
+                updateUIForTab(position)
+
             }
         })
 
@@ -96,6 +98,17 @@ class HomeFragment : Fragment() {
                 binding.tabList.backgroundTintList = resources.getColorStateList(R.color.gray2, requireActivity().theme)
                 binding.tabBubble.backgroundTintList = resources.getColorStateList(R.color.main, requireActivity().theme)
             }
+        }
+    }
+    private fun updateUIForTab(position: Int) {
+        if (position == 2) { // 버블 차트 탭
+            // 검색 UI 숨기기
+            binding.searchContainer.visibility = View.GONE
+            binding.scrollTags.visibility = View.GONE
+        } else {
+            // 다른 탭에서는 검색 UI 표시
+            binding.searchContainer.visibility = View.VISIBLE
+            binding.scrollTags.visibility = View.VISIBLE
         }
     }
 
