@@ -21,4 +21,9 @@ interface TagDao {
 
     @Delete
     suspend fun delete(tag: Tag)
+
+    //@Query("SELECT * FROM tag WHERE name LIKE :query || '%' ORDER BY name ASC")
+    @Query("SELECT * FROM tag WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun getTagsByQuery(query: String): List<Tag>
+
 }

@@ -1,5 +1,7 @@
 package com.example.tokkit
 
+import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -7,6 +9,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.example.tokkit.databinding.ActivitySavelocationBinding
 
@@ -14,6 +17,9 @@ class SaveLocationActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySavelocationBinding
     private lateinit var navigationContainer: LinearLayout
+
+    private var selectedPath: String? = null
+    private var selectedPageView: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +34,10 @@ class SaveLocationActivity : AppCompatActivity() {
         // 저장 버튼
         binding.btnSave.setOnClickListener {
             // 선택된 폴더에 저장 처리
-            setResult(RESULT_OK)
+            val resultIntent = Intent().apply {
+                putExtra("selectedPath", selectedPath)
+            }
+            setResult(RESULT_OK, resultIntent)
             finish()
         }
 
@@ -184,6 +193,16 @@ class SaveLocationActivity : AppCompatActivity() {
 
         pageView.setOnClickListener {
             // 페이지 클릭 처리 - 이 페이지를 저장 위치로 선택
+            selectedPath = page.name
+
+            // 이전 선택된 뷰 초기화
+            selectedPageView?.setBackgroundColor(Color.TRANSPARENT)
+
+            // 현재 선택된 뷰 강조
+            pageView.setBackgroundColor(ContextCompat.getColor(this, R.color.main))
+
+            // 선택된 뷰 저장
+            selectedPageView = pageView
         }
 
         container.addView(pageView)
