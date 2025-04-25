@@ -381,7 +381,7 @@
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:backgroundTint="#8AC8CE"
-                    android:textSize="17dp"
+                    android:textSize="13dp"
                     android:text="퀴즈"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
@@ -394,7 +394,7 @@
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:backgroundTint="#7AA3F5"
-                    android:textSize="17dp"
+                    android:textSize="13dp"
                     android:text="말하기"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
@@ -406,7 +406,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:backgroundTint="#C89AFF"
-                    android:textSize="17dp"
+                    android:textSize="13dp"
                     android:text="노트 보기"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
