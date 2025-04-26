@@ -2,8 +2,13 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.tokkit.databinding.ActivityQuizXmlBinding
 
 class QuizActivity : AppCompatActivity() {
@@ -13,7 +18,9 @@ class QuizActivity : AppCompatActivity() {
     private var articleStage: Int = 0
     private var currentQuestionIndex = 0
     private var userSelectedOption = -1 // 사용자가 선택한 옵션 인덱스,, -1 = 미선택
-    private var userAnswers = mutableMapOf<Int, Int>()
+    private val userAnswers = mutableMapOf<Int, Int>() // 사용자 답변 저장
+    private val handler = Handler(Looper.getMainLooper())
+    private var isShowingFeedback = false // 피드백 표시 중인지 여부
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +34,11 @@ class QuizActivity : AppCompatActivity() {
         setupUI()
         setupQuestions()
         showQuestion(currentQuestionIndex)
+
+        // 피드백 오버레이 초기 설정
+        binding.overlayView.visibility = View.GONE
+        binding.correctMark.visibility = View.GONE
+        binding.incorrectMark.visibility = View.GONE
     }
 
     private fun setupUI() {
@@ -43,23 +55,28 @@ class QuizActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 다음 질문으로 이동
-            if (currentQuestionIndex < questions.size - 1) {
-                currentQuestionIndex++
-                showQuestion(currentQuestionIndex)
-                userSelectedOption = -1 // 선택 초기화
-                updateProgressBar()
-            } else {
-                // 퀴즈 종료 처리
-                finishQuiz()
+            if (isShowingFeedback) {
+                // 이미 피드백을 표시 중이면 무시
+                return@setOnClickListener
             }
+
+            // 정답 확인 및 피드백 표시
+            checkAnswerAndShowFeedback()
         }
 
         // 선택지 버튼 클릭 리스너 설정
-        binding.option1.setOnClickListener { selectOption(0) }
-        binding.option2.setOnClickListener { selectOption(1) }
-        binding.option3.setOnClickListener { selectOption(2) }
-        binding.option4.setOnClickListener { selectOption(3) }
+        binding.option1.setOnClickListener {
+            if (!isShowingFeedback) selectOption(0)
+        }
+        binding.option2.setOnClickListener {
+            if (!isShowingFeedback) selectOption(1)
+        }
+        binding.option3.setOnClickListener {
+            if (!isShowingFeedback) selectOption(2)
+        }
+        binding.option4.setOnClickListener {
+            if (!isShowingFeedback) selectOption(3)
+        }
     }
 
     private fun setupQuestions() {
@@ -117,7 +134,7 @@ class QuizActivity : AppCompatActivity() {
 
         // 현재 선택 저장
         userSelectedOption = optionIndex
-        userAnswers[currentQuestionIndex] = optionIndex  // 사용자 답변 저장
+        userAnswers[currentQuestionIndex] = optionIndex
 
         // 선택된 옵션 강조
         when (optionIndex) {
@@ -160,8 +177,74 @@ class QuizActivity : AppCompatActivity() {
         binding.progressBar.progress = progress
     }
 
+    private fun checkAnswerAndShowFeedback() {
+        isShowingFeedback = true
+        val question = questions[currentQuestionIndex]
+        val isCorrect = userSelectedOption == question.correctOptionIndex
+
+        // 오버레이 표시
+        binding.overlayView.visibility = View.VISIBLE
+
+        // 정답/오답 표시
+        if (isCorrect) {
+            binding.correctMark.visibility = View.VISIBLE
+            binding.incorrectMark.visibility = View.GONE
+        } else {
+            binding.correctMark.visibility = View.GONE
+            binding.incorrectMark.visibility = View.VISIBLE
+
+            // 틀렸을 경우 정답과 오답 표시
+            highlightCorrectAndWrongAnswers(question.correctOptionIndex, userSelectedOption)
+        }
+
+        // 2초 후 다음 문제로 이동 또는 결과 화면으로 이동
+        handler.postDelayed({
+            binding.overlayView.visibility = View.GONE
+            binding.correctMark.visibility = View.GONE
+            binding.incorrectMark.visibility = View.GONE
+
+            // 다음 문제 또는 결과 화면으로 이동
+            if (currentQuestionIndex < questions.size - 1) {
+                currentQuestionIndex++
+                showQuestion(currentQuestionIndex)
+                userSelectedOption = -1 // 선택 초기화
+                updateProgressBar()
+            } else {
+                // 퀴즈 종료 처리
+                finishQuiz()
+            }
+
+            isShowingFeedback = false
+        }, 2000) // 2초 지연
+    }
+
+    private fun highlightCorrectAndWrongAnswers(correctIndex: Int, selectedIndex: Int) {
+        // 정답은 초록색으로 표시
+        val correctOption = when (correctIndex) {
+            0 -> binding.option1
+            1 -> binding.option2
+            2 -> binding.option3
+            3 -> binding.option4
+            else -> null
+        }
+        correctOption?.setBackgroundResource(R.drawable.bg_option_correct)
+        correctOption?.setTextColor(ContextCompat.getColor(this, R.color.white))
+
+        // 틀린 답은 빨간색으로 표시 (선택한 답만)
+        if (selectedIndex != correctIndex) {
+            val wrongOption = when (selectedIndex) {
+                0 -> binding.option1
+                1 -> binding.option2
+                2 -> binding.option3
+                3 -> binding.option4
+                else -> null
+            }
+            wrongOption?.setBackgroundResource(R.drawable.bg_option_wrong)
+            wrongOption?.setTextColor(ContextCompat.getColor(this, R.color.white))
+        }
+    }
+
     private fun finishQuiz() {
-        // 결과 액티비티
         // 정답 수 계산
         var correctAnswers = 0
         for (i in questions.indices) {
@@ -192,4 +275,9 @@ class QuizActivity : AppCompatActivity() {
 
     // 문제 리스트
     private lateinit var questions: List<Question>
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
+    }
 }
