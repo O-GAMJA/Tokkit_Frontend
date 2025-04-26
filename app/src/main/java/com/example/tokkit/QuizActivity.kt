@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +13,7 @@ class QuizActivity : AppCompatActivity() {
     private var articleStage: Int = 0
     private var currentQuestionIndex = 0
     private var userSelectedOption = -1 // 사용자가 선택한 옵션 인덱스,, -1 = 미선택
+    private var userAnswers = mutableMapOf<Int, Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,6 +117,7 @@ class QuizActivity : AppCompatActivity() {
 
         // 현재 선택 저장
         userSelectedOption = optionIndex
+        userAnswers[currentQuestionIndex] = optionIndex  // 사용자 답변 저장
 
         // 선택된 옵션 강조
         when (optionIndex) {
@@ -158,9 +161,25 @@ class QuizActivity : AppCompatActivity() {
     }
 
     private fun finishQuiz() {
-        //결과 액티비티
-        // val intent = Intent(this, QuizResultActivity::class.java)
-        // startActivity(intent)
+        // 결과 액티비티
+        // 정답 수 계산
+        var correctAnswers = 0
+        for (i in questions.indices) {
+            val selectedOption = userAnswers.getOrElse(i) { -1 }
+            if (selectedOption == questions[i].correctOptionIndex) {
+                correctAnswers++
+            }
+        }
+
+        // 점수 계산 (각 문제당 8점)
+        val score = correctAnswers * 8
+
+        // 결과 화면으로 이동
+        val intent = Intent(this, QuizResultActivity::class.java)
+        intent.putExtra("SCORE", score)
+        intent.putExtra("TOTAL_QUESTIONS", questions.size)
+        intent.putExtra("USER_NAME", "Chamin") // *로그인 정보에서 가져올 예정
+        startActivity(intent)
         finish()
     }
 
