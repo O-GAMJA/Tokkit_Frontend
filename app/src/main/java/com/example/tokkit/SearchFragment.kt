@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.adapter.ArticleCardAdapter
+import com.example.tokkit.adapter.ArticleCardAdapterWithClick
 import com.example.tokkit.databinding.FragmentSearchBinding
 import com.example.tokkit.model.Article
 
@@ -20,7 +20,7 @@ class SearchFragment : Fragment() {
 
     // 임시 데이터
     private val allArticles = mutableListOf<Article>()
-    private lateinit var adapter: ArticleCardAdapter
+    private lateinit var adapter: ArticleCardAdapterWithClick
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,7 +52,7 @@ class SearchFragment : Fragment() {
 
     private fun setupRecyclerView() {
         binding.recyclerSearchResults.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ArticleCardAdapter(emptyList())
+        adapter = ArticleCardAdapterWithClick(emptyList())
         binding.recyclerSearchResults.adapter = adapter
     }
 
@@ -146,8 +146,8 @@ class SearchFragment : Fragment() {
         // 샘플 데이터 - 실제로는 DB나 API에서 가져오는 로직이 들어갈 것
         allArticles.add(
             Article(
-                "데이터 통신 - TCP/IP",
-                "TCP/IP (Transmission Control) 인터넷을 포함한 대부분의 네트워크에서 사용되는 프로토콜 스택..",
+                "운영체제 1-1",
+                "# 운영체제란?\n운영체제는 사용자와 하드웨어 간의 **인터페이스**를 제공하여 시스템 자원을 효율적으로 관리하는 소프트웨어입니다.\n\n## 주요 역할\n- **자원 관리:** CPU, 메모리, 저장장치, 입력장치 등의 자원을 할당 및 회수\n- **작업 제어:** 다중 사용자/다중 작업 상황에서 자원을 조율\n\n## 예시\n대표적인 운영체제로는 **Windows, Linux, macOS** 등이 있으며, 각각의 구조와 기능이 다르지만 사용자 요구를 충족시키는 방향으로 발전하고 있습니다.",
                 "2024.01.04",
                 R.drawable.ic_tcp_ip
             )
@@ -190,10 +190,4 @@ class SearchFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-}
-
-// ArticleCardAdapter에 submit 기능 추가 확장
-fun ArticleCardAdapter.submitList(list: List<Article>) {
-    val articles = list.toList()
-    notifyDataSetChanged()
 }
