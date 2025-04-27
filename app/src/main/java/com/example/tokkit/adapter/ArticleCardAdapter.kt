@@ -7,7 +7,7 @@ import com.bumptech.glide.Glide
 import com.example.tokkit.databinding.ItemArticleCardBinding
 import com.example.tokkit.model.Article
 
-class ArticleCardAdapter(private val articles: List<Article>) :
+class ArticleCardAdapter(private var articles: List<Article>) :
     RecyclerView.Adapter<ArticleCardAdapter.ArticleViewHolder>() {
 
     class ArticleViewHolder(val binding: ItemArticleCardBinding) : RecyclerView.ViewHolder(binding.root)
@@ -36,4 +36,10 @@ class ArticleCardAdapter(private val articles: List<Article>) :
     }
 
     override fun getItemCount() = articles.size
+
+    // 리스트 업데이트 메서드 추가
+    fun submitList(list: List<Article>) {
+        this.articles = list
+        notifyDataSetChanged()
+    }
 }

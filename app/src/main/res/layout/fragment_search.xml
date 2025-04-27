@@ -2,16 +2,158 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/main_backgound">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- 검색어 입력부-->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/searchContainer"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rounded_search_bg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 검색 아이콘 -->
+        <ImageView
+            android:id="@+id/ivSearchIcon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginStart="16dp"
+            android:src="@drawable/ic_search"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 검색 입력창 -->
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@null"
+            android:hint="검색어를 입력하세요"
+            android:inputType="text"
+            android:singleLine="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/ivClearSearch"
+            app:layout_constraintStart_toEndOf="@+id/ivSearchIcon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- X 버튼 -->
+        <ImageView
+            android:id="@+id/ivClearSearch"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/ic_close"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 필터 버튼 3개 -->
+    <LinearLayout
+        android:id="@+id/filterContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="검색프래그먼트"
-        android:textSize="50dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchContainer">
+
+        <!-- 유사도순 버튼 -->
+        <TextView
+            android:id="@+id/btnSimilarity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_stage_bg"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:text="유사도순"
+            android:textColor="@color/stageBtn" />
+
+        <!-- 스크랩순 버튼 -->
+        <TextView
+            android:id="@+id/btnScrap"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_stage_bg2"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:text="스크랩순"
+            android:textColor="@color/gray" />
+
+        <!-- 최신순 버튼 -->
+        <TextView
+            android:id="@+id/btnLatest"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/rounded_stage_bg2"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:text="최신순"
+            android:textColor="@color/gray" />
+    </LinearLayout>
+
+    <!-- 검색 결과 리사이클러뷰 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerSearchResults"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:padding="8dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/filterContainer" />
+
+    <!-- 검색 결과 없음 View -->
+    <LinearLayout
+        android:id="@+id/emptyResultView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/filterContainer">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:alpha="0.5"
+            android:src="@drawable/ic_search" />
+
+        <TextView
+            android:id="@+id/tvEmptyResult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="검색어를 입력하세요"
+            android:textColor="@color/gray"
+            android:textSize="16sp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
