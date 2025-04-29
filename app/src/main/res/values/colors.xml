@@ -13,6 +13,7 @@
     <color name="gray2">#D7D7D7</color>
     <color name="gray200">#D4D4D4</color>
     <color name="gray400">#9E9E9E</color>
+    <color name="gray500">#757575</color>
 
 <!--    보라-->
     <color name="bora200">#EFE2FF</color>

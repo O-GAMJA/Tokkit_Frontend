@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityForgettingCurveBinding
@@ -33,6 +34,10 @@ class ForgettingCurveActivity : AppCompatActivity() {
 
         // 퀴즈 버튼
         binding.btnQuiz.setOnClickListener {
+            val intent = Intent(this, QuizActivity::class.java)
+            intent.putExtra("ARTICLE_TITLE", articleTitle)
+            intent.putExtra("ARTICLE_STAGE", articleStage)
+            startActivity(intent)
         }
 
         // 말하기 버튼
