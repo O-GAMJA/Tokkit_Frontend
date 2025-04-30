@@ -34,7 +34,18 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <ImageView
+                android:id="@+id/tokkit"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:src="@drawable/tokkit"
+                android:layout_marginTop="40dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <!-- 프래그먼트가 변경될 영역 - 햄버거 버튼 아래에 배치 -->
+
             <FrameLayout
                 android:id="@+id/fragment_container"
                 android:layout_width="0dp"
@@ -43,8 +54,12 @@
                 android:layout_marginBottom="56dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btn_menu" />
+                app:layout_constraintTop_toBottomOf="@id/btn_menu"
+                app:layout_constraintVertical_bias="1.0">
+
+            </FrameLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
