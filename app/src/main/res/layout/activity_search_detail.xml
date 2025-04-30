@@ -87,7 +87,7 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="운영체제 1-1"
+                android:text="데이터 통신 - TCP/IP"
                 android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -98,10 +98,39 @@
                 android:id="@+id/tvContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="# 운영체제란?\n운영체제는 사용자와 하드웨어 간의 **인터페이스**를 제공하여 시스템 자원을 효율적으로 관리하는 소프트웨어입니다.\n\n## 주요 역할\n- **자원 관리:** CPU, 메모리, 저장장치, 입력장치 등의 자원을 할당 및 회수\n- **작업 제어:** 다중 사용자/다중 작업 상황에서 자원을 조율\n\n## 예시\n대표적인 운영체제로는 **Windows, Linux, macOS** 등이 있으며, 각각의 구조와 기능이 다르지만 사용자 요구를 충족시키는 방향으로 발전하고 있습니다."
+                android:text="TCP/IP (Transmission Control) 인터넷을 포함한 대부분의 네트워크에서 사용되는 프로토콜 스택.."
                 android:textColor="@color/black"
                 android:textSize="16sp"
-                android:lineSpacingExtra="4dp" />
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- 연관 글  -->
+            <TextView
+                android:id="@+id/tvRelatedTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="연관 글"
+                android:textColor="@color/main"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 도트 인디케이터 -->
+            <LinearLayout
+                android:id="@+id/dotsIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+            </LinearLayout>
+
+            <!-- ViewPager2  -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/relatedArticlesViewPager"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginBottom="16dp" />
         </LinearLayout>
     </ScrollView>
 
@@ -224,28 +253,6 @@
                 android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <!-- 감사(기도) -->
-        <LinearLayout
-            android:id="@+id/thanksContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginStart="8dp">
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_thanks"
-                android:contentDescription="감사해요" />
-
-            <TextView
-                android:id="@+id/thanksCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textSize="14sp"
-                android:layout_marginStart="4dp" />
-        </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
