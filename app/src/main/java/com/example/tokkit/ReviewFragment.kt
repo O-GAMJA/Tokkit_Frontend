@@ -8,8 +8,6 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.adapter.ArticleCardAdapter
-import com.example.tokkit.adapter.ArticleListAdapter
 import com.example.tokkit.adapter.ReviewArticleAdapter
 import com.example.tokkit.databinding.FragmentReviewBinding
 import com.example.tokkit.model.Article
