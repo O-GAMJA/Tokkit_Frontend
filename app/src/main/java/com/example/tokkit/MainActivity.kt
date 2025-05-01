@@ -38,6 +38,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             binding.drawerLayout.openDrawer(GravityCompat.START)
         }
 
+        // 버블차트 버튼 클릭 이벤트 설정
+        binding.btnBubble.setOnClickListener{
+            val intent = Intent(this, BubbleChartActivity::class.java)
+            startActivity(intent)
+        }
+
         // 초기 프래그먼트 설정
         if (savedInstanceState == null) {
             replaceFragment(HomeFragment())
