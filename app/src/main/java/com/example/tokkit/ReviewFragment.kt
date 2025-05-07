@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,7 +9,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.adapter.ReviewArticleAdapter
+import com.example.tokkit.adapter.GenericArticleAdapter
 import com.example.tokkit.databinding.FragmentReviewBinding
 import com.example.tokkit.model.Article
 
@@ -192,7 +193,12 @@ class ReviewFragment : Fragment() {
         }
 
         // 어댑터 설정
-        val adapter = ReviewArticleAdapter(filteredArticles)
+        val adapter = GenericArticleAdapter(filteredArticles) { article ->
+            val intent = Intent(requireContext(), ForgettingCurveActivity::class.java)
+            intent.putExtra("ARTICLE_TITLE", article.title)
+            intent.putExtra("ARTICLE_STAGE", article.stage)
+            startActivity(intent)
+        }
         binding.recyclerReviewArticles.adapter = adapter
     }
 

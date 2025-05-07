@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -9,7 +10,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.adapter.ArticleCardAdapterWithClick
+import com.example.tokkit.adapter.GenericArticleAdapter
 import com.example.tokkit.databinding.FragmentSearchBinding
 import com.example.tokkit.model.Article
 
@@ -20,7 +21,7 @@ class SearchFragment : Fragment() {
 
     // 임시 데이터
     private val allArticles = mutableListOf<Article>()
-    private lateinit var adapter: ArticleCardAdapterWithClick
+    private lateinit var adapter: GenericArticleAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,7 +53,13 @@ class SearchFragment : Fragment() {
 
     private fun setupRecyclerView() {
         binding.recyclerSearchResults.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ArticleCardAdapterWithClick(emptyList())
+        adapter = GenericArticleAdapter(emptyList()) { article ->
+            val intent = Intent(requireContext(), SearchDetailActivity::class.java)
+            intent.putExtra("ARTICLE_TITLE", article.title)
+            intent.putExtra("ARTICLE_CONTENT", article.content)
+            intent.putExtra("ARTICLE_IMAGE", article.imageResId)
+            startActivity(intent)
+        }
         binding.recyclerSearchResults.adapter = adapter
     }
 
