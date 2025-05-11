@@ -13,3 +13,13 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# llama3_2_3b 폴더 내 모든 파일 무시
+/app/src/main/assets/models/llama3_2_3b/*
+# llama3_2_3b_readme.txt 파일은 추적
+!/app/src/main/assets/models/llama3_2_3b/llama3_2_3b_readme.txt
+
+# htp_config 폴더 내 모든 파일 무시
+/app/src/main/assets/htp_config/*
+# htp_config_readme.txt 파일은 추적
+!/app/src/main/assets/htp_config/htp_config_readme.txt

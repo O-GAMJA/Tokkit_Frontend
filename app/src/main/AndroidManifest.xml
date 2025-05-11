@@ -169,6 +169,19 @@
             android:exported="false">
         </activity>
 
+        <activity
+        android:name=".genie.GenieConversationActivity"
+        android:exported="false" />
+
+        <!-- Genie 관련 네이티브 라이브러리 설정 -->
+        <uses-native-library
+        android:name="libadsprpc.so"
+        android:required="false" />
+        <uses-native-library
+        android:name="libcdsprpc.so"
+        android:required="false" />
+
+
     </application>
 
 </manifest>
