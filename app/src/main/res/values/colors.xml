@@ -17,6 +17,7 @@
 
 <!--    보라-->
     <color name="bora200">#EFE2FF</color>
+    <color name="bora_clear">#F1E9FA</color>
 
 <!--    청록-->
     <color name="chunglok">#29B3BB</color>
