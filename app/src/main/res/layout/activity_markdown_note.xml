@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <!-- 뒤로가기 버튼 -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="32dp"
+        android:background="@null"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_back"
+        android:contentDescription="뒤로가기"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- 노트 제목 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="대화 요약"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/btn_back"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- 편집 버튼 -->
+    <Button
+        android:id="@+id/btn_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="편집"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/main"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toTopOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="@id/tv_title"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 저장 버튼 (처음에는 숨김) -->
+    <Button
+        android:id="@+id/btn_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="저장"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/main"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="@id/tv_title"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 마크다운 텍스트 표시 영역 -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 마크다운 보기 모드 -->
+        <TextView
+            android:id="@+id/tv_markdown_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="#222222"
+            android:lineSpacingExtra="4dp"/>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- 마크다운 편집 모드 (처음에는 숨김) -->
+    <EditText
+        android:id="@+id/markdown_editor"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/transparent"
+        android:textSize="16sp"
+        android:textColor="#222222"
+        android:padding="16dp"
+        android:gravity="top|start"
+        android:inputType="textMultiLine"
+        android:scrollbars="vertical"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
