@@ -194,43 +194,58 @@ class GenieConversationActivity : AppCompatActivity() {
     }
 
     private fun sendMessage(message: String) {
+        // 사용자 메시지 추가
         adapter.addMessage(ChatMessage(message, MessageSender.USER))
         adapter.notifyItemInserted(adapter.itemCount - 1)
         binding.chatRecyclerView.smoothScrollToPosition(adapter.itemCount)
 
         val index = adapter.itemCount
+
+        // BOT 메시지 위치를 위한 빈 메시지 추가
+        adapter.addMessage(ChatMessage("", MessageSender.BOT))
+        adapter.notifyItemInserted(adapter.itemCount - 1)
+
         val executor = Executors.newSingleThreadExecutor()
+
+        // 문장 버퍼 추가
+        val sentenceBuffer = StringBuilder()
+        fullResponse.clear() // 이전 응답 초기화
+
         executor.execute {
             genieWrapper.getResponseForPrompt(message, object : StringCallback {
                 override fun onNewString(response: String) {
                     runOnUiThread {
+                        // 누적 응답에 새 응답 추가
                         fullResponse.append(response)
-                        Log.d("GenieResponse", "AI 전체 응답: ${fullResponse.toString().replace("\n", "\\n")}")
+                        sentenceBuffer.append(response)
 
-                        adapter.updateBotMessage(response)
-                        adapter.notifyItemChanged(index)
+                        // UI 업데이트
+                        messages[adapter.itemCount - 1] = ChatMessage(fullResponse.toString(), MessageSender.BOT)
+                        adapter.notifyItemChanged(adapter.itemCount - 1)
                         binding.chatRecyclerView.scrollToPosition(adapter.itemCount - 1)
 
-                        // 이전 대기 제거
-                        responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
+                        // 문장 단위로 TTS 실행
+                        val bufferStr = sentenceBuffer.toString()
+                        val sentenceEndPattern = Regex("[.,?!]")
 
-                        // 새 대기 설정
-                        responseTimeoutRunnable = Runnable {
-                            val finalText = fullResponse.toString()
-                            val sentences = finalText
-                                .replace(",", "")
-                                .split(Regex("(?<=[.!?])\\s+"))
+                        if (sentenceEndPattern.containsMatchIn(bufferStr)) {
+                            // 문장 끝 부호를 기준으로 분리
+                            val sentences = bufferStr.split(sentenceEndPattern)
 
-                            for (sentence in sentences) {
-                                val clean = sentence.replace(Regex("[.?!]$"), "").trim()
-                                if (clean.isNotBlank()) {
-                                    tts.speak(clean, TextToSpeech.QUEUE_ADD, null, null)
+                            // 마지막 문장(아직 완성되지 않은)을 제외하고 처리
+                            if (sentences.size > 1) {
+                                for (i in 0 until sentences.size - 1) {
+                                    val sentence = sentences[i].trim()
+                                    if (sentence.isNotBlank()) {
+                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, null)
+                                    }
                                 }
-                            }
 
-                            fullResponse.clear()
+                                // 버퍼 초기화 후 마지막 미완성 문장만 유지
+                                sentenceBuffer.clear()
+                                sentenceBuffer.append(sentences.last())
+                            }
                         }
-                        responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                     }
                 }
             })
