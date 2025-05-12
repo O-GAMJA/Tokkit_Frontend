@@ -22,8 +22,10 @@ import com.example.tokkit.genie.ChatMessage
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.genie.GenieConversationActivity
 import com.example.tokkit.genie.GenieWrapper
+import com.example.tokkit.genie.MarkdownNoteActivity
 import com.example.tokkit.genie.MessageSender
 import com.example.tokkit.genie.StringCallback
+import com.example.tokkit.genie.MarkdownPromptHandler
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Paths
@@ -42,6 +44,8 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private var fullResponse = StringBuilder()
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
+
+    private val markdownPromptHandler = MarkdownPromptHandler()
 
     companion object {
         private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
@@ -87,8 +91,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         // 노트 생성 버튼
         binding.btnCreateNote.setOnClickListener {
-            val intent = Intent(this, NoteMarkdownActivity::class.java)
-            startActivity(intent)
+            createMarkdownNote()
         }
 
         // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
@@ -103,6 +106,72 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         // Genie 초기화
         initializeGenie()
+    }
+
+    private fun createMarkdownNote() {
+        val conversation = ConversationManager.getConversationText()
+        Log.d("ChatActivity", "대화 내용: $conversation")
+
+        val notePrompt = markdownPromptHandler.getPromptForNoteGeneration(conversation)
+        Toast.makeText(this, "노트 생성 중...", Toast.LENGTH_SHORT).show()
+
+        val service = Executors.newSingleThreadExecutor()
+        service.execute {
+            try {
+                val markdownContent = getCompleteResponse(notePrompt)
+
+                val finalContent = if (markdownContent.isBlank()) {
+                    Log.e("ChatActivity", "마크다운 내용이 비어있음")
+                    "# 대화 요약\n\n대화 내용을 요약하는데 실패했습니다. 다시 시도해주세요."
+                } else {
+                    Log.d("ChatActivity", "마크다운 내용: $markdownContent")
+                    markdownContent
+                }
+
+                runOnUiThread {
+                    val intent = Intent(this, MarkdownNoteActivity::class.java)
+                    intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
+                    intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, "대화 요약")
+                    startActivity(intent)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatActivity", "노트 생성 오류: ${e.message}", e)
+                runOnUiThread {
+                    Toast.makeText(this,
+                        "노트 생성 중 오류가 발생했습니다: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun getCompleteResponse(prompt: String): String {
+        val responseBuilder = StringBuilder()
+        val responseLock = java.util.concurrent.CountDownLatch(1)
+        var isComplete = false
+
+        genieWrapper.getResponseForPrompt(prompt, object : StringCallback {
+            override fun onNewString(response: String) {
+                responseBuilder.append(response)
+                Log.d("ChatActivity", "응답 토큰 받음: $response")
+
+                if (response.contains("</response>") || response.contains("END_OF_RESPONSE") || response.endsWith(".")) {
+                    isComplete = true
+                    responseLock.countDown()
+                }
+            }
+        })
+
+        try {
+            if (!responseLock.await(15, java.util.concurrent.TimeUnit.SECONDS) && !isComplete) {
+                Log.w("ChatActivity", "응답 대기 시간 초과, 현재까지 받은 내용 사용")
+            }
+        } catch (e: InterruptedException) {
+            Log.e("ChatActivity", "응답 대기 중 인터럽트", e)
+        }
+
+        return responseBuilder.toString()
     }
 
     private fun initializeTTS() {
