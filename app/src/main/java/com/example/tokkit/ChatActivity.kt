@@ -17,13 +17,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.tokkit.databinding.ActivityChatBinding
 import com.example.tokkit.genie.ChatMessage
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.genie.GenieConversationActivity
 import com.example.tokkit.genie.GenieWrapper
-import com.example.tokkit.genie.MessageRecyclerViewAdapter
 import com.example.tokkit.genie.MessageSender
 import com.example.tokkit.genie.StringCallback
 import java.io.File
@@ -45,9 +43,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
 
-    private lateinit var adapter: MessageRecyclerViewAdapter
-
-
     companion object {
         private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
         private const val REQUEST_RECORD_AUDIO = 100
@@ -60,10 +55,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         // 저장된 대화 내용 로드
         ConversationManager.loadConversation(this)
-
-        adapter = MessageRecyclerViewAdapter(this, messages)
-        binding.chatRecyclerView.adapter = adapter
-        binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
 
         // TTS 초기화
         initializeTTS()
@@ -293,10 +284,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private fun loadMessagesFromManager() {
         messages.clear()
         messages.addAll(ConversationManager.getAllMessages())
-        adapter.notifyDataSetChanged()
-        if (messages.isNotEmpty()) {
-            binding.chatRecyclerView.scrollToPosition(messages.size - 1)
-        }
         Log.d("ChatActivity", "loadMessagesFromManager(): 메시지 ${messages.size}개 로딩됨")
         for ((index, message) in messages.withIndex()) {
             Log.d("ChatActivity", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
