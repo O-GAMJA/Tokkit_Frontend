@@ -180,4 +180,7 @@ dependencies {
 
     // flexbox (자동 줄바꿈)
     implementation ("com.google.android.flexbox:flexbox:3.0.0")
+
+    //Gson
+    implementation ("com.google.code.gson:gson:2.8.9")
 }
