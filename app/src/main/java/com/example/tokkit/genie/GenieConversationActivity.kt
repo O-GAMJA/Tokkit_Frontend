@@ -4,9 +4,12 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.system.Os
 import android.util.Log
 import android.view.Menu
@@ -32,6 +35,16 @@ class GenieConversationActivity : AppCompatActivity() {
     private lateinit var adapter: MessageRecyclerViewAdapter
     private lateinit var genieWrapper: GenieWrapper
     private lateinit var speechRecognizer: SpeechRecognizer
+    private lateinit var tts: TextToSpeech
+    private var fullResponse = StringBuilder()
+    // 1초 동안 새 토큰이 없으면 응답 종료로 간주
+    private var responseTimeoutHandler = Handler(Looper.getMainLooper())
+    private var responseTimeoutRunnable: Runnable? = null
+
+    private val responseQueue: Queue<String> = LinkedList()
+    private var displayText = StringBuilder()
+    private var isSpeaking = false
+
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
 
@@ -54,6 +67,13 @@ class GenieConversationActivity : AppCompatActivity() {
         // 뒤로가기 버튼 이벤트
         binding.btnBack.setOnClickListener {
             finish()
+        }
+
+        // TTS 초기화
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.language = Locale.US // 필요한 경우 Locale.US 등으로 변경
+            }
         }
 
         // 음성 권한 요청
@@ -88,7 +108,7 @@ class GenieConversationActivity : AppCompatActivity() {
 
             messages.add(ChatMessage(WELCOME_MESSAGE, MessageSender.BOT))
 
-            // 🎤 마이크 버튼 클릭 시 STT 시작
+            // 마이크 버튼 클릭 시 STT 시작
             binding.btnMic.setOnClickListener {
                 startSTT()
             }
@@ -121,7 +141,7 @@ class GenieConversationActivity : AppCompatActivity() {
                     sendMessage(spokenText)
                 }
 
-                // 🔇 원래 마이크 버튼 복귀
+                // 원래 마이크 버튼 복귀
                 binding.lottieMic.cancelAnimation()
                 binding.lottieMic.visibility = View.INVISIBLE
                 binding.btnMic.visibility = View.VISIBLE
@@ -131,7 +151,7 @@ class GenieConversationActivity : AppCompatActivity() {
             override fun onError(error: Int) {
                 Toast.makeText(this@GenieConversationActivity, "STT 오류 발생: $error", Toast.LENGTH_SHORT).show()
 
-                // 🔇 원래 마이크 버튼 복귀
+                // 원래 마이크 버튼 복귀
                 binding.lottieMic.cancelAnimation()
                 binding.lottieMic.visibility = View.INVISIBLE
                 binding.btnMic.visibility = View.VISIBLE
@@ -150,7 +170,7 @@ class GenieConversationActivity : AppCompatActivity() {
 
     private fun startSTT() {
         if (!isListening) {
-            // 🔊 애니메이션 시작
+            // 애니메이션 시작
             binding.btnMic.visibility = View.INVISIBLE
             binding.lottieMic.visibility = View.VISIBLE
             binding.lottieMic.playAnimation()
@@ -184,9 +204,33 @@ class GenieConversationActivity : AppCompatActivity() {
             genieWrapper.getResponseForPrompt(message, object : StringCallback {
                 override fun onNewString(response: String) {
                     runOnUiThread {
+                        fullResponse.append(response)
+                        Log.d("GenieResponse", "AI 전체 응답: ${fullResponse.toString().replace("\n", "\\n")}")
+
                         adapter.updateBotMessage(response)
                         adapter.notifyItemChanged(index)
                         binding.chatRecyclerView.scrollToPosition(adapter.itemCount - 1)
+
+                        // 이전 대기 제거
+                        responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
+
+                        // 새 대기 설정
+                        responseTimeoutRunnable = Runnable {
+                            val finalText = fullResponse.toString()
+                            val sentences = finalText
+                                .replace(",", "")
+                                .split(Regex("(?<=[.!?])\\s+"))
+
+                            for (sentence in sentences) {
+                                val clean = sentence.replace(Regex("[.?!]$"), "").trim()
+                                if (clean.isNotBlank()) {
+                                    tts.speak(clean, TextToSpeech.QUEUE_ADD, null, null)
+                                }
+                            }
+
+                            fullResponse.clear()
+                        }
+                        responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                     }
                 }
             })
@@ -293,6 +337,10 @@ class GenieConversationActivity : AppCompatActivity() {
     override fun onDestroy() {
         if (::speechRecognizer.isInitialized) {
             speechRecognizer.destroy()
+        }
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
         }
         super.onDestroy()
     }
