@@ -7,7 +7,7 @@ package com.example.tokkit.genie;
 /**
  * MessageSender: Enum to represent if message is from BOT or user
  */
-enum MessageSender {
+public enum MessageSender {
     BOT,
     USER,
 };

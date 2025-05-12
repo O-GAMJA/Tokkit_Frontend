@@ -12,15 +12,13 @@ import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.system.Os
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.R
+import com.example.tokkit.ChatActivity
 import com.example.tokkit.databinding.ActivityGenieChatBinding
 import java.nio.file.Paths
 import java.util.*
@@ -28,7 +26,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class GenieConversationActivity : AppCompatActivity() {
+class GenieConversationActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
 
     private lateinit var binding: ActivityGenieChatBinding
     private val messages = ArrayList<ChatMessage>(1000)
@@ -40,10 +38,6 @@ class GenieConversationActivity : AppCompatActivity() {
     // 1초 동안 새 토큰이 없으면 응답 종료로 간주
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
-
-    private val responseQueue: Queue<String> = LinkedList()
-    private var displayText = StringBuilder()
-    private var isSpeaking = false
 
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
@@ -60,9 +54,15 @@ class GenieConversationActivity : AppCompatActivity() {
         binding = ActivityGenieChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // 저장된 대화 내용 로드
+        ConversationManager.loadConversation(this)
+
         adapter = MessageRecyclerViewAdapter(this, messages)
         binding.chatRecyclerView.adapter = adapter
         binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        // ConversationManager에 리스너 등록
+        ConversationManager.addListener(this)
 
         // 뒤로가기 버튼 이벤트
         binding.btnBack.setOnClickListener {
@@ -106,17 +106,26 @@ class GenieConversationActivity : AppCompatActivity() {
             genieWrapper = GenieWrapper(modelDir, htpConfigPath)
             Log.i("GenieChat", "$modelName 모델 로드 완료")
 
-            messages.add(ChatMessage(WELCOME_MESSAGE, MessageSender.BOT))
+            // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
+            val existingMessages = ConversationManager.getAllMessages()
+            if (existingMessages.isEmpty()) {
+                val welcomeMessage = ChatMessage(WELCOME_MESSAGE, MessageSender.BOT)
+                ConversationManager.addMessage(welcomeMessage)
+            } else {
+                // ConversationManager에서 기존 대화 내용 로드
+                loadMessagesFromManager()
+            }
 
             // 마이크 버튼 클릭 시 STT 시작
             binding.btnMic.setOnClickListener {
                 startSTT()
             }
 
-            // 채팅 모드 전환 버튼
+            // 채팅 모드 전환 버튼 - ChatActivity로 전환
             binding.btnChatMode.setOnClickListener {
-                // 여기서는 채팅 텍스트 모드로 전환하는
-                // 현재는 ChatTextActivity로 전환하는 코드있어 생략
+                val intent = Intent(this, ChatActivity::class.java)
+                startActivity(intent)
+                finish()
             }
 
             // 노트 생성 버튼
@@ -128,6 +137,20 @@ class GenieConversationActivity : AppCompatActivity() {
             Log.e("GenieChat", "에러: ${e}")
             Toast.makeText(this, "초기화 오류: ${e.message}", Toast.LENGTH_SHORT).show()
             finish()
+        }
+    }
+
+    private fun loadMessagesFromManager() {
+        messages.clear()
+        messages.addAll(ConversationManager.getAllMessages())
+        adapter.notifyDataSetChanged()
+        if (messages.isNotEmpty()) {
+            binding.chatRecyclerView.scrollToPosition(messages.size - 1)
+        }
+
+        Log.d("GenieChat", "loadMessagesFromManager(): 메시지 ${messages.size}개 로딩됨")
+        for ((index, message) in messages.withIndex()) {
+            Log.d("GenieChat", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
         }
     }
 
@@ -194,11 +217,12 @@ class GenieConversationActivity : AppCompatActivity() {
     }
 
     private fun sendMessage(message: String) {
-        adapter.addMessage(ChatMessage(message, MessageSender.USER))
-        adapter.notifyItemInserted(adapter.itemCount - 1)
-        binding.chatRecyclerView.smoothScrollToPosition(adapter.itemCount)
+        // ConversationManager를 통해 메시지 추가
+        val userMessage = ChatMessage(message, MessageSender.USER)
+        ConversationManager.addMessage(userMessage)
 
-        val index = adapter.itemCount
+        // UI 업데이트는 onConversationChanged에서 처리됨
+
         val executor = Executors.newSingleThreadExecutor()
         executor.execute {
             genieWrapper.getResponseForPrompt(message, object : StringCallback {
@@ -207,9 +231,10 @@ class GenieConversationActivity : AppCompatActivity() {
                         fullResponse.append(response)
                         Log.d("GenieResponse", "AI 전체 응답: ${fullResponse.toString().replace("\n", "\\n")}")
 
-                        adapter.updateBotMessage(response)
-                        adapter.notifyItemChanged(index)
-                        binding.chatRecyclerView.scrollToPosition(adapter.itemCount - 1)
+                        // ConversationManager를 통해 봇 메시지 업데이트
+                        val updatedResponse = ConversationManager.updateLastBotMessage(response)
+
+                        // UI 업데이트는 onConversationChanged에서 처리됨
 
                         // 이전 대기 제거
                         responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
@@ -237,16 +262,27 @@ class GenieConversationActivity : AppCompatActivity() {
         }
     }
 
+    // ConversationManager.ConversationChangeListener 구현
+    override fun onConversationChanged(updatedMessages: List<ChatMessage>) {
+        runOnUiThread {
+            messages.clear()
+            messages.addAll(updatedMessages)
+            adapter.notifyDataSetChanged()
+            if (messages.isNotEmpty()) {
+                binding.chatRecyclerView.scrollToPosition(messages.size - 1)
+            }
+
+            Log.d("GenieChat", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
+            for ((index, message) in messages.withIndex()) {
+                Log.d("GenieChat", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
+            }
+        }
+    }
+
     // 마크다운 노트 생성 메서드
     private fun createMarkdownNote() {
-        // 대화 내용 추출
-        val conversationBuilder = StringBuilder()
-        for (message in messages) {
-            val sender = if (message.isMessageFromUser()) "User" else "Assistant"
-            conversationBuilder.append("$sender: ${message.getMessage()}\n\n")
-        }
-
-        val conversation = conversationBuilder.toString()
+        // ConversationManager에서 대화 내용 가져오기
+        val conversation = ConversationManager.getConversationText()
 
         // 로그 추가
         Log.d("GenieChat", "대화 내용: $conversation")
@@ -334,7 +370,16 @@ class GenieConversationActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // 활동이 중지될 때 대화 상태 저장
+        ConversationManager.saveConversation(this)
+    }
+
     override fun onDestroy() {
+        // ConversationManager 리스너 제거
+        ConversationManager.removeListener(this)
+
         if (::speechRecognizer.isInitialized) {
             speechRecognizer.destroy()
         }

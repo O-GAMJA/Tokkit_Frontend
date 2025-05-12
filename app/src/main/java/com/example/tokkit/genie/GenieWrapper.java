@@ -16,7 +16,7 @@ public class GenieWrapper {
      * @param modelDirPath directory path on system pointing to model bundle
      * @param htpConfigPath HTP config file to use
      */
-    GenieWrapper(String modelDirPath, String htpConfigPath) {
+    public GenieWrapper(String modelDirPath, String htpConfigPath) {
         genieWrapperNativeHandle = loadModel(modelDirPath, htpConfigPath);
     }
 
