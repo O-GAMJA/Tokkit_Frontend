@@ -133,7 +133,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
             // 노트 생성 버튼
             binding.btnCreateNote.setOnClickListener {
-                createMarkdownNote()
+                // 로딩 오버레이 표시 및 노트 생성 시작
+                showNoteLoadingOverlay()
+                createMarkdownNoteInBackground()
             }
 
         } catch (e: Exception) {
@@ -299,8 +301,26 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         }
     }
 
-    // 마크다운 노트 생성 메서드
-    private fun createMarkdownNote() {
+    // 노트 생성 로딩 오버레이 표시
+    private fun showNoteLoadingOverlay() {
+        // 로딩 오버레이 표시
+        binding.noteLoadingOverlay.visibility = View.VISIBLE
+
+        // 문서 애니메이션 시작
+        binding.lottieDocAnimation.playAnimation()
+    }
+
+    // 노트 생성 로딩 오버레이 숨기기
+    private fun hideNoteLoadingOverlay() {
+        // 로딩 오버레이 숨기기
+        binding.noteLoadingOverlay.visibility = View.GONE
+
+        // 문서 애니메이션 중지
+        binding.lottieDocAnimation.cancelAnimation()
+    }
+
+    // 백그라운드에서 노트 생성
+    private fun createMarkdownNoteInBackground() {
         // ConversationManager에서 대화 내용 가져오기
         val conversation = ConversationManager.getConversationText()
 
@@ -309,8 +329,6 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
         // 마크다운 노트 생성을 위한 프롬프트
         val notePrompt = markdownPromptHandler.getPromptForNoteGeneration(conversation)
-
-        Toast.makeText(this, "노트 생성 중...", Toast.LENGTH_SHORT).show()
 
         // 백그라운드에서 노트 생성
         val service = Executors.newSingleThreadExecutor()
@@ -330,6 +348,10 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
                 // 노트 생성 완료 후 노트 표시 화면으로 이동
                 runOnUiThread {
+                    // 로딩 오버레이 숨기기
+                    hideNoteLoadingOverlay()
+
+                    // 노트 화면으로 이동
                     val intent = Intent(this@GenieConversationActivity, MarkdownNoteActivity::class.java)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, "대화 요약")
@@ -339,6 +361,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                 Log.e("GenieChat", "노트 생성 오류: ${e.message}", e)
 
                 runOnUiThread {
+                    // 로딩 오버레이 숨기기
+                    hideNoteLoadingOverlay()
+
                     Toast.makeText(this@GenieConversationActivity,
                         "노트 생성 중 오류가 발생했습니다: ${e.message}",
                         Toast.LENGTH_SHORT).show()
@@ -367,7 +392,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
         })
 
-        // 응답 완료를 기다리거나 10초 후 시간 초과
+        // 응답 완료를 기다리거나 15초 후 시간 초과
         try {
             // 최대 15초 대기
             if (!responseLock.await(15, TimeUnit.SECONDS) && !isComplete) {

@@ -120,13 +120,15 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         // Genie 초기화
         initializeGenie()
     }
-
+    
     private fun createMarkdownNote() {
+        // 로딩 오버레이 표시
+        showNoteLoadingOverlay()
+
         val conversation = ConversationManager.getConversationText()
         Log.d("ChatActivity", "대화 내용: $conversation")
 
         val notePrompt = markdownPromptHandler.getPromptForNoteGeneration(conversation)
-        Toast.makeText(this, "노트 생성 중...", Toast.LENGTH_SHORT).show()
 
         val service = Executors.newSingleThreadExecutor()
         service.execute {
@@ -142,6 +144,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 }
 
                 runOnUiThread {
+                    // 로딩 오버레이 숨기기
+                    hideNoteLoadingOverlay()
+
                     val intent = Intent(this, MarkdownNoteActivity::class.java)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, "대화 요약")
@@ -150,6 +155,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             } catch (e: Exception) {
                 Log.e("ChatActivity", "노트 생성 오류: ${e.message}", e)
                 runOnUiThread {
+                    // 로딩 오버레이 숨기기
+                    hideNoteLoadingOverlay()
+
                     Toast.makeText(this,
                         "노트 생성 중 오류가 발생했습니다: ${e.message}",
                         Toast.LENGTH_SHORT
@@ -520,6 +528,24 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         } else {
             Toast.makeText(this, "음성 인식을 위해 마이크 권한이 필요합니다", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // 노트 생성 로딩 오버레이 표시
+    private fun showNoteLoadingOverlay() {
+        // 로딩 오버레이 표시
+        binding.noteLoadingOverlay.visibility = View.VISIBLE
+
+        // 문서 애니메이션 시작
+        binding.lottieDocAnimation.playAnimation()
+    }
+
+    // 노트 생성 로딩 오버레이 숨기기
+    private fun hideNoteLoadingOverlay() {
+        // 로딩 오버레이 숨기기
+        binding.noteLoadingOverlay.visibility = View.GONE
+
+        // 문서 애니메이션 중지
+        binding.lottieDocAnimation.cancelAnimation()
     }
 
     override fun onPause() {
