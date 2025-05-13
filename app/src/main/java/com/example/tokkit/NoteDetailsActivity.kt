@@ -197,7 +197,11 @@ class NoteDetailsActivity : AppCompatActivity() {
             if (!path.isNullOrEmpty()) {
                 binding.storageDetail.text = path
                 selectedPath = path
+
+                // 폴더 구조 정보 받기
+                val folderStructure = data.getStringArrayListExtra("folderStructure")
                 Log.d("NoteDetails", "저장 위치 업데이트: $path")
+                Log.d("NoteDetails", "폴더 구조: $folderStructure")
             }
         }
     }
