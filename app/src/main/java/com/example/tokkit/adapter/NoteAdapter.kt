@@ -43,6 +43,7 @@ class NoteAdapter(
                 "날짜 정보 없음" // 또는 다른 기본값
             }
 
+
             // 이미지 URL이 비어있지 않은 경우에만 이미지 로드
             if (!note.imageUrl.isNullOrEmpty()) {
                 Glide.with(ivArticle.context)

@@ -28,6 +28,7 @@ data class ApiResponse<T>(
     val message: String,
     val result: T
 )
+
 data class NoteCreateRequest(
     val id: String,
     val title: String,
@@ -43,4 +44,5 @@ data class NoteCreateResponse(
     val total_note_chunks: Int,
     val total_note_count: Int
 )
+
 
