@@ -143,13 +143,17 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                     markdownContent
                 }
 
+                // 마크다운 내용에서 제목 추출
+                val noteTitle = com.example.tokkit.util.MarkdownUtil.extractTitleFromMarkdown(finalContent)
+                Log.d("ChatActivity", "추출된 제목: $noteTitle")
+
                 runOnUiThread {
                     // 로딩 오버레이 숨기기
                     hideNoteLoadingOverlay()
 
                     val intent = Intent(this, MarkdownNoteActivity::class.java)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
-                    intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, "대화 요약")
+                    intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE,noteTitle)
                     startActivity(intent)
                 }
             } catch (e: Exception) {

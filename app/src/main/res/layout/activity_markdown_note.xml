@@ -22,15 +22,16 @@
         app:layout_constraintStart_toStartOf="parent"/>
 
     <!-- 노트 제목 -->
-    <TextView
+    <EditText
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:padding="10dp"
         android:text="노트 제목 자리 입니다."
         android:textStyle="bold"
-        android:textSize="20sp"
+        android:textSize="40sp"
         android:layout_marginTop="8dp"
+        android:background="@null"
         app:layout_constraintTop_toBottomOf="@id/btn_back"
         app:layout_constraintStart_toStartOf="parent"/>
 
