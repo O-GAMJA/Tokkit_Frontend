@@ -45,7 +45,7 @@ class NoteDetailsActivity : AppCompatActivity() {
         // Intent에서 데이터 가져오기
         val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT")
         val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
-        val noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "대화 요약"
+        val noteTitle = intent.getStringExtra("NOTE_TITLE")
 
         // 로그로 데이터 확인
         Log.d("NoteDetails", "마크다운 내용: $markdownContent")
@@ -97,7 +97,7 @@ class NoteDetailsActivity : AppCompatActivity() {
             Toast.makeText(this, "노트를 저장 중입니다...", Toast.LENGTH_SHORT).show()
 
             saveNoteToServer(
-                noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "대화 요약",
+                noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "노트디테일Activity",
                 markdownContent = intent.getStringExtra("MARKDOWN_CONTENT") ?: "",
                 conversationText = intent.getStringExtra("CONVERSATION_TEXT") ?: "",
                 isPublic = isPublic,
@@ -166,6 +166,7 @@ class NoteDetailsActivity : AppCompatActivity() {
         //저장 위치 화살표 버튼
         binding.storageForward.setOnClickListener{
             val intent = Intent(this, SaveLocationActivity::class.java)
+            intent.putExtra("NOTE_TITLE",noteTitle) // 현재 제목을 인텐트에 넣기
             startActivityForResult(intent, 102)
         }
     }

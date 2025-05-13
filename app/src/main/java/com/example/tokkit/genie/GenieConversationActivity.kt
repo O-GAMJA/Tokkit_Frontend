@@ -346,6 +346,10 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                     markdownContent
                 }
 
+                // 마크다운 내용에서 제목 추출
+                val noteTitle = com.example.tokkit.util.MarkdownUtil.extractTitleFromMarkdown(finalContent)
+                Log.d("GenieChat", "추출된 제목: $noteTitle")
+
                 // 노트 생성 완료 후 노트 표시 화면으로 이동
                 runOnUiThread {
                     // 로딩 오버레이 숨기기
@@ -354,7 +358,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                     // 노트 화면으로 이동
                     val intent = Intent(this@GenieConversationActivity, MarkdownNoteActivity::class.java)
                     intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
-                    intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, "대화 요약")
+                    intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, noteTitle)
                     startActivity(intent)
                 }
             } catch (e: Exception) {
@@ -371,7 +375,6 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
         }
     }
-
     // 응답을 완전히 받을 때까지 기다리는 블로킹 메서드
     private fun getCompleteResponse(prompt: String): String {
         val responseBuilder = StringBuilder()

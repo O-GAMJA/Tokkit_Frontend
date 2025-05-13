@@ -34,7 +34,7 @@ class SaveLocationActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Intent에서 노트 제목 받기
-        noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "새 노트 제목"
+        noteTitle = intent.getStringExtra("NOTE_TITLE")
 
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener {
