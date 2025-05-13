@@ -17,6 +17,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 import com.example.tokkit.genie.ConversationManager
+import com.example.tokkit.data.remote.api.NoteApiService
+import com.example.tokkit.data.remote.model.ApiResponse
+import com.example.tokkit.data.remote.model.NoteCreateRequest
+import com.example.tokkit.util.RetrofitClient
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.util.UUID
+
 
 class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
@@ -78,8 +90,19 @@ class NoteDetailsActivity : AppCompatActivity() {
             Log.d("NoteDetails", "- 태그 목록: $currentTagList")
             Log.d("NoteDetails", "- 저장 위치: $selectedPath")
 
-            // 저장 로직 추가 예정
-            // saveNoteToDatabase(noteTitle, markdownContent, conversationText, isPublic, currentTagList, selectedPath)
+            // API 호출 시작 로그 추가
+            Log.d("NoteDetails", "노트 저장 API 호출 시작")
+
+            // 저장 시도 메시지 표시
+            Toast.makeText(this, "노트를 저장 중입니다...", Toast.LENGTH_SHORT).show()
+
+            saveNoteToServer(
+                noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "대화 요약",
+                markdownContent = intent.getStringExtra("MARKDOWN_CONTENT") ?: "",
+                conversationText = intent.getStringExtra("CONVERSATION_TEXT") ?: "",
+                isPublic = isPublic,
+                directoryName = selectedPath ?: "기본 경로"
+            )
 
             // 대화 내용 초기화
             ConversationManager.clearMessages()
@@ -227,6 +250,87 @@ class NoteDetailsActivity : AppCompatActivity() {
             val chip = inflater.inflate(R.layout.item_chip, tagContainer, false) as TextView
             chip.text = "# $tag"
             tagContainer.addView(chip)
+        }
+    }
+
+    private fun saveNoteToServer(
+        noteTitle: String,
+        markdownContent: String,
+        conversationText: String,
+        isPublic: Boolean,
+        directoryName: String
+    ) {
+        // 고정된 이미지 URL (요구사항에 따름)
+        val imageUrl = "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+
+        // 노트 ID 생성 (UUID)
+        val noteId = UUID.randomUUID().toString()
+
+        // 요청 객체 생성
+        val noteRequest = NoteCreateRequest(
+            id = noteId,
+            title = noteTitle,
+            content = markdownContent,
+            isPublic = isPublic,
+            directoryName = directoryName,
+            imageUrl = imageUrl,
+            conversationLog = conversationText,
+            stage = "STAGE0"
+        )
+
+        // 요청 바디를 JSON 문자열로 변환하여 로그 출력 (디버깅용)
+        val gson = Gson()
+        val requestJson = gson.toJson(listOf(noteRequest))
+        Log.d("NoteDetails", "API 요청 JSON: $requestJson")
+
+        // API 호출
+        val scope = CoroutineScope(Dispatchers.Main)
+        scope.launch {
+            try {
+                val api = RetrofitClient.noteApi
+
+                Log.d("NoteDetails", "API 호출 직전")
+                val response = withContext(Dispatchers.IO) {
+                    Log.d("NoteDetails", "API 호출 실행")
+                    api.createNote(listOf(noteRequest))
+                }
+                Log.d("NoteDetails", "API 호출 완료: ${response.code}, ${response.message}")
+
+                if (response.isSuccess) {
+                    // 저장 성공
+                    Log.d("NoteDetails", "노트 저장 성공: ${response.result}")
+
+                    // 대화 내용 초기화
+                    ConversationManager.clearMessages()
+                    ConversationManager.clearSavedConversation(this@NoteDetailsActivity)
+                    ConversationManager.startNewSession()
+                    Log.d("NoteDetails", "대화 내용 초기화 완료")
+
+                    // 성공 메시지 표시
+                    Toast.makeText(this@NoteDetailsActivity, "노트가 저장되었습니다", Toast.LENGTH_SHORT).show()
+
+                    // 메인 화면으로 돌아가기
+                    val intent = Intent(this@NoteDetailsActivity, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    // 저장 실패
+                    Log.e("NoteDetails", "노트 저장 실패: ${response.message}")
+                    Toast.makeText(this@NoteDetailsActivity, "노트 저장에 실패했습니다: ${response.message}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: HttpException) {
+                // HTTP 예외 처리
+                val errorCode = e.code()
+                val errorBody = e.response()?.errorBody()?.string() ?: "오류 내용 없음"
+
+                Log.e("NoteDetails", "HTTP 오류 발생: 코드=$errorCode, 응답 본문=$errorBody", e)
+                Toast.makeText(this@NoteDetailsActivity, "서버 오류가 발생했습니다 (코드: $errorCode)", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                // 일반 예외 처리
+                Log.e("NoteDetails", "노트 저장 중 오류 발생", e)
+                Toast.makeText(this@NoteDetailsActivity, "오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
