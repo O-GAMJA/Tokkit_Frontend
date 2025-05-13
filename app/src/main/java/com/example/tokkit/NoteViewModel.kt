@@ -39,4 +39,20 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    private val _selectedNote = MutableLiveData<Note?>()
+    val selectedNote: LiveData<Note?> get() = _selectedNote
+
+    fun loadNoteById(noteId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                _selectedNote.value = repository.getNoteById(noteId)
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 }

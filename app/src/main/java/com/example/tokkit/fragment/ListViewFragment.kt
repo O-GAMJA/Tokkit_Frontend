@@ -43,9 +43,7 @@ class ListViewFragment : Fragment() {
         adapter = NoteAdapter(
             onItemClick = { note ->
                 val intent = Intent(requireContext(), SearchDetailActivity::class.java).apply {
-                    putExtra("ARTICLE_TITLE", note.title)
-                    putExtra("ARTICLE_CONTENT", note.content)
-                    putExtra("ARTICLE_IMAGE", note.imageUrl)
+                    putExtra("NOTE_ID", note.id)
                 }
                 startActivity(intent)
             },

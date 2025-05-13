@@ -10,10 +10,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.RelatedArticlesAdapter
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
@@ -21,6 +23,7 @@ import com.example.tokkit.model.Article
 import com.example.tokkit.model.Comment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import io.noties.markwon.Markwon
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -28,6 +31,8 @@ class SearchDetailActivity : AppCompatActivity() {
     private var bookmarkCount = 3 // 초기 북마크 카운트
     private var isBookmarked = false // 북마크 상태
     private lateinit var dotsIndicator: List<ImageView>
+
+    private val noteViewModel: NoteViewModel by viewModels()
 
     // 댓글 목록 데이터 (전역 변수로 변경)
     private val commentList = mutableListOf(
@@ -41,10 +46,42 @@ class SearchDetailActivity : AppCompatActivity() {
         binding = ActivitySearchDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 인텐트에서 데이터 가져오기
-        val title = intent.getStringExtra("ARTICLE_TITLE") ?: ""
-        val content = intent.getStringExtra("ARTICLE_CONTENT") ?: ""
-        val imageResId = intent.getIntExtra("ARTICLE_IMAGE", R.drawable.ic_tcp_ip)
+        val noteId = intent.getStringExtra("NOTE_ID") ?: return
+
+        noteViewModel.loadNoteById(noteId)
+
+        noteViewModel.selectedNote.observe(this) { note ->
+            if (note != null) {
+                // 노트 제목
+                binding.tvTitle.text = note.title
+
+                // 마크다운 처리
+                val markwon = Markwon.create(this)
+                markwon.setMarkdown(binding.tvContent, note.content)
+
+                // 이미지
+                Glide.with(this).load(note.imageUrl).into(binding.ivArticleImage)
+
+                // 북마크
+                bookmarkCount = note.bookmarkStatus.count
+                isBookmarked = note.bookmarkStatus.clicked
+                binding.bookmarkCount.text = bookmarkCount.toString()
+                binding.btnBookmark.setImageResource(
+                    if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark
+                )
+
+                // 이모지 카운트
+                binding.likeCount.text = note.emojiStatus.count["like"]?.toString() ?: "0"
+                binding.heartCount.text = note.emojiStatus.count["thumbsUp"]?.toString() ?: "0"
+                binding.thinkingCount.text = note.emojiStatus.count["thinking"]?.toString() ?: "0"
+                binding.fireCount.text = note.emojiStatus.count["fire"]?.toString() ?: "0"
+                binding.hundredCount.text = note.emojiStatus.count["hundred"]?.toString() ?: "0"
+
+            } else {
+                Toast.makeText(this, "노트를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
 
         // 뒤로가기 버튼 설정
         binding.btnBack.setOnClickListener {
@@ -53,11 +90,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // 북마크 버튼 설정
         setupBookmarkButton()
-
-        // 데이터 표시
-        binding.ivArticleImage.setImageResource(imageResId)
-        binding.tvTitle.text = title
-        binding.tvContent.text = content
 
         // 이모티콘 버튼 기능
         setupReactionButtons()
