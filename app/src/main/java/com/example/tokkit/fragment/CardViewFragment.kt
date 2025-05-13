@@ -40,14 +40,17 @@ class CardViewFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = NoteAdapter { note ->
-            val intent = Intent(requireContext(), SearchDetailActivity::class.java).apply {
-                putExtra("ARTICLE_TITLE", note.title)
-                putExtra("ARTICLE_CONTENT", note.content)
-                putExtra("ARTICLE_IMAGE", note.imageUrl)
-            }
-            startActivity(intent)
-        }
+        adapter = NoteAdapter(
+            onItemClick = { note ->
+                val intent = Intent(requireContext(), SearchDetailActivity::class.java).apply {
+                    putExtra("ARTICLE_TITLE", note.title)
+                    putExtra("ARTICLE_CONTENT", note.content)
+                    putExtra("ARTICLE_IMAGE", note.imageUrl)
+                }
+                startActivity(intent)
+            },
+            useCardLayout = true
+        )
 
         binding.recyclerCardView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerCardView.adapter = adapter
