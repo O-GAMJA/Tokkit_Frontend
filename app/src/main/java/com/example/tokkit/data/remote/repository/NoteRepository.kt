@@ -25,4 +25,15 @@ class NoteRepository {
             emptyList()
         }
     }
+
+    suspend fun getNoteById(noteId: String): Note? {
+        return try {
+            val response = api.getNoteById(noteId)
+            if (response.isSuccess) response.result else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 }

@@ -87,9 +87,9 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="데이터 통신 - TCP/IP"
+                android:text=""
                 android:textColor="@color/black"
-                android:textSize="20sp"
+                android:textSize="40sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
 
@@ -98,7 +98,7 @@
                 android:id="@+id/tvContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="TCP/IP (Transmission Control) 인터넷을 포함한 대부분의 네트워크에서 사용되는 프로토콜 스택.."
+                android:text=""
                 android:textColor="@color/black"
                 android:textSize="16sp"
                 android:lineSpacingExtra="4dp"

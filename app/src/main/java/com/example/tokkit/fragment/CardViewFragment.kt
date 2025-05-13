@@ -14,6 +14,7 @@ import com.example.tokkit.NoteViewModel
 import com.example.tokkit.databinding.FragmentCardViewBinding
 import com.example.tokkit.adapter.NoteAdapter
 import com.example.tokkit.SearchDetailActivity
+import io.noties.markwon.Markwon
 
 class CardViewFragment : Fragment() {
 
@@ -40,14 +41,17 @@ class CardViewFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = NoteAdapter { note ->
-            val intent = Intent(requireContext(), SearchDetailActivity::class.java).apply {
-                putExtra("ARTICLE_TITLE", note.title)
-                putExtra("ARTICLE_CONTENT", note.content)
-                putExtra("ARTICLE_IMAGE", note.imageUrl)
-            }
-            startActivity(intent)
-        }
+        val markwon = Markwon.create(requireContext())
+
+        adapter = NoteAdapter(
+            onItemClick = { note ->
+                val intent = Intent(requireContext(), SearchDetailActivity::class.java)
+                intent.putExtra("NOTE_ID", note.id)
+                startActivity(intent)
+            },
+            useCardLayout = true,
+            markwon = markwon
+        )
 
         binding.recyclerCardView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerCardView.adapter = adapter

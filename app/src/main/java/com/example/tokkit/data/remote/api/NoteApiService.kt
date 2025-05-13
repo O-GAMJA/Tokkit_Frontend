@@ -10,11 +10,20 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface NoteApiService {
+    // 회원의 모든 노트 조회 api
     @GET("/notes/{memberId}/all")
     suspend fun getAllNotes(
         @Path("memberId") memberId: Long
     ): ApiResponse<List<Note>>
 
+
+    // 노트 상세 조회 api
+    @GET("/notes/{noteId}")
+    suspend fun getNoteById(
+        @Path("noteId") noteId: String
+    ): ApiResponse<Note>
+
+    // 노트 저장 api
     @POST("/notes")
     suspend fun createNote(@Body notes: List<NoteCreateRequest>): ApiResponse<NoteCreateResponse>
 
