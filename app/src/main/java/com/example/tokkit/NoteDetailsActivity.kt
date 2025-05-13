@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
@@ -38,6 +39,14 @@ class NoteDetailsActivity : AppCompatActivity() {
         Log.d("NoteDetails", "대화 내용: $conversationText")
         Log.d("NoteDetails", "노트 제목: $noteTitle")
 
+        // 공개 설정 기본값 초기화 (기본값-> 전체 공개)
+        var isPublic = true
+
+        // 공개 설정 라디오 버튼 리스너 설정
+        binding.visibilityRadioGroup.setOnCheckedChangeListener { group, checkedId ->
+            isPublic = checkedId == R.id.publicOption
+            Log.d("NoteDetails", "공개 설정 변경: is_public = $isPublic")
+        }
 
         // 태그 초기화
         val tagList = intent.getStringArrayListExtra("selectedTags")
@@ -45,13 +54,37 @@ class NoteDetailsActivity : AppCompatActivity() {
             binding.tagContent.visibility = View.INVISIBLE
             binding.tagContainerInNote.visibility = View.VISIBLE
             renderSelectedTags(tagList)
+            Log.d("NoteDetails", "초기 태그 목록: $tagList")
+        } else {
+            Log.d("NoteDetails", "초기 태그 목록: 비어있음")
         }
+
 
         // 경로 초기화
         selectedPath = intent.getStringExtra("selectedPath")
         if (!selectedPath.isNullOrEmpty()) {
             binding.storageDetail.text = selectedPath
+            Log.d("NoteDetails", "저장 위치: $selectedPath")
+        } else {
+            Log.d("NoteDetails", "저장 위치: 지정되지 않음")
         }
+
+        // 저장 버튼 (새로 추가)
+        binding.saveNoteButton.setOnClickListener {
+            // 현재 공개 설정, 태그, 저장 위치 정보 로그 출력
+            Log.d("NoteDetails", "저장 시점 정보:")
+            Log.d("NoteDetails", "- 공개 설정: is_public = $isPublic")
+            Log.d("NoteDetails", "- 태그 목록: $currentTagList")
+            Log.d("NoteDetails", "- 저장 위치: $selectedPath")
+
+            // 저장 로직 추가 예정
+            // saveNoteToDatabase(noteTitle, markdownContent, conversationText, isPublic, currentTagList, selectedPath)
+
+            Toast.makeText(this, "노트가 저장되었습니다", Toast.LENGTH_SHORT).show()
+
+            // 저장 후 화면 종료/ 다른 화면으로 이동 예정
+        }
+
 
         val byteArray = intent.getByteArrayExtra("generatedImage")
         if (byteArray != null) {
@@ -156,6 +189,7 @@ class NoteDetailsActivity : AppCompatActivity() {
                 binding.tagContent.visibility = View.INVISIBLE      // 안내 문구 숨김 (공간 유지)
                 binding.tagContainerInNote.visibility = View.VISIBLE  // 칩 영역 표시
                 renderSelectedTags(tagList)
+                Log.d("NoteDetails", "태그 목록 업데이트: $tagList")
             }
         }
         if (requestCode == 102 && resultCode == RESULT_OK) {
@@ -163,6 +197,7 @@ class NoteDetailsActivity : AppCompatActivity() {
             if (!path.isNullOrEmpty()) {
                 binding.storageDetail.text = path
                 selectedPath = path
+                Log.d("NoteDetails", "저장 위치 업데이트: $path")
             }
         }
     }
