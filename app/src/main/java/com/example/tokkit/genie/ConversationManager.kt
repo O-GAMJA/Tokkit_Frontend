@@ -151,6 +151,15 @@ object ConversationManager {
     // 저장된 대화 상태를 복원하는 메서드
     fun loadConversation(context: Context) {
         val sharedPrefs = context.getSharedPreferences("ConversationPrefs", Context.MODE_PRIVATE)
+        val savedSessionId = sharedPrefs.getString("conversation_session_id", "")
+
+        // 세션 ID가 다르면 (앱이 재시작되었으면) 대화를 불러오지 않고 초기화
+        if (savedSessionId != currentSessionId) {
+            messages.clear()
+            clearSavedConversation(context)
+            return
+        }
+
         val jsonString = sharedPrefs.getString("conversation_history", null)
 
         if (jsonString != null) {
@@ -167,7 +176,6 @@ object ConversationManager {
             notifyListeners()
         }
     }
-
     // 대화 기록 초기화 메서드
     fun clearSavedConversation(context: Context) {
         val sharedPrefs = context.getSharedPreferences("ConversationPrefs", Context.MODE_PRIVATE)
