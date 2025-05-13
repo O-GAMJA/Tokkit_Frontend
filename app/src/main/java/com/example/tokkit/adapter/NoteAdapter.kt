@@ -12,7 +12,7 @@ import com.example.tokkit.databinding.ItemArticleListBinding
 
 class NoteAdapter(
     private val onItemClick: (Note) -> Unit,
-    private val useCardLayout: Boolean  // 👈 true면 card, false면 list
+    private val useCardLayout: Boolean  //  true면 card, false면 list
 ) : ListAdapter<Note, RecyclerView.ViewHolder>(NoteDiffCallback()) {
 
     override fun getItemViewType(position: Int): Int {
