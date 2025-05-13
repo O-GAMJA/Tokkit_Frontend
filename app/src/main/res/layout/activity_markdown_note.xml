@@ -27,38 +27,42 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="대화 요약"
+        android:text=""
         android:textStyle="bold"
         android:textSize="20sp"
         android:layout_marginTop="8dp"
         app:layout_constraintTop_toBottomOf="@id/btn_back"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <!-- 편집 버튼 -->
-    <Button
+    <!-- 편집 버튼 (아이콘) -->
+    <ImageButton
         android:id="@+id/btn_edit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="편집"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/main"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:src="@drawable/ic_edit"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="편집"
         android:layout_marginEnd="16dp"
-        app:layout_constraintTop_toTopOf="@id/tv_title"
-        app:layout_constraintBottom_toBottomOf="@id/tv_title"
+        app:layout_constraintTop_toTopOf="@+id/btn_back"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- 저장 버튼 (처음에는 숨김) -->
-    <Button
+    <!-- 저장 버튼 (아이콘) (처음에는 숨김) -->
+    <ImageButton
         android:id="@+id/btn_save"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="저장"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/main"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:src="@drawable/ic_save"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="저장"
         android:layout_marginEnd="16dp"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@id/tv_title"
-        app:layout_constraintBottom_toBottomOf="@id/tv_title"
+        app:layout_constraintTop_toTopOf="@+id/btn_back"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- 마크다운 텍스트 표시 영역 -->
@@ -99,5 +103,19 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btn_save_next"
+        android:backgroundTint="@color/main"
+        android:textColor="#ffffff"
+        android:text="노트저장"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="40dp"
+        />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

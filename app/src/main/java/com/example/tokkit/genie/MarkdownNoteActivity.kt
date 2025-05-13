@@ -5,8 +5,11 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.tokkit.NoteDetailsActivity
 import com.example.tokkit.databinding.ActivityMarkdownNoteBinding
 import io.noties.markwon.Markwon
+import android.content.Intent
+
 
 class MarkdownNoteActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMarkdownNoteBinding
@@ -61,6 +64,12 @@ class MarkdownNoteActivity : AppCompatActivity() {
             // TODO: 노트 저장 로직 구현
         }
 
+        //노트 저장 버튼
+        binding.btnSaveNext.setOnClickListener{
+            val intent = Intent(this, NoteDetailsActivity::class.java)
+            startActivity(intent)
+
+        }
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener {
             finish()
