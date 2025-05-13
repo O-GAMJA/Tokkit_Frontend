@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.example.tokkit.model.ChatMessage as AppChatMessage
+import java.util.UUID
 
 /**
  * 애플리케이션 전체에서 대화 상태를 관리하는 싱글톤 클래스
@@ -14,6 +15,9 @@ object ConversationManager {
 
     // 변경 리스너
     private val listeners = mutableListOf<ConversationChangeListener>()
+
+    // 세션 ID를 저장 (앱 실행마다 새로운 ID 생성)
+    private var currentSessionId = UUID.randomUUID().toString()
 
     /**
      * 새 메시지 추가
@@ -60,6 +64,15 @@ object ConversationManager {
      */
     fun clearMessages() {
         messages.clear()
+        notifyListeners()
+    }
+
+    /**
+     * 새 세션 시작 메서드
+     */
+    fun startNewSession() {
+        messages.clear()
+        currentSessionId = UUID.randomUUID().toString()
         notifyListeners()
     }
 
@@ -130,6 +143,8 @@ object ConversationManager {
 
         val jsonString = Gson().toJson(messagesJson)
         editor.putString("conversation_history", jsonString)
+        // 세션 ID도 함께 저장
+        editor.putString("conversation_session_id", currentSessionId)
         editor.apply()
     }
 
@@ -156,7 +171,7 @@ object ConversationManager {
     // 대화 기록 초기화 메서드
     fun clearSavedConversation(context: Context) {
         val sharedPrefs = context.getSharedPreferences("ConversationPrefs", Context.MODE_PRIVATE)
-        sharedPrefs.edit().remove("conversation_history").apply()
+        sharedPrefs.edit().remove("conversation_history").remove("conversation_session_id").apply()
     }
 
     /**

@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
+import com.example.tokkit.genie.ConversationManager
 
 class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
@@ -80,9 +81,19 @@ class NoteDetailsActivity : AppCompatActivity() {
             // 저장 로직 추가 예정
             // saveNoteToDatabase(noteTitle, markdownContent, conversationText, isPublic, currentTagList, selectedPath)
 
+            // 대화 내용 초기화
+            ConversationManager.clearMessages()
+            ConversationManager.clearSavedConversation(this)
+            ConversationManager.startNewSession()
+            Log.d("NoteDetails", "대화 내용 초기화 완료")
+
             Toast.makeText(this, "노트가 저장되었습니다", Toast.LENGTH_SHORT).show()
 
-            // 저장 후 화면 종료/ 다른 화면으로 이동 예정
+            // 메인 화면으로 돌아가기
+            val intent = Intent(this, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)  // 스택의 최상위로 MainActivity 가져오기
+            startActivity(intent)
+            finish()  // 현재 활동 종료
         }
 
 
