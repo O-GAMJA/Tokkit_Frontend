@@ -8,10 +8,12 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -21,9 +23,11 @@ import com.example.tokkit.adapter.RelatedArticlesAdapter
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
 import com.example.tokkit.model.Article
 import com.example.tokkit.model.Comment
+import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.Markwon
+import kotlinx.coroutines.launch
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -33,6 +37,12 @@ class SearchDetailActivity : AppCompatActivity() {
     private lateinit var dotsIndicator: List<ImageView>
 
     private val noteViewModel: NoteViewModel by viewModels()
+    private var isEditMode = false
+    private var currentNoteId: String? = null
+
+    private val MENU_EDIT_ID = 1
+    private val MENU_SAVE_ID = 2
+    private val MENU_DELETE_ID = 3
 
     // 댓글 목록 데이터 (전역 변수로 변경)
     private val commentList = mutableListOf(
@@ -47,11 +57,17 @@ class SearchDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val noteId = intent.getStringExtra("NOTE_ID") ?: return
+        currentNoteId = noteId
 
         noteViewModel.loadNoteById(noteId)
 
         noteViewModel.selectedNote.observe(this) { note ->
             if (note != null) {
+                // 더보기 버튼 설정
+                binding.btnMore.setOnClickListener { view ->
+                    showPopupMenu(view, note.id)
+                }
+
                 // 노트 제목
                 binding.tvTitle.text = note.title
 
@@ -102,6 +118,130 @@ class SearchDetailActivity : AppCompatActivity() {
             showCommentBottomSheet()
         }
     }
+
+    private fun showPopupMenu(view: View, noteId: String) {
+        val popupMenu = PopupMenu(this, view)
+        val menu = popupMenu.menu
+
+        // 동적 메뉴 텍스트 변경
+        if (isEditMode) {
+            menu.add(0, MENU_SAVE_ID, 0, "저장")
+        } else {
+            menu.add(0, MENU_EDIT_ID, 0, "수정")
+        }
+        menu.add(0, MENU_DELETE_ID, 1, "삭제")
+
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_EDIT_ID -> {
+                    enterEditMode()
+                    true
+                }
+                MENU_SAVE_ID -> {
+                    saveEditedNote()
+                    true
+                }
+                MENU_DELETE_ID -> {
+                    deleteNote(noteId)
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
+    }
+
+    private fun enterEditMode() {
+        isEditMode = true
+
+        // 제목 수정 가능
+        binding.tvTitle.visibility = View.GONE
+        binding.etTitleEditor.visibility = View.VISIBLE
+        binding.modeExplain.visibility = View.VISIBLE
+        binding.etTitleEditor.setText(binding.tvTitle.text.toString())
+
+        // 본문 수정 가능
+        binding.tvContent.visibility = View.GONE
+        binding.etContentEditor.visibility = View.VISIBLE
+        binding.etContentEditor.setText(binding.tvContent.text.toString())
+
+        // 불필요한 뷰 숨기기
+        binding.bookmarkContainer.visibility = View.GONE
+        binding.reactionLayout.visibility = View.GONE
+        binding.tvRelatedTitle.visibility = View.GONE
+        binding.relatedArticlesViewPager.visibility = View.GONE
+        binding.dotsIndicator.visibility = View.GONE
+    }
+
+    private fun saveEditedNote() {
+        val noteId = currentNoteId ?: return
+        val newContent = binding.etContentEditor.text.toString()
+        val newTitle = binding.etTitleEditor.text.toString()
+
+        val patchData = mapOf(
+            "title" to newTitle,
+            "content" to newContent
+        )
+
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.noteApi.updateNote(noteId, patchData)
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    Toast.makeText(this@SearchDetailActivity, "노트가 수정되었습니다.", Toast.LENGTH_SHORT).show()
+
+                    // 마크다운 결과 반영
+                    binding.tvTitle.text = newTitle
+                    binding.tvContent.text = newContent
+
+                    // 수정 UI 비활성화
+                    binding.modeExplain.visibility = View.GONE
+                    binding.tvTitle.visibility = View.VISIBLE
+                    binding.etTitleEditor.visibility = View.GONE
+                    binding.tvContent.visibility = View.VISIBLE
+                    binding.etContentEditor.visibility = View.GONE
+
+                    // 숨겼던 뷰 복원
+                    binding.bookmarkContainer.visibility = View.VISIBLE
+                    binding.reactionLayout.visibility = View.VISIBLE
+                    binding.tvRelatedTitle.visibility = View.VISIBLE
+                    binding.relatedArticlesViewPager.visibility = View.VISIBLE
+                    binding.dotsIndicator.visibility = View.VISIBLE
+
+                    isEditMode = false
+                } else {
+                    Toast.makeText(this@SearchDetailActivity, "수정 실패", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("SaveNote", "오류", e)
+                Toast.makeText(this@SearchDetailActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    private fun deleteNote(noteId: String) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.noteApi.deleteNote(noteId)
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    Toast.makeText(this@SearchDetailActivity, "노트가 삭제되었습니다.", Toast.LENGTH_SHORT).show()
+
+                    val result = Intent().apply {
+                        putExtra("noteDeleted", true)
+                    }
+                    setResult(RESULT_OK, result)
+                    finish()
+                } else {
+                    Toast.makeText(this@SearchDetailActivity, "삭제 실패: ${response.body()?.message}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("DeleteNote", "삭제 오류", e)
+                Toast.makeText(this@SearchDetailActivity, "서버 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
