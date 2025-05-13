@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text=""
+        android:text="노트 제목 자리 입니다."
         android:textStyle="bold"
         android:textSize="20sp"
         android:layout_marginTop="8dp"

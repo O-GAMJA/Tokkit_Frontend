@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -26,6 +27,16 @@ class NoteDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNoteDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Intent에서 데이터 가져오기
+        val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT")
+        val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
+        val noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "대화 요약"
+
+        // 로그로 데이터 확인
+        Log.d("NoteDetails", "마크다운 내용: $markdownContent")
+        Log.d("NoteDetails", "대화 내용: $conversationText")
+        Log.d("NoteDetails", "노트 제목: $noteTitle")
 
 
         // 태그 초기화

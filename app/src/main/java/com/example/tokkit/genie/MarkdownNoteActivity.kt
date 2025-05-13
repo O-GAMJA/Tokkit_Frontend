@@ -30,7 +30,7 @@ class MarkdownNoteActivity : AppCompatActivity() {
 
         // 인텐트에서 데이터 가져오기
         val markdownContent = intent.getStringExtra(EXTRA_MARKDOWN_CONTENT) ?: ""
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: "대화 요약"
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: "대화 요약<일단 하드코딩>"
 
         // 로그 추가
         Log.d("MarkdownNote", "수신된 마크다운 내용: $markdownContent")
@@ -65,11 +65,30 @@ class MarkdownNoteActivity : AppCompatActivity() {
         }
 
         //노트 저장 버튼
-        binding.btnSaveNext.setOnClickListener{
-            val intent = Intent(this, NoteDetailsActivity::class.java)
-            startActivity(intent)
+        binding.btnSaveNext.setOnClickListener {
 
+            val intent = Intent(this, NoteDetailsActivity::class.java)
+
+            // 현재 마크다운 내용을 가져옴 (편집 모드인 경우 에디터 내용, 아닌 경우 원본 내용)
+            val currentMarkdownContent = if (binding.markdownEditor.visibility == View.VISIBLE) {
+                binding.markdownEditor.text.toString()
+            } else {
+                // 인텐트에서 가져오려 하지 말고, 직접 markdownContent 변수 사용
+                markdownContent
+            }
+
+            Log.d("NoteDetail", "MarkDown-> NoteDetails로 전달할 마크다운 내용: $currentMarkdownContent")
+
+            // 대화 내용과 마크다운 내용을 Intent에 추가
+            val conversationText = ConversationManager.getConversationText()
+            intent.putExtra("MARKDOWN_CONTENT", currentMarkdownContent)
+            intent.putExtra("CONVERSATION_TEXT", conversationText)
+            intent.putExtra("NOTE_TITLE", binding.tvTitle.text.toString())
+
+            // NoteDetailActivity로 이동
+            startActivity(intent)
         }
+
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener {
             finish()
