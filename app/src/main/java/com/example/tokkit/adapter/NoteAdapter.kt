@@ -37,7 +37,12 @@ class NoteAdapter(
                 note.content
             }
 
-            tvDate.text = note.createdAt.substring(0, 10) // "2025-05-13"
+            tvDate.text = if (note.createdAt != null && note.createdAt.length >= 10) {
+                note.createdAt.substring(0, 10) // "2025-05-13"
+            } else {
+                "날짜 정보 없음" // 또는 다른 기본값
+            }
+
 
             // 이미지 URL이 비어있지 않은 경우에만 이미지 로드
             if (!note.imageUrl.isNullOrEmpty()) {

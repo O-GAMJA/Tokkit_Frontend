@@ -28,3 +28,21 @@ data class ApiResponse<T>(
     val message: String,
     val result: T
 )
+
+data class NoteCreateRequest(
+    val id: String,
+    val title: String,
+    val content: String,
+    val isPublic: Boolean,
+    val directoryName: String,
+    val imageUrl: String,
+    val conversationLog: String,
+    val stage: String = "STAGE0"
+    )
+
+data class NoteCreateResponse(
+    val total_note_chunks: Int,
+    val total_note_count: Int
+)
+
+
