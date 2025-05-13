@@ -26,6 +26,19 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
+        <TextView
+            android:id="@+id/modeExplain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="수정 중입니다.."
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            />
+
         <!-- 더보기 버튼 추가 -->
         <ImageButton
             android:id="@+id/btnMore"
@@ -95,7 +108,7 @@
                 android:layout_marginBottom="16dp"
                 android:contentDescription="기사 이미지" />
 
-            <!-- 제목 -->
+            <!-- 기존 제목 표시용 -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
@@ -106,7 +119,19 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
 
-            <!-- 내용 -->
+            <EditText
+                android:id="@+id/etTitleEditor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:background="@android:color/transparent"
+                android:hint="제목을 입력하세요"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 기존 내용 표시용 -->
             <TextView
                 android:id="@+id/tvContent"
                 android:layout_width="match_parent"
@@ -115,7 +140,23 @@
                 android:textColor="@color/black"
                 android:textSize="16sp"
                 android:lineSpacingExtra="4dp"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="24dp"
+                android:visibility="visible" />
+
+            <!-- 수정용 EditText (처음엔 숨김 처리) -->
+            <EditText
+                android:id="@+id/etContentEditor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"
+                android:background="@android:color/transparent"
+                android:hint="내용을 입력하세요"
+                android:visibility="gone"
+                android:gravity="top"
+                android:layout_marginBottom="24dp"
+                />
+
 
             <!-- 연관 글  -->
             <TextView

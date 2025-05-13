@@ -15,6 +15,8 @@ import com.example.tokkit.databinding.FragmentCardViewBinding
 import com.example.tokkit.adapter.NoteAdapter
 import com.example.tokkit.SearchDetailActivity
 import io.noties.markwon.Markwon
+import android.app.Activity
+import androidx.activity.result.contract.ActivityResultContracts
 
 class CardViewFragment : Fragment() {
 
@@ -22,6 +24,15 @@ class CardViewFragment : Fragment() {
     private val binding get() = _binding!!
     private val noteViewModel: NoteViewModel by activityViewModels()
     private lateinit var adapter: NoteAdapter
+
+    private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val deleted = result.data?.getBooleanExtra("noteDeleted", false) ?: false
+            if (deleted) {
+                noteViewModel.loadNotes(1L) // 실사용자 ID로 교체 가능
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,7 +58,7 @@ class CardViewFragment : Fragment() {
             onItemClick = { note ->
                 val intent = Intent(requireContext(), SearchDetailActivity::class.java)
                 intent.putExtra("NOTE_ID", note.id)
-                startActivity(intent)
+                detailLauncher.launch(intent)
             },
             useCardLayout = true,
             markwon = markwon
