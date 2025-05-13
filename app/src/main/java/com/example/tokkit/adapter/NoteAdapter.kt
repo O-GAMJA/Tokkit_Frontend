@@ -9,10 +9,12 @@ import com.bumptech.glide.Glide
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.ItemArticleCardBinding
 import com.example.tokkit.databinding.ItemArticleListBinding
+import io.noties.markwon.Markwon
 
 class NoteAdapter(
     private val onItemClick: (Note) -> Unit,
-    private val useCardLayout: Boolean  //  true면 card, false면 list
+    private val useCardLayout: Boolean,  //  true면 card, false면 list
+    private val markwon: Markwon
 ) : ListAdapter<Note, RecyclerView.ViewHolder>(NoteDiffCallback()) {
 
     override fun getItemViewType(position: Int): Int {
@@ -42,7 +44,7 @@ class NoteAdapter(
             is CardViewHolder -> {
                 with(holder.binding) {
                     tvTitle.text = note.title
-                    tvContent.text = note.content.take(100).plus("...")
+                    markwon.setMarkdown(tvContent, note.content.take(100).plus("..."))
                     tvDate.text = if (note.createdAt != null && note.createdAt.length >= 10) {
                         note.createdAt.substring(0, 10) // "2025-05-13"
                     } else {
@@ -58,7 +60,7 @@ class NoteAdapter(
             is ListViewHolder -> {
                 with(holder.binding) {
                     tvTitle.text = note.title
-                    tvContent.text = note.content.take(80).plus("...")
+                    markwon.setMarkdown(tvContent, note.content.take(80).plus("..."))
                     tvDate.text = if (note.createdAt != null && note.createdAt.length >= 10) {
                         note.createdAt.substring(0, 10) // "2025-05-13"
                     } else {

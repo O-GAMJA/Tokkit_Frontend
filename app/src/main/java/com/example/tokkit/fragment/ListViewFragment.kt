@@ -13,6 +13,7 @@ import com.example.tokkit.NoteViewModel
 import com.example.tokkit.databinding.FragmentListViewBinding
 import com.example.tokkit.SearchDetailActivity
 import com.example.tokkit.adapter.NoteAdapter
+import io.noties.markwon.Markwon
 
 class ListViewFragment : Fragment() {
 
@@ -40,14 +41,16 @@ class ListViewFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        val markwon = Markwon.create(requireContext())
+
         adapter = NoteAdapter(
             onItemClick = { note ->
-                val intent = Intent(requireContext(), SearchDetailActivity::class.java).apply {
-                    putExtra("NOTE_ID", note.id)
-                }
+                val intent = Intent(requireContext(), SearchDetailActivity::class.java)
+                intent.putExtra("NOTE_ID", note.id)
                 startActivity(intent)
             },
-            useCardLayout = false
+            useCardLayout = false,
+            markwon = markwon
         )
 
         binding.recyclerListView.layoutManager = LinearLayoutManager(requireContext())
