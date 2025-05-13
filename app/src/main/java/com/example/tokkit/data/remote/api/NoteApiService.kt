@@ -2,7 +2,11 @@ package com.example.tokkit.data.remote.api
 
 import com.example.tokkit.data.remote.model.ApiResponse
 import com.example.tokkit.data.remote.model.Note
+import com.example.tokkit.data.remote.model.NoteCreateRequest
+import com.example.tokkit.data.remote.model.NoteCreateResponse
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface NoteApiService {
@@ -12,10 +16,15 @@ interface NoteApiService {
         @Path("memberId") memberId: Long
     ): ApiResponse<List<Note>>
 
+
     // 노트 상세 조회 api
     @GET("/notes/{noteId}")
     suspend fun getNoteById(
         @Path("noteId") noteId: String
     ): ApiResponse<Note>
+
+    // 노트 저장 api
+    @POST("/notes")
+    suspend fun createNote(@Body notes: List<NoteCreateRequest>): ApiResponse<NoteCreateResponse>
 
 }
