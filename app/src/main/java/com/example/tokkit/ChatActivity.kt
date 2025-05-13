@@ -17,12 +17,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.tokkit.databinding.ActivityChatBinding
 import com.example.tokkit.genie.ChatMessage
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.genie.GenieConversationActivity
 import com.example.tokkit.genie.GenieWrapper
 import com.example.tokkit.genie.MarkdownNoteActivity
+import com.example.tokkit.genie.MessageRecyclerViewAdapter
 import com.example.tokkit.genie.MessageSender
 import com.example.tokkit.genie.StringCallback
 import com.example.tokkit.genie.MarkdownPromptHandler
@@ -31,19 +33,25 @@ import java.io.FileOutputStream
 import java.nio.file.Paths
 import java.util.ArrayList
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
     private lateinit var binding: ActivityChatBinding
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var tts: TextToSpeech
     private lateinit var genieWrapper: GenieWrapper
+    private lateinit var adapter: MessageRecyclerViewAdapter
 
     private val messages = ArrayList<ChatMessage>(1000)
     private var isListening = false
     private var fullResponse = StringBuilder()
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
+
+    // 문장 단위 TTS 처리를 위한 버퍼
+    private val sentenceBuffer = StringBuilder()
 
     private val markdownPromptHandler = MarkdownPromptHandler()
 
@@ -59,6 +67,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         // 저장된 대화 내용 로드
         ConversationManager.loadConversation(this)
+
+//        // RecyclerView 설정
+//        adapter = MessageRecyclerViewAdapter(this, messages)
+//        binding.chatRecyclerView.adapter = adapter
+//        binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
 
         // TTS 초기화
         initializeTTS()
@@ -148,7 +161,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
     private fun getCompleteResponse(prompt: String): String {
         val responseBuilder = StringBuilder()
-        val responseLock = java.util.concurrent.CountDownLatch(1)
+        val responseLock = CountDownLatch(1)
         var isComplete = false
 
         genieWrapper.getResponseForPrompt(prompt, object : StringCallback {
@@ -164,7 +177,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         })
 
         try {
-            if (!responseLock.await(15, java.util.concurrent.TimeUnit.SECONDS) && !isComplete) {
+            if (!responseLock.await(15, TimeUnit.SECONDS) && !isComplete) {
                 Log.w("ChatActivity", "응답 대기 시간 초과, 현재까지 받은 내용 사용")
             }
         } catch (e: InterruptedException) {
@@ -262,6 +275,10 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         val userMessage = ChatMessage(message, MessageSender.USER)
         ConversationManager.addMessage(userMessage)
 
+        // 문장 버퍼 초기화
+        sentenceBuffer.clear()
+        fullResponse.clear() // 이전 응답 초기화
+
         // 응답 생성 요청
         if (::genieWrapper.isInitialized) {
             val executor = Executors.newSingleThreadExecutor()
@@ -269,29 +286,46 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 genieWrapper.getResponseForPrompt(message, object : StringCallback {
                     override fun onNewString(response: String) {
                         runOnUiThread {
+                            // 누적 응답에 새 응답 추가
                             fullResponse.append(response)
+                            sentenceBuffer.append(response)
 
                             // ConversationManager를 통해 봇 메시지 업데이트
                             val updatedResponse = ConversationManager.updateLastBotMessage(response)
 
+                            // 문장 단위로 TTS 실행
+                            val bufferStr = sentenceBuffer.toString()
+                            val sentenceEndPattern = Regex("[.,?!]")
+
+                            if (sentenceEndPattern.containsMatchIn(bufferStr)) {
+                                // 문장 끝 부호를 기준으로 분리
+                                val sentences = bufferStr.split(sentenceEndPattern)
+
+                                // 마지막 문장(아직 완성되지 않은)을 제외하고 처리
+                                if (sentences.size > 1) {
+                                    for (i in 0 until sentences.size - 1) {
+                                        val sentence = sentences[i].trim()
+                                        if (sentence.isNotBlank()) {
+                                            tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, null)
+                                        }
+                                    }
+
+                                    // 버퍼 초기화 후 마지막 미완성 문장만 유지
+                                    sentenceBuffer.clear()
+                                    sentenceBuffer.append(sentences.last())
+                                }
+                            }
+
                             // 이전 대기 제거
                             responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
 
-                            // 새 대기 설정 - 발화를 위한 문장 처리
+                            // 새 대기 설정 - 완전히 응답이 끝났을 때 마지막 미완성 문장 처리
                             responseTimeoutRunnable = Runnable {
-                                val finalText = fullResponse.toString()
-                                val sentences = finalText
-                                    .replace(",", "")
-                                    .split(Regex("(?<=[.!?])\\s+"))
-
-                                for (sentence in sentences) {
-                                    val clean = sentence.replace(Regex("[.?!]$"), "").trim()
-                                    if (clean.isNotBlank()) {
-                                        tts.speak(clean, TextToSpeech.QUEUE_ADD, null, null)
-                                    }
+                                val lastSentence = sentenceBuffer.toString().trim()
+                                if (lastSentence.isNotBlank()) {
+                                    tts.speak(lastSentence, TextToSpeech.QUEUE_ADD, null, null)
+                                    sentenceBuffer.clear()
                                 }
-
-                                fullResponse.clear()
                             }
                             responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                         }
@@ -343,7 +377,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 loadMessagesFromManager()
             }
 
-
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 초기화 오류: ${e.message}", e)
             Toast.makeText(this, "Genie 초기화 중 오류 발생: ${e.message}", Toast.LENGTH_LONG).show()
@@ -353,6 +386,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private fun loadMessagesFromManager() {
         messages.clear()
         messages.addAll(ConversationManager.getAllMessages())
+//        adapter.notifyDataSetChanged()
+//        if (messages.isNotEmpty()) {
+//            binding.chatRecyclerView.scrollToPosition(messages.size - 1)
+//        }
+
         Log.d("ChatActivity", "loadMessagesFromManager(): 메시지 ${messages.size}개 로딩됨")
         for ((index, message) in messages.withIndex()) {
             Log.d("ChatActivity", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
@@ -382,7 +420,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 putExtra(GenieConversationActivity.KEY_MODEL_NAME, "llama3_2_3b")
             }
             startActivity(intent)
-
 
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 대화 시작 오류: ${e.message}", e)
@@ -461,12 +498,18 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
     // ConversationManager.ConversationChangeListener 구현
     override fun onConversationChanged(updatedMessages: List<ChatMessage>) {
-        messages.clear()
-        messages.addAll(updatedMessages)
-        // 필요시 로그나 TTS 발화도 가능
-        Log.d("ChatActivity", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
-        for ((index, message) in messages.withIndex()) {
-            Log.d("ChatActivity", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
+        runOnUiThread {
+            messages.clear()
+            messages.addAll(updatedMessages)
+//            adapter.notifyDataSetChanged()
+//            if (messages.isNotEmpty()) {
+//                binding.chatRecyclerView.scrollToPosition(messages.size - 1)
+//            }
+
+            Log.d("ChatActivity", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
+            for ((index, message) in messages.withIndex()) {
+                Log.d("ChatActivity", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
+            }
         }
     }
 

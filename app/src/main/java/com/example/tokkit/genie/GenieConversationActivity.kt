@@ -39,6 +39,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
 
+    // 문장 단위 TTS 처리를 위한 버퍼
+    private val sentenceBuffer = StringBuilder()
+
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
 
@@ -221,39 +224,56 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         val userMessage = ChatMessage(message, MessageSender.USER)
         ConversationManager.addMessage(userMessage)
 
-        // UI 업데이트는 onConversationChanged에서 처리됨
+        // 문장 버퍼 초기화
+        sentenceBuffer.clear()
+        fullResponse.clear() // 이전 응답 초기화
 
         val executor = Executors.newSingleThreadExecutor()
         executor.execute {
             genieWrapper.getResponseForPrompt(message, object : StringCallback {
                 override fun onNewString(response: String) {
                     runOnUiThread {
+                        // 누적 응답에 새 응답 추가
                         fullResponse.append(response)
+                        sentenceBuffer.append(response)
                         Log.d("GenieResponse", "AI 전체 응답: ${fullResponse.toString().replace("\n", "\\n")}")
 
                         // ConversationManager를 통해 봇 메시지 업데이트
                         val updatedResponse = ConversationManager.updateLastBotMessage(response)
 
-                        // UI 업데이트는 onConversationChanged에서 처리됨
+                        // 문장 단위로 TTS 실행
+                        val bufferStr = sentenceBuffer.toString()
+                        val sentenceEndPattern = Regex("[.,?!]")
+
+                        if (sentenceEndPattern.containsMatchIn(bufferStr)) {
+                            // 문장 끝 부호를 기준으로 분리
+                            val sentences = bufferStr.split(sentenceEndPattern)
+
+                            // 마지막 문장(아직 완성되지 않은)을 제외하고 처리
+                            if (sentences.size > 1) {
+                                for (i in 0 until sentences.size - 1) {
+                                    val sentence = sentences[i].trim()
+                                    if (sentence.isNotBlank()) {
+                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, null)
+                                    }
+                                }
+
+                                // 버퍼 초기화 후 마지막 미완성 문장만 유지
+                                sentenceBuffer.clear()
+                                sentenceBuffer.append(sentences.last())
+                            }
+                        }
 
                         // 이전 대기 제거
                         responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
 
-                        // 새 대기 설정
+                        // 새 대기 설정 - 완전히 응답이 끝났을 때 마지막 미완성 문장 처리
                         responseTimeoutRunnable = Runnable {
-                            val finalText = fullResponse.toString()
-                            val sentences = finalText
-                                .replace(",", "")
-                                .split(Regex("(?<=[.!?])\\s+"))
-
-                            for (sentence in sentences) {
-                                val clean = sentence.replace(Regex("[.?!]$"), "").trim()
-                                if (clean.isNotBlank()) {
-                                    tts.speak(clean, TextToSpeech.QUEUE_ADD, null, null)
-                                }
+                            val lastSentence = sentenceBuffer.toString().trim()
+                            if (lastSentence.isNotBlank()) {
+                                tts.speak(lastSentence, TextToSpeech.QUEUE_ADD, null, null)
+                                sentenceBuffer.clear()
                             }
-
-                            fullResponse.clear()
                         }
                         responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                     }
@@ -349,7 +369,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
         // 응답 완료를 기다리거나 10초 후 시간 초과
         try {
-            // 최대 10초 대기
+            // 최대 15초 대기
             if (!responseLock.await(15, TimeUnit.SECONDS) && !isComplete) {
                 // 시간 초과 시 현재까지 받은 내용 사용
                 Log.w("GenieChat", "응답 대기 시간 초과, 현재까지 받은 내용 사용")
