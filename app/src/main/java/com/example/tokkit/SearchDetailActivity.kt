@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -52,6 +53,11 @@ class SearchDetailActivity : AppCompatActivity() {
 
         noteViewModel.selectedNote.observe(this) { note ->
             if (note != null) {
+                // 더보기 버튼 설정
+                binding.btnMore.setOnClickListener { view ->
+                    showPopupMenu(view, note.id)
+                }
+
                 // 노트 제목
                 binding.tvTitle.text = note.title
 
@@ -102,6 +108,29 @@ class SearchDetailActivity : AppCompatActivity() {
             showCommentBottomSheet()
         }
     }
+
+    private fun showPopupMenu(view: View, noteId: String) {
+        val popupMenu = PopupMenu(this, view)
+        popupMenu.menuInflater.inflate(R.menu.menu_note_options, popupMenu.menu)
+
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_edit -> {
+                    Toast.makeText(this, "노트 수정 클릭", Toast.LENGTH_SHORT).show()
+                    // TODO: 수정 화면 이동 처리
+                    true
+                }
+                R.id.menu_delete -> {
+                    Toast.makeText(this, "노트 삭제 클릭", Toast.LENGTH_SHORT).show()
+                    // TODO: 삭제 처리
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
+    }
+
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
