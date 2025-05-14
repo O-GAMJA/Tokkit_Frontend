@@ -2,12 +2,20 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.tokkit.databinding.ActivityLoadingBinding
+import com.example.tokkit.data.remote.model.ImageGenerationRequest
+import com.example.tokkit.util.RetrofitClient
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class LoadingActivity : AppCompatActivity() {
 
-    private lateinit var binding : ActivityLoadingBinding
+    private lateinit var binding: ActivityLoadingBinding
+    private val TAG = "LoadingActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,13 +24,185 @@ class LoadingActivity : AppCompatActivity() {
 
         val tagList = intent.getStringArrayListExtra("selectedTags") ?: arrayListOf()
         val selectedPath = intent.getStringExtra("selectedPath")
+        val noteContent = intent.getStringExtra("NOTE_CONTENT") ?: ""
+        val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT") ?: ""
+        val conversationText = intent.getStringExtra("CONVERSATION_TEXT") ?: ""
+        val noteTitle = intent.getStringExtra("NOTE_TITLE")
 
-        binding.imageGenerate.setOnClickListener {
-            val intent = Intent(this, GeneratedResultActivity::class.java)
+        // 로그 추가
+        Log.d(TAG, "LoadingActivity에서 받은 데이터 - 마크다운: ${markdownContent.take(50)}...")
+        Log.d(TAG, "LoadingActivity에서 받은 데이터 - 대화: ${conversationText.take(50)}...")
+        Log.d(TAG, "LoadingActivity에서 받은 데이터 - 제목: $noteTitle")
+
+        // 애니메이션 시작
+        binding.lottieAnimationView.playAnimation()
+
+        // 태그 기반 스타일 생성
+        val style = generateStyleFromTags(tagList)
+
+        // API 호출
+        generateImage(noteContent, style, tagList, selectedPath, markdownContent, conversationText, noteTitle)
+    }
+
+    private fun generateStyleFromTags(tags: ArrayList<String>): String {
+        // 태그를 스타일로 변환 (예: 학습 관련 태그면 "educational, diagram", 자연 관련이면 "natural, photograph" 등)
+        val styleMap = mapOf(
+            "JAVA" to "computer code, programming",
+            "TCP/IP" to "network diagram, technical",
+            "데이터 통신" to "digital connection, technology",
+            "Android" to "mobile interface, app design",
+            "Kotlin" to "clean code, programming"
+        )
+
+        val styles = tags.mapNotNull { styleMap[it] }
+
+        // 기본 스타일에 태그 기반 스타일 추가
+        return if (styles.isNotEmpty()) {
+            "${styles.joinToString(", ")}, digital art, minimalist"
+        } else {
+            "minimalist, digital art, illustration"
+        }
+    }
+
+    private fun generateImage(
+        noteContent: String,
+        style: String,
+        tagList: ArrayList<String>,
+        selectedPath: String?,
+        markdownContent: String,
+        conversationText: String,
+        noteTitle: String?
+    ) {
+        // 프로그레스 텍스트 업데이트
+        binding.loadingText.text = "노트에 어울리는\n사진을 생성하고 있어요"
+
+        lifecycleScope.launch {
+            var retryCount = 0
+            val maxRetries = 3
+
+            while (retryCount < maxRetries) {
+                try {
+                    val api = RetrofitClient.imageApi
+                    val request = ImageGenerationRequest(noteContent, style)
+
+                    Log.d("IMAGEGENERATE", "API 호출 시작 (시도 ${retryCount + 1}/$maxRetries): $request")
+
+                    val response = api.generateImage(request)
+
+                    Log.d("IMAGEGENERATE", "API 응답: $response")
+
+                    if (response.isSuccess) {
+                        // 이미지 생성 성공
+                        val imageUrl = response.result.imageUrl
+
+                        // 결과 화면으로 이동
+                        val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
+                        intent.putExtra("IMAGE_URL", imageUrl)
+                        intent.putStringArrayListExtra("selectedTags", tagList)
+                        intent.putExtra("selectedPath", selectedPath)
+
+                        // ⭐ 원본 데이터도 함께 전달
+                        intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                        intent.putExtra("CONVERSATION_TEXT", conversationText)
+                        intent.putExtra("NOTE_TITLE", noteTitle)
+
+                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
+                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
+                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 제목: $noteTitle")
+
+                        startActivity(intent)
+                        finish()
+                        return@launch
+                    } else {
+                        // 실패 처리
+                        Log.e("IMAGEGENERATE", "이미지 생성 실패: ${response.message}")
+                        retryCount++
+
+                        if (retryCount >= maxRetries) {
+                            fallbackToDefaultImage(tagList, selectedPath, markdownContent, conversationText, noteTitle)
+                            return@launch
+                        }
+
+                        // 재시도 메시지 표시
+                        binding.loadingText.text = "연결 재시도 중...\n(${retryCount}/${maxRetries})"
+                        delay(2000) // 2초 대기 후 재시도
+                    }
+                } catch (e: HttpException) {
+                    Log.e("IMAGEGENERATE", "HTTP 오류 (시도 ${retryCount + 1}/$maxRetries): ${e.code()}", e)
+                    retryCount++
+
+                    if (retryCount >= maxRetries) {
+                        fallbackToDefaultImage(tagList, selectedPath, markdownContent, conversationText, noteTitle)
+                        return@launch
+                    }
+
+                    // 재시도 메시지 표시
+                    binding.loadingText.text = "연결 재시도 중...\n(${retryCount}/${maxRetries})"
+                    delay(2000) // 2초 대기 후 재시도
+                } catch (e: Exception) {
+                    Log.e("IMAGEGENERATE", "오류 발생 (시도 ${retryCount + 1}/$maxRetries): ${e.message}", e)
+                    retryCount++
+
+                    if (retryCount >= maxRetries) {
+                        fallbackToDefaultImage(tagList, selectedPath, markdownContent, conversationText, noteTitle)
+                        return@launch
+                    }
+
+                    // 재시도 메시지 표시
+                    binding.loadingText.text = "연결 재시도 중...\n(${retryCount}/${maxRetries})"
+                    delay(2000) // 2초 대기 후 재시도
+                }
+            }
+        }
+    }
+
+    private fun fallbackToDefaultImage(
+        tagList: ArrayList<String>,
+        selectedPath: String?,
+        markdownContent: String,
+        conversationText: String,
+        noteTitle: String?
+    ) {
+        // 실패 메시지 표시
+        binding.loadingText.text = "이미지 생성에 실패했습니다.\n기본 이미지를 사용합니다."
+
+        // 잠시 대기 후 다음 화면으로 이동 (사용자가 메시지를 볼 수 있도록)
+        lifecycleScope.launch {
+            delay(1500)
+
+            // API 실패 시 기본 이미지 사용
+            val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", tagList)
             intent.putExtra("selectedPath", selectedPath)
+            intent.putExtra("USE_DEFAULT_IMAGE", true)
+
+            // 노트 내용에 따라 기본 이미지 선택
+            val noteContent = intent.getStringExtra("NOTE_CONTENT") ?: ""
+            when {
+                noteContent.contains("operating system", ignoreCase = true) ->
+                    intent.putExtra("DEFAULT_IMAGE_TYPE", "OS")
+                noteContent.contains("network", ignoreCase = true) ->
+                    intent.putExtra("DEFAULT_IMAGE_TYPE", "NETWORK")
+                // 필요한 만큼 추가 조건 넣기
+            }
+
+            // 원본 데이터 전달
+            intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+            intent.putExtra("CONVERSATION_TEXT", conversationText)
+            intent.putExtra("NOTE_TITLE", noteTitle)
+
+            Log.d(TAG, "fallback - GeneratedResultActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
+            Log.d(TAG, "fallback - GeneratedResultActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
+            Log.d(TAG, "fallback - GeneratedResultActivity로 데이터 전달 - 제목: $noteTitle")
+
             startActivity(intent)
             finish()
         }
     }
+    override fun onDestroy() {
+        super.onDestroy()
+        // 애니메이션 정리
+        binding.lottieAnimationView.cancelAnimation()
+    }
 }
+

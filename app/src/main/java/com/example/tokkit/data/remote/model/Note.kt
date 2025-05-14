@@ -45,4 +45,20 @@ data class NoteCreateResponse(
     val total_note_count: Int
 )
 
+// 이미지 생성 요청 모델
+data class ImageGenerationRequest(
+    val noteContent: String,
+    val style: String
+)
 
+// 이미지 생성 응답 모델
+data class ImageGenerationResponse(
+    val isSuccess: Boolean,
+    val code: String,
+    val message: String,
+    val result: ImageResult
+)
+
+data class ImageResult(
+    val imageUrl: String
+)
