@@ -2,6 +2,7 @@ package com.example.tokkit.data.remote.repository
 
 import android.util.Log
 import com.example.tokkit.data.remote.api.NoteApiService
+import com.example.tokkit.data.remote.model.EmojiRequest
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.util.RetrofitClient
 
@@ -35,5 +36,21 @@ class NoteRepository {
             null
         }
     }
+
+    suspend fun toggleEmoji(noteId: String, emojiType: String, isClicked: Boolean): Note? {
+        return try {
+            val response = if (isClicked) {
+                api.removeEmoji(noteId, EmojiRequest(emojiType)) // 삭제 요청
+            } else {
+                api.addEmoji(noteId, EmojiRequest(emojiType))    // 추가 요청
+            }
+            if (response.isSuccess) response.result else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+
 
 }

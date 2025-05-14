@@ -20,6 +20,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.RelatedArticlesAdapter
+import com.example.tokkit.data.remote.model.BookmarkStatus
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
 import com.example.tokkit.model.Article
 import com.example.tokkit.model.Comment
@@ -63,36 +64,43 @@ class SearchDetailActivity : AppCompatActivity() {
 
         noteViewModel.selectedNote.observe(this) { note ->
             if (note != null) {
-                // 더보기 버튼 설정
+                // 더보기 버튼
                 binding.btnMore.setOnClickListener { view ->
                     showPopupMenu(view, note.id)
                 }
 
-                // 노트 제목
-                binding.tvTitle.text = note.title
+                // 제목
+                binding.tvTitle.text = note.title ?: "(제목 없음)"
 
-                // 마크다운 처리
+                // 마크다운 내용
                 val markwon = Markwon.create(this)
-                markwon.setMarkdown(binding.tvContent, note.content)
+                val safeContent = note.content ?: ""
+                markwon.setMarkdown(binding.tvContent, safeContent)
 
                 // 이미지
-                Glide.with(this).load(note.imageUrl).into(binding.ivArticleImage)
+                val imageUrl = note.imageUrl
+                if (!imageUrl.isNullOrBlank()) {
+                    Glide.with(this).load(imageUrl).into(binding.ivArticleImage)
+                } else {
+                    binding.ivArticleImage.setImageDrawable(null)
+                }
 
-                // 북마크
-                bookmarkCount = note.bookmarkStatus.count
-                isBookmarked = note.bookmarkStatus.clicked
+                // 북마크 상태
+                val bookmarkStatus: BookmarkStatus = note.bookmarkStatus ?: BookmarkStatus(0, false)
+                bookmarkCount = bookmarkStatus.count
+                isBookmarked = bookmarkStatus.clicked
                 binding.bookmarkCount.text = bookmarkCount.toString()
                 binding.btnBookmark.setImageResource(
                     if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark
                 )
 
-                // 이모지 카운트
-                binding.likeCount.text = note.emojiStatus.count["like"]?.toString() ?: "0"
-                binding.heartCount.text = note.emojiStatus.count["thumbsUp"]?.toString() ?: "0"
-                binding.thinkingCount.text = note.emojiStatus.count["thinking"]?.toString() ?: "0"
-                binding.fireCount.text = note.emojiStatus.count["fire"]?.toString() ?: "0"
-                binding.hundredCount.text = note.emojiStatus.count["hundred"]?.toString() ?: "0"
-
+                // 이모지 상태
+                val emojiStatus = note.emojiStatus ?: return@observe
+                binding.likeCount.text = emojiStatus.count["like"]?.toString() ?: "0"
+                binding.heartCount.text = emojiStatus.count["thumbsUp"]?.toString() ?: "0"
+                binding.thinkingCount.text = emojiStatus.count["thinking"]?.toString() ?: "0"
+                binding.fireCount.text = emojiStatus.count["fire"]?.toString() ?: "0"
+                binding.hundredCount.text = emojiStatus.count["hundred"]?.toString() ?: "0"
             } else {
                 Toast.makeText(this, "노트를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             }
@@ -272,41 +280,37 @@ class SearchDetailActivity : AppCompatActivity() {
     }
 
     private fun setupReactionButtons() {
-        // 좋아요 버튼
-        binding.likeContainer.setOnClickListener {
-            // 좋아요 카운트 증가 로직
-            val currentCount = binding.likeCount.text.toString().toInt()
-            binding.likeCount.text = (currentCount + 1).toString()
-        }
 
-        // 하트 버튼
-        binding.heartContainer.setOnClickListener {
-            // 하트 카운트 증가 로직
-            val currentCount = binding.heartCount.text.toString().toInt()
-            binding.heartCount.text = (currentCount + 1).toString()
-        }
+        setupEmojiToggle(binding.likeContainer, "LIKE")
+        setupEmojiToggle(binding.heartContainer, "THUMBS_UP")
+        setupEmojiToggle(binding.thinkingContainer, "THINKING")
+        setupEmojiToggle(binding.fireContainer, "FIRE")
+        setupEmojiToggle(binding.hundredContainer, "HUNDRED")
+    }
 
-        // 궁금해요 버튼
-        binding.thinkingContainer.setOnClickListener {
-            // 궁금해요 카운트 증가 로직
-            val currentCount = binding.thinkingCount.text.toString().toInt()
-            binding.thinkingCount.text = (currentCount + 1).toString()
-        }
+    private fun setupEmojiToggle(container: View, emojiType: String) {
+        container.setOnClickListener {
+            val noteId = currentNoteId ?: return@setOnClickListener
+            val currentNote = noteViewModel.selectedNote.value ?: return@setOnClickListener
 
-        // 불 버튼
-        binding.fireContainer.setOnClickListener {
-            // 불 카운트 증가 로직
-            val currentCount = binding.fireCount.text.toString().toInt()
-            binding.fireCount.text = (currentCount + 1).toString()
-        }
+            // 서버 enum 값이 대문자로 기대되므로 매핑을 정확히 맞춰야 함
+            val emojiKeyMap = mapOf(
+                "LIKE" to "like",
+                "THUMBS_UP" to "thumbsUp",
+                "THINKING" to "thinking",
+                "FIRE" to "fire",
+                "HUNDRED" to "hundred"
+            )
 
-        // 100점 버튼
-        binding.hundredContainer.setOnClickListener {
-            // 100점 카운트 증가 로직
-            val currentCount = binding.hundredCount.text.toString().toInt()
-            binding.hundredCount.text = (currentCount + 1).toString()
+            val clickedKey = emojiKeyMap[emojiType] ?: return@setOnClickListener
+            val isClicked = currentNote.emojiStatus.clicked[clickedKey] ?: false
+
+            // ViewModel 호출 (isClicked는 Boolean 확정됨)
+            noteViewModel.toggleEmoji(noteId, emojiType, isClicked)
         }
     }
+
+
 
     private fun setupRelatedArticlesViewPager() {
         // 샘플 연관 글 데이터
