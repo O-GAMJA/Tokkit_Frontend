@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.bumptech.glide.Glide
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.data.remote.api.NoteApiService
@@ -27,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
+import java.io.File
 import java.util.UUID
 
 
@@ -46,11 +48,15 @@ class NoteDetailsActivity : AppCompatActivity() {
         val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT")
         val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
         val noteTitle = intent.getStringExtra("NOTE_TITLE")
+        val imageUrl = intent.getStringExtra("IMAGE_URL")
+
 
         // 로그로 데이터 확인
         Log.d("NoteDetails", "마크다운 내용: $markdownContent")
         Log.d("NoteDetails", "대화 내용: $conversationText")
         Log.d("NoteDetails", "노트 제목: $noteTitle")
+        Log.d("NoteDetails", "이미지 URL: $imageUrl")
+
 
         // 공개 설정 기본값 초기화 (기본값-> 전체 공개)
         var isPublic = true
@@ -103,8 +109,6 @@ class NoteDetailsActivity : AppCompatActivity() {
                 isPublic = isPublic,
                 directoryName = selectedPath ?: "기본 경로"
             )
-
-            // 대화 내용 초기화
             ConversationManager.clearMessages()
             ConversationManager.clearSavedConversation(this)
             ConversationManager.startNewSession()
@@ -169,6 +173,64 @@ class NoteDetailsActivity : AppCompatActivity() {
             intent.putExtra("NOTE_TITLE",noteTitle) // 현재 제목을 인텐트에 넣기
             startActivityForResult(intent, 102)
         }
+
+        // 이미지 파일 경로 확인
+        val imageFilePath = intent.getStringExtra("IMAGE_FILE_PATH")
+        if (!imageFilePath.isNullOrEmpty()) {
+            val imageFile = File(imageFilePath)
+            if (imageFile.exists()) {
+                // 파일이 존재하면 이미지뷰에 설정
+                Glide.with(this)
+                    .load(imageFile)
+                    .into(binding.imageUpload)
+
+                // 크기 조정
+                val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+                layoutParams.width = dpToPx(300)
+                layoutParams.height = dpToPx(300)
+
+                // marginTop 0dp로 변경
+                layoutParams.topMargin = dpToPx(0)
+
+                binding.imageUpload.layoutParams = layoutParams
+
+                // 스케일 설정
+                binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+                binding.imageUpload.adjustViewBounds = true
+                binding.imageUpload.requestLayout()
+            } else {
+                Log.e("NoteDetails", "이미지 파일이 존재하지 않음: $imageFilePath")
+            }
+        } else {
+            // 기존 코드 (byteArray 사용)
+            val byteArray = intent.getByteArrayExtra("generatedImage")
+            if (byteArray != null) {
+                try {
+                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                    binding.imageUpload.setImageBitmap(bitmap)
+
+                    // 크기 조정
+                    val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+                    layoutParams.width = dpToPx(300)
+                    layoutParams.height = dpToPx(300)
+
+                    // marginTop 24dp로 변경
+                    layoutParams.topMargin = dpToPx(0)
+
+                    binding.imageUpload.layoutParams = layoutParams
+
+                    // 스케일 설정
+                    binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+                    binding.imageUpload.adjustViewBounds = true
+                    binding.imageUpload.requestLayout()
+                } catch (e: Exception) {
+                    Log.e("NoteDetails", "비트맵 디코딩 실패", e)
+                }
+            }
+        }
+
+
+
     }
 
     private fun showImageChoicePopupAt(x: Int, y: Int) {
@@ -192,10 +254,24 @@ class NoteDetailsActivity : AppCompatActivity() {
         }
 
         popupView.findViewById<LinearLayout>(R.id.btn_generate).setOnClickListener {
-            // TODO: 이미지 생성 로직 구현 ( Stable Diffusion )
+            // 노트 내용 가져오기 (markdownContent 또는 ConversationManager의 대화 내용)
+            val noteContent = intent.getStringExtra("MARKDOWN_CONTENT")
+            val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT")
+            val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
+            val noteTitle = intent.getStringExtra("NOTE_TITLE")
+            // 로그 추가
+            Log.d("NoteDetails", "이미지 생성으로 전달할 데이터 - 마크다운: $markdownContent")
+            Log.d("NoteDetails", "이미지 생성으로 전달할 데이터 - 대화: $conversationText")
+            Log.d("NoteDetails", "이미지 생성으로 전달할 데이터 - 제목: $noteTitle")
+
             val intent = Intent(this, LoadingActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", ArrayList(currentTagList))
             intent.putExtra("selectedPath", selectedPath)
+            intent.putExtra("NOTE_CONTENT", markdownContent)
+            intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+            intent.putExtra("CONVERSATION_TEXT", conversationText)
+            intent.putExtra("NOTE_TITLE", noteTitle)
+
             popupWindow.dismiss()
             startActivity(intent)
             finish()
@@ -261,8 +337,27 @@ class NoteDetailsActivity : AppCompatActivity() {
         isPublic: Boolean,
         directoryName: String
     ) {
-        // 고정된 이미지 URL (요구사항에 따름)
-        val imageUrl = "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+        // 빈 데이터 검사 추가
+        if (markdownContent.isBlank()) {
+            Log.e("NoteDetails", "마크다운 내용이 비어있어 저장할 수 없습니다")
+            Toast.makeText(this, "저장할 노트 내용이 없습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (noteTitle.isBlank()) {
+            Log.e("NoteDetails", "노트 제목이 비어있어 저장할 수 없습니다")
+            Toast.makeText(this, "노트 제목이 필요합니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 로그 추가
+        Log.d("NoteDetails", "저장할 데이터 - 제목: $noteTitle")
+        Log.d("NoteDetails", "저장할 데이터 - 마크다운 내용 길이: ${markdownContent.length}")
+        Log.d("NoteDetails", "저장할 데이터 - 대화 내용 길이: ${conversationText.length}")
+
+        // URL 받음
+        val imageUrl = intent.getStringExtra("IMAGE_URL") ?: "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+
 
         // 노트 ID 생성 (UUID)
         val noteId = UUID.randomUUID().toString()
@@ -279,9 +374,12 @@ class NoteDetailsActivity : AppCompatActivity() {
             stage = "STAGE0"
         )
 
+        // 리스트로 만들어서 보내야 함
+        val noteRequestList = listOf(noteRequest)
+
         // 요청 바디를 JSON 문자열로 변환하여 로그 출력 (디버깅용)
         val gson = Gson()
-        val requestJson = gson.toJson(listOf(noteRequest))
+        val requestJson = gson.toJson(noteRequestList)
         Log.d("NoteDetails", "API 요청 JSON: $requestJson")
 
         // API 호출
@@ -293,7 +391,8 @@ class NoteDetailsActivity : AppCompatActivity() {
                 Log.d("NoteDetails", "API 호출 직전")
                 val response = withContext(Dispatchers.IO) {
                     Log.d("NoteDetails", "API 호출 실행")
-                    api.createNote(listOf(noteRequest))
+                    // 리스트로 전달!
+                    api.createNote(noteRequestList)
                 }
                 Log.d("NoteDetails", "API 호출 완료: ${response.code}, ${response.message}")
 
