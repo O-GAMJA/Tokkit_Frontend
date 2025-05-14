@@ -2,19 +2,23 @@ package com.example.tokkit.data.remote.model
 
 data class Note(
     val id: String,
-    val title: String,
-    val content: String,
+    val title: String?,
+    val content: String?,
     val imageUrl: String?,
-    val createdAt: String,
-    val updatedAt: String,
+    val createdAt: String?,
+    val updatedAt: String?,
     val emojiStatus: EmojiStatus,
-    val bookmarkStatus: BookmarkStatus,
-    val tags: List<String>
+    val bookmarkStatus: BookmarkStatus?,
+    val tags: List<String>?
 )
 
 data class EmojiStatus(
     val count: Map<String, Int>,
     val clicked: Map<String, Boolean>
+)
+
+data class EmojiRequest(
+    val emojiType: String
 )
 
 data class BookmarkStatus(

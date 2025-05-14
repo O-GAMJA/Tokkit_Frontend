@@ -55,4 +55,20 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    fun toggleEmoji(noteId: String, emojiType: String, isClicked: Boolean) {
+        viewModelScope.launch {
+            val response = repository.toggleEmoji(noteId, emojiType, isClicked)
+            val existingNote = _selectedNote.value
+            if (response != null && existingNote != null) {
+                val updatedNote = existingNote.copy(
+                    emojiStatus = response.emojiStatus
+                )
+                _selectedNote.value = updatedNote
+            }
+        }
+    }
+
+
+
+
 }
