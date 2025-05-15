@@ -21,6 +21,7 @@ import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.RelatedArticlesAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
+import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
 import com.example.tokkit.model.Article
 import com.example.tokkit.model.Comment
@@ -36,6 +37,8 @@ class SearchDetailActivity : AppCompatActivity() {
     private var bookmarkCount = 3 // 초기 북마크 카운트
     private var isBookmarked = false // 북마크 상태
     private lateinit var dotsIndicator: List<ImageView>
+    private var currentNote: Note? = null // 현재 노트 정보
+    private var isModified = false // 노트 수정 여부 플래그
 
     private val noteViewModel: NoteViewModel by viewModels()
     private var isEditMode = false
@@ -63,6 +66,7 @@ class SearchDetailActivity : AppCompatActivity() {
         noteViewModel.loadNoteById(noteId)
 
         noteViewModel.selectedNote.observe(this) { note ->
+            currentNote = note
             if (note != null) {
                 // 더보기 버튼
                 binding.btnMore.setOnClickListener { view ->
@@ -109,6 +113,10 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // 뒤로가기 버튼 설정
         binding.btnBack.setOnClickListener {
+            val result = Intent().apply {
+                putExtra("noteModified", true)
+            }
+            setResult(RESULT_OK, result)
             finish()
         }
 
@@ -171,7 +179,7 @@ class SearchDetailActivity : AppCompatActivity() {
         // 본문 수정 가능
         binding.tvContent.visibility = View.GONE
         binding.etContentEditor.visibility = View.VISIBLE
-        binding.etContentEditor.setText(binding.tvContent.text.toString())
+        binding.etContentEditor.setText(currentNote?.content ?: "")
 
         // 불필요한 뷰 숨기기
         binding.bookmarkContainer.visibility = View.GONE
@@ -195,11 +203,13 @@ class SearchDetailActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.noteApi.updateNote(noteId, patchData)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    isModified = true
                     Toast.makeText(this@SearchDetailActivity, "노트가 수정되었습니다.", Toast.LENGTH_SHORT).show()
 
                     // 마크다운 결과 반영
                     binding.tvTitle.text = newTitle
-                    binding.tvContent.text = newContent
+                    val markwon = Markwon.create(this@SearchDetailActivity)
+                    markwon.setMarkdown(binding.tvContent, newContent)
 
                     // 수정 UI 비활성화
                     binding.modeExplain.visibility = View.GONE
@@ -499,4 +509,14 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // BottomSheet 표시
         bottomSheetDialog.show()
-    }}
+    }
+
+    override fun onBackPressed() {
+        val result = Intent().apply {
+            putExtra("noteModified", true)
+        }
+        setResult(RESULT_OK, result)
+        super.onBackPressed()
+    }
+
+}

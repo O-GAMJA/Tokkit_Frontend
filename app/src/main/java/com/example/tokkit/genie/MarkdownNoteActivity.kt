@@ -48,7 +48,7 @@ class MarkdownNoteActivity : AppCompatActivity() {
         // 마크다운 내용 표시
         markwon.setMarkdown(binding.tvMarkdownContent, markdownContent)
 
-        // 편집 모드로 전환f
+        // 편집 모드로 전환
         binding.btnEdit.setOnClickListener {
             binding.tvMarkdownContent.visibility = View.GONE
             binding.markdownEditor.visibility = View.VISIBLE
