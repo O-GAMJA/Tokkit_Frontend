@@ -6,6 +6,7 @@ import com.example.tokkit.data.remote.model.EmojiRequest
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.data.remote.model.NoteListResult
 import com.example.tokkit.data.remote.model.PaginationInfo
+import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.util.RetrofitClient
 
 class NoteRepository {
@@ -52,6 +53,22 @@ class NoteRepository {
         }
     }
 
+    suspend fun fetchSimilarNotes(noteId: String, size: Int = 5): List<SimilarNoteItem> {
+        Log.d("NoteRepository", "fetchSimilarNotes() called - noteId: $noteId")
+        return try {
+            val response = api.getSimilarNotes(noteId, size)
+            Log.d("NoteRepository", "API response: ${response.result.noteSearchResults.size} items")
+            if (response.isSuccess) {
+                response.result.noteSearchResults
+            } else {
+                Log.e("NoteRepository", "API 실패: ${response.message}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("NoteRepository", "유사 노트 API 호출 실패", e)
+            emptyList()
+        }
+    }
 
 
 }

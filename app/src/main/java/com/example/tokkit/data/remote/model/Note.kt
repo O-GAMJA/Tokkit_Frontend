@@ -25,6 +25,25 @@ data class PaginationInfo(
     val isLast: Boolean
 )
 
+data class SimilarNoteResponse(
+    val noteSearchResults: List<SimilarNoteItem>
+)
+
+data class SimilarNoteItem(
+    val noteId: String,
+    val memberInfo: MemberInfo,
+    val noteTitle: String,
+    val noteSnippet: String,
+    val noteImageUrl: String?,
+    val tags: List<String>,
+    val score: Double
+)
+
+data class MemberInfo(
+    val memberId: Long,
+    val nickname: String,
+    val imageUrl: String?
+)
 
 data class EmojiStatus(
     val count: Map<String, Int>,

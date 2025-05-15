@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tokkit.data.remote.model.Note
+import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.data.remote.repository.NoteRepository
 import kotlinx.coroutines.launch
 
@@ -103,7 +104,14 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    private val _similarNotes = MutableLiveData<List<SimilarNoteItem>>()
+    val similarNotes: LiveData<List<SimilarNoteItem>> get() = _similarNotes
 
+    fun loadSimilarNotes(noteId: String) {
+        viewModelScope.launch {
+            _similarNotes.value = repository.fetchSimilarNotes(noteId)
+        }
+    }
 
 
 }
