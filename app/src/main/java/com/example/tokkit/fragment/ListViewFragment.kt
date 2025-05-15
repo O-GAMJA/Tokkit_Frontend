@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.NoteViewModel
 import com.example.tokkit.databinding.FragmentListViewBinding
 import com.example.tokkit.SearchDetailActivity
@@ -23,12 +24,15 @@ class ListViewFragment : Fragment() {
     private val binding get() = _binding!!
     private val noteViewModel: NoteViewModel by activityViewModels()
     private lateinit var adapter: NoteAdapter
+    private var currentPage: Int = 0
 
     private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val deleted = result.data?.getBooleanExtra("noteDeleted", false) ?: false
-            if (deleted) {
-                noteViewModel.loadNotes(1L) // 실사용자 ID로 교체 가능
+            val modified = result.data?.getBooleanExtra("noteModified", false) ?: false
+
+            if (deleted || modified) {
+                noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
             }
         }
     }
@@ -64,8 +68,23 @@ class ListViewFragment : Fragment() {
             markwon = markwon
         )
 
-        binding.recyclerListView.layoutManager = LinearLayoutManager(requireContext())
+        val layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerListView.layoutManager = layoutManager
         binding.recyclerListView.adapter = adapter
+
+        binding.recyclerListView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val totalItemCount = layoutManager.itemCount
+                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                if (lastVisibleItem + 3 >= totalItemCount) {
+                    // 현재 리스트의 끝 근처에 도달했을 때 다음 페이지 요청
+                    noteViewModel.loadMoreNotes(memberId = 1L)
+                }
+            }
+        })
     }
 
     private fun observeViewModel() {

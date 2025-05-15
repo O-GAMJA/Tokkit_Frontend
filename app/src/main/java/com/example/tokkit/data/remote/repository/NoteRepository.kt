@@ -4,28 +4,29 @@ import android.util.Log
 import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.data.remote.model.EmojiRequest
 import com.example.tokkit.data.remote.model.Note
+import com.example.tokkit.data.remote.model.NoteListResult
+import com.example.tokkit.data.remote.model.PaginationInfo
 import com.example.tokkit.util.RetrofitClient
 
 class NoteRepository {
     private val api: NoteApiService = RetrofitClient.noteApi
 
-    suspend fun getNotes(memberId: Long): List<Note> {
+    suspend fun getNotes(memberId: Long, page: Int, size: Int): NoteListResult {
         return try {
-            val response = api.getAllNotes(memberId)
-            Log.d("NoteRepository", "서버 응답: $response")
-            if (response.isSuccess && response.result != null) {
-                Log.d("NoteRepository", "파싱 성공: ${response.result.size}")
-                return response.result
+            val response = api.getAllNotes(memberId, page, size)
+            if (response.isSuccess) {
+                Log.d("NoteRepository", "파싱 성공: ${response.result.notes.size}")
+                response.result
             } else {
-                Log.d("NoteRepository", "파싱 실패 또는 result가 null")
-                return emptyList()
+                Log.e("NoteRepository", "API 실패: ${response.message}")
+                NoteListResult(emptyList(), PaginationInfo(page, size, 0, 0, true))
             }
-
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+            Log.e("NoteRepository", "예외 발생", e)
+            NoteListResult(emptyList(), PaginationInfo(page, size, 0, 0, true))
         }
     }
+
 
     suspend fun getNoteById(noteId: String): Note? {
         return try {
