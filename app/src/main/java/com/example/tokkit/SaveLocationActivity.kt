@@ -1,20 +1,21 @@
 package com.example.tokkit
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
 import com.example.tokkit.databinding.ActivitySavelocationBinding
-
-// SaveLocationActivity.kt 수정
+import com.example.tokkit.databinding.DialogAddFolderBinding
 
 class SaveLocationActivity : AppCompatActivity() {
 
@@ -27,6 +28,10 @@ class SaveLocationActivity : AppCompatActivity() {
     private var selectedFolderPath: MutableList<String> = mutableListOf()
     // 노트 제목 (Intent에서 받은 경우 사용)
     private var noteTitle: String? = null
+
+    // 선택된 폴더 컨테이너와 확장 아이콘을 저장
+    private var selectedFolderContainer: LinearLayout? = null
+    private var selectedFolderExpandIcon: ImageView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,14 +65,75 @@ class SaveLocationActivity : AppCompatActivity() {
             finish()
         }
 
+        // 폴더 추가 버튼
+        binding.btnAddFolder.setOnClickListener {
+            if (selectedFolderPath.isEmpty()) {
+                // 선택된 폴더가 없으면 최상위 폴더 추가
+                showAddFolderDialog(null, null)
+            } else {
+                // 선택된 폴더가 있으면 해당 폴더 하위에 추가
+                showAddFolderDialog(selectedFolderContainer, selectedFolderPath)
+            }
+        }
+
         // 폴더 구조 설정
         setupFolderStructure()
+    }
+
+    private fun showAddFolderDialog(parentContainer: LinearLayout?, parentPath: List<String>?) {
+        val dialogBinding = DialogAddFolderBinding.inflate(LayoutInflater.from(this))
+        val builder = AlertDialog.Builder(this)
+        builder.setView(dialogBinding.root)
+
+        // 다이얼로그 제목 설정
+        if (parentPath != null && parentPath.isNotEmpty()) {
+            val parentFolderName = parentPath.last()
+            dialogBinding.dialogTitle.text = "'$parentFolderName' 하위에 폴더 추가"
+        } else {
+            dialogBinding.dialogTitle.text = "새 폴더 추가"
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+
+        // 취소 버튼
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // 추가 버튼
+        dialogBinding.btnAdd.setOnClickListener {
+            val folderName = dialogBinding.etFolderName.text.toString().trim()
+            if (folderName.isNotEmpty()) {
+                if (parentContainer != null && parentPath != null) {
+                    // 선택된 폴더 하위에 추가
+                    addSubFolderToSelected(folderName, parentContainer, parentPath)
+                } else {
+                    // 최상위 레벨에 추가
+                    addMainFolder(folderName, emptyList())
+                }
+                dialog.dismiss()
+                Toast.makeText(this, "폴더가 추가되었습니다", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun addSubFolderToSelected(folderName: String, parentContainer: LinearLayout, parentPath: List<String>) {
+        // 하위 폴더 생성 및 추가
+        val newFolder = FolderItem(folderName, emptyList())
+        addSubFolder(newFolder, parentContainer, ArrayList(parentPath))
+
+        // 부모 폴더가 접혀있다면 펼치기
+        parentContainer.visibility = View.VISIBLE
+        selectedFolderExpandIcon?.setImageResource(R.drawable.ic_collapse)
     }
 
     private fun setupFolderStructure() {
         navigationContainer = binding.folderContainer
 
-        // 데이터 통신 구조 폴더, 하위 폴더
+        // 기존 폴더 구조
         addMainFolder("데이터 통신", listOf(
             FolderItem("TCP/IP", emptyList())
         ))
@@ -115,7 +181,7 @@ class SaveLocationActivity : AppCompatActivity() {
         // 폴더 선택을 위한 클릭 리스너 추가
         folderView.setOnClickListener {
             // 폴더 열기/닫기 토글
-            if (subItems.isNotEmpty()) {
+            if (subItemsContainer.childCount > 0 || subItems.isNotEmpty()) {
                 if (subItemsContainer.visibility == View.VISIBLE) {
                     subItemsContainer.visibility = View.GONE
                     expandIcon.setImageResource(R.drawable.ic_expand)
@@ -126,7 +192,7 @@ class SaveLocationActivity : AppCompatActivity() {
             }
 
             // 폴더 선택 처리
-            selectFolder(folderView, mutableListOf(folderName))
+            selectFolder(folderView, subItemsContainer, expandIcon, mutableListOf(folderName))
         }
 
         navigationContainer.addView(folderView)
@@ -147,31 +213,32 @@ class SaveLocationActivity : AppCompatActivity() {
         folderNameTv.text = folder.name
         folderIcon.setImageResource(R.drawable.ic_folder)
 
+        // 하위 항목 컨테이너 생성
+        val subItemsContainer = LinearLayout(this)
+        subItemsContainer.orientation = LinearLayout.VERTICAL
+        subItemsContainer.visibility = View.GONE
+
         // 폴더에 하위 항목이 없으면 화살표 아이콘 대신 공백 표시
         if (folder.subItems.isEmpty()) {
             expandIcon.setImageResource(android.R.color.transparent)
         } else {
             expandIcon.setImageResource(R.drawable.ic_expand)
-        }
 
-        val subItemsContainer = LinearLayout(this)
-        subItemsContainer.orientation = LinearLayout.VERTICAL
-        subItemsContainer.visibility = View.GONE
-
-        // 하위 아이템 추가 (이제 PageItem 추가는 제거)
-        for (item in folder.subItems) {
-            if (item is FolderItem) {
-                // 현재 경로에 현재 폴더 이름 추가
-                val currentPath = ArrayList(parentPath)
-                currentPath.add(folder.name)
-                addSubFolder(item, subItemsContainer, currentPath)
+            // 하위 아이템 추가
+            for (item in folder.subItems) {
+                if (item is FolderItem) {
+                    // 현재 경로에 현재 폴더 이름 추가
+                    val currentPath = ArrayList(parentPath)
+                    currentPath.add(folder.name)
+                    addSubFolder(item, subItemsContainer, currentPath)
+                }
             }
         }
 
         // 클릭 리스너: 폴더 열기/닫기 및 선택
         folderView.setOnClickListener {
             // 폴더 열기/닫기 토글
-            if (folder.subItems.isNotEmpty()) {
+            if (subItemsContainer.childCount > 0 || folder.subItems.isNotEmpty()) {
                 if (subItemsContainer.visibility == View.VISIBLE) {
                     subItemsContainer.visibility = View.GONE
                     expandIcon.setImageResource(R.drawable.ic_expand)
@@ -186,7 +253,7 @@ class SaveLocationActivity : AppCompatActivity() {
             currentPath.add(folder.name)
 
             // 폴더 선택 처리
-            selectFolder(folderView, currentPath)
+            selectFolder(folderView, subItemsContainer, expandIcon, currentPath)
         }
 
         container.addView(folderView)
@@ -194,13 +261,15 @@ class SaveLocationActivity : AppCompatActivity() {
     }
 
     // 폴더 선택 처리 메서드
-    private fun selectFolder(folderView: View, folderPath: List<String>) {
+    private fun selectFolder(folderView: View, container: LinearLayout, expandIcon: ImageView, folderPath: List<String>) {
         // 이전 선택 초기화
         selectedFolderView?.setBackgroundColor(Color.TRANSPARENT)
 
         // 현재 선택 저장
         selectedFolderView = folderView
         selectedFolderPath = folderPath.toMutableList()
+        selectedFolderContainer = container
+        selectedFolderExpandIcon = expandIcon
 
         // 선택된 폴더 강조 표시
         folderView.setBackgroundColor(ContextCompat.getColor(this, R.color.main))
