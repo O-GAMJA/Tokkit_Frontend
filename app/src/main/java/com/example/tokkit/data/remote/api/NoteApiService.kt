@@ -5,6 +5,7 @@ import com.example.tokkit.data.remote.model.EmojiRequest
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.data.remote.model.NoteCreateRequest
 import com.example.tokkit.data.remote.model.NoteCreateResponse
+import com.example.tokkit.data.remote.model.NoteListResult
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -14,14 +15,16 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.HTTP
+import retrofit2.http.Query
 
 interface NoteApiService {
     // 회원의 모든 노트 조회 api
     @GET("/notes/{memberId}/all")
     suspend fun getAllNotes(
-        @Path("memberId") memberId: Long
-    ): ApiResponse<List<Note>>
-
+        @Path("memberId") memberId: Long,
+        @Query("page") page: Int,
+        @Query("size") size: Int
+    ): ApiResponse<NoteListResult>
 
     // 노트 상세 조회 api
     @GET("/notes/{noteId}")

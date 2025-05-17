@@ -21,20 +21,55 @@ class NoteViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> get() = _error
 
-    fun loadNotes(memberId: Long) {
+    private val _isLastPage = MutableLiveData<Boolean>()
+    val isLastPage: LiveData<Boolean> get() = _isLastPage
+
+    private var currentPage = 0
+    private val pageSize = 10
+    private var isLoadingPage = false
+
+    fun loadNotes(memberId: Long, page: Int= 0, size: Int = 10) {
         _isLoading.value = true
-        Log.d("NoteViewModel", "loadNotes 시작 - memberId: $memberId")
+        currentPage = page
+        Log.d("NoteViewModel", "loadNotes 시작 - memberId: $memberId, page: $page, size: $size")
 
         viewModelScope.launch {
             try {
-                val result = repository.getNotes(memberId)
-                Log.d("NoteViewModel", "노트 수: ${result.size}")
-                _notes.value = result
+                val result = repository.getNotes(memberId = memberId, page, size)
+                Log.d("NoteViewModel", "노트 수: ${result.notes.size}")
+                _notes.value = result.notes
+                _isLastPage.value = result.paginationInfo.isLast
             } catch (e: Exception) {
                 Log.e("NoteViewModel", "예외 발생: ${e.message}", e)
                 _notes.value = emptyList()
+                _error.value = e.message ?: "노트 불러오기 실패"
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun resetNotes() {
+        currentPage = 0
+        _notes.value = emptyList()
+        _isLastPage.value = false
+    }
+
+    fun loadMoreNotes(memberId: Long) {
+        if (isLoadingPage || _isLastPage.value == true) return
+
+        isLoadingPage = true
+        viewModelScope.launch {
+            try {
+                val newResult = repository.getNotes(memberId, currentPage, pageSize)
+                val currentList = _notes.value ?: emptyList()
+                _notes.value = currentList + newResult.notes
+                _isLastPage.value = newResult.paginationInfo.isLast
+                currentPage++
+            } catch (e: Exception) {
+                Log.e("NoteViewModel", "페이지 로드 실패", e)
+            } finally {
+                isLoadingPage = false
             }
         }
     }

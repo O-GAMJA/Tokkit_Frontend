@@ -12,6 +12,20 @@ data class Note(
     val tags: List<String>?
 )
 
+data class NoteListResult(
+    val notes: List<Note>,
+    val paginationInfo: PaginationInfo
+)
+
+data class PaginationInfo(
+    val page: Int,
+    val size: Int,
+    val totalElements: Int,
+    val totalPages: Int,
+    val isLast: Boolean
+)
+
+
 data class EmojiStatus(
     val count: Map<String, Int>,
     val clicked: Map<String, Boolean>
