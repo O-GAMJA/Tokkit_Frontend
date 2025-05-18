@@ -8,11 +8,11 @@
 using namespace AppUtils;
 
 // Llama3 prompt
-constexpr const std::string_view c_bot_name = "QBot";
+constexpr const std::string_view c_bot_name = "Tokkit";
 constexpr const std::string_view c_first_prompt_prefix_part_1 =
-    "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYour name is ";
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYour name is ";
 constexpr const std::string_view c_first_prompt_prefix_part_2 =
-    "and you are a helpful AI assistant. Please keep answers concise and to the point. <|eot_id|>";
+        " and you are a helpful AI assistant. Please keep answers concise and to the point. <|eot_id|>";
 constexpr const std::string_view c_prompt_prefix = "<|start_header_id|>user<|end_header_id|>\n\n";
 constexpr const std::string_view c_end_of_prompt = "<|eot_id|>";
 constexpr const std::string_view c_assistant_header = "<|start_header_id|>assistant<|end_header_id|>\n\n";

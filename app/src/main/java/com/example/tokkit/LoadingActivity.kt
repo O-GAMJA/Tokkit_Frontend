@@ -7,10 +7,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.tokkit.databinding.ActivityLoadingBinding
 import com.example.tokkit.data.remote.model.ImageGenerationRequest
+import com.example.tokkit.data.remote.model.S3UrlResponse
 import com.example.tokkit.util.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.io.File
+import java.util.UUID
 
 class LoadingActivity : AppCompatActivity() {
 
@@ -82,40 +85,91 @@ class LoadingActivity : AppCompatActivity() {
 
             while (retryCount < maxRetries) {
                 try {
+                    // 이미지 생성 API 호출
                     val api = RetrofitClient.imageApi
                     val request = ImageGenerationRequest(noteContent, style)
 
-                    Log.d("IMAGEGENERATE", "API 호출 시작 (시도 ${retryCount + 1}/$maxRetries): $request")
+                    Log.d(TAG, "이미지 생성 API 호출 시작 (시도 ${retryCount + 1}/$maxRetries): $request")
 
                     val response = api.generateImage(request)
 
-                    Log.d("IMAGEGENERATE", "API 응답: $response")
+                    Log.d(TAG, "이미지 생성 API 응답: $response")
 
                     if (response.isSuccess) {
-                        // 이미지 생성 성공
+                        // 이미지 생성 성공 - 이미지 URL 획득
                         val imageUrl = response.result.imageUrl
 
-                        // 결과 화면으로 이동
-                        val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
-                        intent.putExtra("IMAGE_URL", imageUrl)
-                        intent.putStringArrayListExtra("selectedTags", tagList)
-                        intent.putExtra("selectedPath", selectedPath)
+                        try {
+                            // S3 프리사인드 URL 발급 요청
+                            val s3Api = RetrofitClient.s3Api
+                            val uniqueFileName = "note_image_${UUID.randomUUID()}.jpg"
 
-                        // ⭐ 원본 데이터도 함께 전달
-                        intent.putExtra("MARKDOWN_CONTENT", markdownContent)
-                        intent.putExtra("CONVERSATION_TEXT", conversationText)
-                        intent.putExtra("NOTE_TITLE", noteTitle)
+                            Log.d(TAG, "S3 프리사인드 URL 요청 시작: fileType=profile, fileName=$uniqueFileName")
 
-                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
-                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
-                        Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 제목: $noteTitle")
+                            val s3Response = s3Api.getPreSignedUrl("profile", uniqueFileName)
 
-                        startActivity(intent)
-                        finish()
-                        return@launch
+                            if (s3Response.isSuccess) {
+                                // S3 URL 발급 성공
+                                val preSignedUrl = s3Response.result.preSignedUrl
+                                val imageKey = s3Response.result.imageKey
+
+                                Log.d(TAG, "S3 프리사인드 URL 발급 성공: imageKey=$imageKey")
+
+                                // 결과 화면으로 이동
+                                val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
+                                intent.putExtra("IMAGE_URL", imageUrl)
+                                intent.putExtra("PRE_SIGNED_URL", preSignedUrl)
+                                intent.putExtra("IMAGE_KEY", imageKey)
+                                intent.putStringArrayListExtra("selectedTags", tagList)
+                                intent.putExtra("selectedPath", selectedPath)
+                                intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                                intent.putExtra("CONVERSATION_TEXT", conversationText)
+                                intent.putExtra("NOTE_TITLE", noteTitle)
+
+                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
+                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
+                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 제목: $noteTitle")
+                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - S3 이미지 키: $imageKey")
+
+                                startActivity(intent)
+                                finish()
+                                return@launch
+                            } else {
+                                // S3 URL 발급 실패 - 기존 방식으로 폴백
+                                Log.e(TAG, "S3 프리사인드 URL 발급 실패: ${s3Response.message}")
+
+                                // 기존 방식으로 이미지 URL만 전달
+                                val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
+                                intent.putExtra("IMAGE_URL", imageUrl)
+                                intent.putStringArrayListExtra("selectedTags", tagList)
+                                intent.putExtra("selectedPath", selectedPath)
+                                intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                                intent.putExtra("CONVERSATION_TEXT", conversationText)
+                                intent.putExtra("NOTE_TITLE", noteTitle)
+
+                                startActivity(intent)
+                                finish()
+                                return@launch
+                            }
+                        } catch (e: Exception) {
+                            // S3 URL 요청 실패 - 기존 방식으로 폴백
+                            Log.e(TAG, "S3 URL 요청 중 예외 발생", e)
+
+                            val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
+                            intent.putExtra("IMAGE_URL", imageUrl)
+                            intent.putStringArrayListExtra("selectedTags", tagList)
+                            intent.putExtra("selectedPath", selectedPath)
+                            intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                            intent.putExtra("CONVERSATION_TEXT", conversationText)
+                            intent.putExtra("NOTE_TITLE", noteTitle)
+
+                            startActivity(intent)
+                            finish()
+                            return@launch
+                        }
                     } else {
-                        // 실패 처리
-                        Log.e("IMAGEGENERATE", "이미지 생성 실패: ${response.message}")
+                        // 이미지 생성 실패
+                        Log.e(TAG, "이미지 생성 실패: ${response.message}")
                         retryCount++
 
                         if (retryCount >= maxRetries) {
@@ -128,7 +182,7 @@ class LoadingActivity : AppCompatActivity() {
                         delay(2000) // 2초 대기 후 재시도
                     }
                 } catch (e: HttpException) {
-                    Log.e("IMAGEGENERATE", "HTTP 오류 (시도 ${retryCount + 1}/$maxRetries): ${e.code()}", e)
+                    Log.e(TAG, "HTTP 오류 (시도 ${retryCount + 1}/$maxRetries): ${e.code()}", e)
                     retryCount++
 
                     if (retryCount >= maxRetries) {
@@ -136,11 +190,10 @@ class LoadingActivity : AppCompatActivity() {
                         return@launch
                     }
 
-                    // 재시도 메시지 표시
                     binding.loadingText.text = "연결 재시도 중...\n(${retryCount}/${maxRetries})"
-                    delay(2000) // 2초 대기 후 재시도
+                    delay(2000)
                 } catch (e: Exception) {
-                    Log.e("IMAGEGENERATE", "오류 발생 (시도 ${retryCount + 1}/$maxRetries): ${e.message}", e)
+                    Log.e(TAG, "오류 발생 (시도 ${retryCount + 1}/$maxRetries): ${e.message}", e)
                     retryCount++
 
                     if (retryCount >= maxRetries) {
@@ -148,9 +201,8 @@ class LoadingActivity : AppCompatActivity() {
                         return@launch
                     }
 
-                    // 재시도 메시지 표시
                     binding.loadingText.text = "연결 재시도 중...\n(${retryCount}/${maxRetries})"
-                    delay(2000) // 2초 대기 후 재시도
+                    delay(2000)
                 }
             }
         }
@@ -177,13 +229,11 @@ class LoadingActivity : AppCompatActivity() {
             intent.putExtra("USE_DEFAULT_IMAGE", true)
 
             // 노트 내용에 따라 기본 이미지 선택
-            val noteContent = intent.getStringExtra("NOTE_CONTENT") ?: ""
             when {
-                noteContent.contains("operating system", ignoreCase = true) ->
+                markdownContent.contains("operating system", ignoreCase = true) ->
                     intent.putExtra("DEFAULT_IMAGE_TYPE", "OS")
-                noteContent.contains("network", ignoreCase = true) ->
+                markdownContent.contains("network", ignoreCase = true) ->
                     intent.putExtra("DEFAULT_IMAGE_TYPE", "NETWORK")
-                // 필요한 만큼 추가 조건 넣기
             }
 
             // 원본 데이터 전달
@@ -199,10 +249,10 @@ class LoadingActivity : AppCompatActivity() {
             finish()
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
         // 애니메이션 정리
         binding.lottieAnimationView.cancelAnimation()
     }
 }
-
