@@ -335,7 +335,8 @@ class NoteDetailsActivity : AppCompatActivity() {
         markdownContent: String,
         conversationText: String,
         isPublic: Boolean,
-        directoryName: String
+        directoryName: String,
+        directoryId: Int? = null
     ) {
         // 빈 데이터 검사 추가
         if (markdownContent.isBlank()) {

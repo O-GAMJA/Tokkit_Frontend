@@ -34,4 +34,8 @@ object RetrofitClient {
     val imageApi: ImageApiService by lazy {
         retrofit.create(ImageApiService::class.java)
     }
+
+    fun <T> createService(serviceClass: Class<T>): T {
+        return retrofit.create(serviceClass)
+    }
 }
