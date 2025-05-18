@@ -10,6 +10,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
@@ -127,12 +128,33 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
 
+        // 전체 노트 ID 로깅
+        Log.d("MainActivity", "로드된 디렉토리 트리 정보:")
+        directories.forEach { directory ->
+            logDirectoryContents(directory, "")
+        }
+
         // 최상위 디렉토리 표시
         for (directory in directories) {
             addDirectoryViewForNav(directory, navigationContainer, emptyList())
         }
     }
 
+    // 디렉토리 내용을 재귀적으로 로깅하는 함수
+    private fun logDirectoryContents(directory: Directory, indent: String) {
+        Log.d("MainActivity", "${indent}디렉토리: ${directory.name} (ID: ${directory.directory_id})")
+
+        // 노트 정보 로깅
+        directory.notes.forEachIndexed { index, note ->
+            val noteId = note.note_id ?: note.id
+            Log.d("MainActivity", "${indent}  - 노트 ${index+1}: '${note.title ?: "(제목 없음)"}' (ID: $noteId)")
+        }
+
+        // 하위 디렉토리 정보 로깅 (재귀 호출)
+        directory.children.forEach { childDir ->
+            logDirectoryContents(childDir, "$indent  ")
+        }
+    }
     private fun addDirectoryViewForNav(directory: Directory, container: LinearLayout, parentPath: List<String>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, container, false)
         val folderNameTv = folderView.findViewById<TextView>(R.id.tvFolderName)
@@ -166,7 +188,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             // 노트 항목 추가
             for (note in directory.notes) {
-                addPageViewForNav(note.title, note.id, subItemsContainer, parentPath.size + 1)
+                val noteId = note.note_id ?: note.id
+                addPageViewForNav(note.title, noteId, subItemsContainer, parentPath.size + 1)
             }
 
             // 하위 디렉토리 추가
@@ -193,12 +216,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         container.addView(subItemsContainer)
     }
 
-    private fun addPageViewForNav(pageName: String, pageId: String, container: LinearLayout, indentLevel: Int) {
+    private fun addPageViewForNav(pageTitle: String?, noteId: String?, container: LinearLayout, indentLevel: Int) {
         val pageView = layoutInflater.inflate(R.layout.item_page, container, false)
         val pageNameTv = pageView.findViewById<TextView>(R.id.tvPageName)
         val pageIcon = pageView.findViewById<ImageView>(R.id.ivPageIcon)
 
-        pageNameTv.text = pageName
+        // null 처리
+        pageNameTv.text = pageTitle ?: "(제목 없음)"
         pageIcon.setImageResource(R.drawable.ic_page)
 
         // 들여쓰기 설정
@@ -209,16 +233,29 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // 노트 클릭 시 상세 화면으로 이동
         pageView.setOnClickListener {
-            val intent = Intent(this, SearchDetailActivity::class.java)
-            intent.putExtra("NOTE_ID", pageId)
-            startActivity(intent)
+            // 드로어 닫기
             binding.drawerLayout.closeDrawer(GravityCompat.START)
+
+            if (noteId != null) {
+                // 선택된 노트 ID 로그 출력
+                Log.d("MainActivity", "선택된 노트 ID: $noteId")
+
+                try {
+                    // 노트 상세 화면으로 이동
+                    val intent = Intent(this, SearchDetailActivity::class.java)
+                    intent.putExtra("NOTE_ID", noteId)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "상세 화면 이동 중 오류", e)
+                    Toast.makeText(this, "페이지를 열 수 없습니다", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "이 항목은 조회할 수 없습니다", Toast.LENGTH_SHORT).show()
+            }
         }
 
         container.addView(pageView)
     }
-
-
     private fun addMainFolder(folderName: String, subItems: List<Any>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, navigationContainer, false)
         val folderNameTv = folderView.findViewById<TextView>(R.id.tvFolderName)

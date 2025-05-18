@@ -2,6 +2,7 @@ package com.example.tokkit.data.remote.model
 
 data class Note(
     val id: String,
+    val note_id: String?,
     val title: String,
     val content: String?,
     val imageUrl: String?,
