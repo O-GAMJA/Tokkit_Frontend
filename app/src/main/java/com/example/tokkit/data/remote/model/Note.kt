@@ -53,6 +53,7 @@ data class NoteCreateRequest(
     val content: String,
     val isPublic: Boolean,
     val directoryName: String,
+    val directoryId: Int? = null,
     val imageUrl: String,
     val conversationLog: String,
     val stage: String = "STAGE0"
@@ -79,4 +80,18 @@ data class ImageGenerationResponse(
 
 data class ImageResult(
     val imageUrl: String
+)
+
+data class DirectoryTreeResponse(
+    val isSuccess: Boolean,
+    val code: String,
+    val message: String,
+    val result: List<Directory>
+)
+
+data class Directory(
+    val name: String,
+    val notes: List<Note>,
+    val children: List<Directory>,
+    val directory_id: Int
 )
