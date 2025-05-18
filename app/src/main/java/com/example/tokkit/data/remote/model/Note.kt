@@ -53,12 +53,12 @@ data class NoteCreateRequest(
     val title: String,
     val content: String,
     val isPublic: Boolean,
-    val directoryName: String,
     val directoryId: Int? = null,
-    val imageUrl: String,
+    val bannerImageKey: String,
     val conversationLog: String,
-    val stage: String = "STAGE0"
-    )
+    val stage: String = "STAGE0",
+    val tags: List<String>? = null,
+)
 
 data class NoteCreateResponse(
     val total_note_chunks: Int,
@@ -95,4 +95,9 @@ data class Directory(
     val notes: List<Note>,
     val children: List<Directory>,
     val directory_id: Int
+)
+
+data class S3UrlResponse(
+    val preSignedUrl: String,
+    val imageKey: String
 )

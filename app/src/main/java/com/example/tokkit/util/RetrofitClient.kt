@@ -2,6 +2,7 @@ package com.example.tokkit.util
 
 import com.example.tokkit.data.remote.api.ImageApiService
 import com.example.tokkit.data.remote.api.NoteApiService
+import com.example.tokkit.data.remote.api.S3ApiService
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -37,5 +38,9 @@ object RetrofitClient {
 
     fun <T> createService(serviceClass: Class<T>): T {
         return retrofit.create(serviceClass)
+    }
+
+    val s3Api: S3ApiService by lazy {
+        retrofit.create(S3ApiService::class.java)
     }
 }
