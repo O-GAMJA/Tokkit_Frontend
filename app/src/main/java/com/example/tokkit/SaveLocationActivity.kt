@@ -170,14 +170,11 @@ class SaveLocationActivity : AppCompatActivity() {
         }
 
         // 들여쓰기 설정 (하위 폴더인 경우)
-        if (parentPath.isNotEmpty()) {
-            val params = folderView.layoutParams as? LinearLayout.LayoutParams ?: LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.marginStart = 24.dpToPx()
-            folderView.layoutParams = params
-        }
+        val indentLevel = parentPath.size // 깊이 레벨
+        val params = folderView.layoutParams as? LinearLayout.LayoutParams
+            ?: LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        params.marginStart = (24 * indentLevel).dpToPx()
+        folderView.layoutParams = params
 
         // 폴더에 하위 항목이 없으면 화살표 아이콘 대신 공백 표시
         if (!hasChildren) {
@@ -386,8 +383,10 @@ class SaveLocationActivity : AppCompatActivity() {
         val folderIcon = folderView.findViewById<ImageView>(R.id.ivFolderIcon)
 
         // 들여쓰기를 위해 마진 추가
-        val params = folderView.layoutParams as LinearLayout.LayoutParams
-        params.marginStart = 24.dpToPx()
+        val indentLevel = parentPath.size // 부모 경로의 길이가 깊이 레벨
+        val params = folderView.layoutParams as? LinearLayout.LayoutParams
+            ?: LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        params.marginStart = (24 * indentLevel).dpToPx() // 깊이에 비례하여 마진 설정
         folderView.layoutParams = params
 
         folderNameTv.text = folder.name
