@@ -6,6 +6,7 @@ import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.data.remote.model.NoteCreateRequest
 import com.example.tokkit.data.remote.model.NoteCreateResponse
 import com.example.tokkit.data.remote.model.NoteListResult
+import com.example.tokkit.data.remote.model.SimilarNoteResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -43,6 +44,13 @@ interface NoteApiService {
         @Path("noteId") noteId: String,
         @Body request: Map<String, @JvmSuppressWildcards Any?>
     ): Response<ApiResponse<Unit>>
+
+    // 유사한 노트 조회
+    @GET("/search/similarNotes")
+    suspend fun getSimilarNotes(
+        @Query("noteId") noteId: String,
+        @Query("size") size: Int = 5
+    ): ApiResponse<SimilarNoteResponse>
 
     // 이모지 추가
     @POST("/notes/{noteId}/emoji")
