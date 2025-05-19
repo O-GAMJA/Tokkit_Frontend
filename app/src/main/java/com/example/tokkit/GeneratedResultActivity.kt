@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -167,15 +168,45 @@ class GeneratedResultActivity : AppCompatActivity() {
 
         // 다시 생성하기 버튼
         binding.regenerateButton.setOnClickListener {
+            val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT") ?: ""
+            val conversationText = intent.getStringExtra("CONVERSATION_TEXT") ?: ""
+            var noteTitle = intent.getStringExtra("NOTE_TITLE") ?: ""
+
+            // 로그 추가 - 전달할 데이터 검증
+            Log.d(TAG, "재생성 시작 - 전달할 데이터:")
+            Log.d(TAG, "제목: $noteTitle")
+            Log.d(TAG, "재생성: LoadingActivity로 제목 전달: $noteTitle")
+
+            Log.d(TAG, "마크다운 내용 길이: ${markdownContent.length}")
+            Log.d(TAG, "대화 내용 길이: ${conversationText.length}")
+
+            // 데이터가 비어있는지 확인
+            if (markdownContent.isBlank()) {
+                Log.e(TAG, "마크다운 내용이 비어있어 재생성할 수 없습니다")
+                Toast.makeText(this, "재생성할 노트 내용이 없습니다", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (noteTitle.isBlank()) {
+                Log.e(TAG, "노트 제목이 비어있어 재생성할 수 없습니다")
+                // 제목이 비어있으면 기본값 설정
+                noteTitle = "새 노트"
+            }
+
             val intent = Intent(this, LoadingActivity::class.java)
             intent.putStringArrayListExtra("selectedTags", tagList)
             intent.putExtra("selectedPath", selectedPath)
             intent.putExtra("REGENERATE", true)
 
-            // 원본 데이터도 함께 전달
+            // 원본 데이터 전달 - 확실히 전달되도록 확인
+            intent.putExtra("NOTE_CONTENT", markdownContent) // 이미지 생성에 사용되는 내용
             intent.putExtra("MARKDOWN_CONTENT", markdownContent)
             intent.putExtra("CONVERSATION_TEXT", conversationText)
             intent.putExtra("NOTE_TITLE", noteTitle)
+
+            Log.d(TAG, "LoadingActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
+            Log.d(TAG, "LoadingActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
+            Log.d(TAG, "LoadingActivity로 데이터 전달 - 제목: $noteTitle")
 
             startActivity(intent)
             finish()
