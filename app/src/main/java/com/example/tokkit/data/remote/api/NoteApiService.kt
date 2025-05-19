@@ -1,12 +1,6 @@
 package com.example.tokkit.data.remote.api
 
-import com.example.tokkit.data.remote.model.ApiResponse
-import com.example.tokkit.data.remote.model.EmojiRequest
-import com.example.tokkit.data.remote.model.Note
-import com.example.tokkit.data.remote.model.NoteCreateRequest
-import com.example.tokkit.data.remote.model.NoteCreateResponse
-import com.example.tokkit.data.remote.model.NoteListResult
-import com.example.tokkit.data.remote.model.SimilarNoteResponse
+import com.example.tokkit.data.remote.model.*
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -65,6 +59,15 @@ interface NoteApiService {
         @Path("noteId") noteId: String,
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
+
+    // 뎃글 목록 조회
+    @GET("/comments/{noteId}")
+    suspend fun getComments(
+        @Path("noteId") noteId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): ApiResponse<CommentPageResponse>
+
 
     // 노트 저장 api
     @POST("/notes")
