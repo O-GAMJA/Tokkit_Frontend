@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
+
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.data.remote.api.NoteApiService
@@ -30,6 +31,11 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.File
 import java.util.UUID
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 
 
 class NoteDetailsActivity : AppCompatActivity() {
@@ -147,75 +153,213 @@ class NoteDetailsActivity : AppCompatActivity() {
     }
 
     private fun setupImageDisplay(s3ImageKey: String?, imageUrl: String?) {
+        Log.d("NoteDetails", "이미지 표시 시작 - S3 키: $s3ImageKey, URL: $imageUrl")
+
+        // 이미지 업로드 상태에서 넘어왔는지 확인
+        val showImageUploadButton = intent.getBooleanExtra("SHOW_IMAGE_UPLOAD_BUTTON", false)
+
+        if (showImageUploadButton) {
+            // 이미지 업로드 버튼 상태로 표시
+            Log.d("NoteDetails", "이미지 업로드 버튼 표시")
+            binding.imageUpload.setImageResource(R.drawable.image_upload)
+            applyImageLayoutSettings()
+            return
+        }
+
+        // 이미지 표시 우선순위:
+        // 1. S3 이미지 키
+        // 2. 이미지 파일 경로
+        // 3. 이미지 URL
+        // 4. 바이트 배열
+
+        var imageLoaded = false
+
         // 1. S3 이미지 키가 있는 경우
         if (!s3ImageKey.isNullOrEmpty()) {
-            Log.d("NoteDetails", "S3 이미지 키를 사용하여 이미지 표시: $s3ImageKey")
+            Log.d("NoteDetails", "S3 이미지 키를 사용하여 이미지 표시 시도: $s3ImageKey")
 
-            // S3 이미지 URL 구성 - 실제 사용되는 URL 형식으로 변경 필요
+            // S3 이미지 URL 구성
             val fullImageUrl = "http://52.79.86.14:8080/image/$s3ImageKey"
 
             Glide.with(this)
                 .load(fullImageUrl)
+                .error(R.drawable.ic_default_image) // 오류 시 기본 이미지 표시
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("NoteDetails", "S3 이미지 로드 실패: ${e?.message}", e)
+                        // 다음 방법으로 시도
+                        loadImageFromPath()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("NoteDetails", "S3 이미지 로드 성공")
+                        imageLoaded = true
+                        applyImageLayoutSettings()
+                        return false
+                    }
+                })
                 .into(binding.imageUpload)
 
-            applyImageLayoutSettings()
-            return
+            if (imageLoaded) return
         }
 
         // 2. 이미지 파일 경로가 있는 경우
+        loadImageFromPath()
+    }
+
+    private fun loadImageFromPath() {
         val imageFilePath = intent.getStringExtra("IMAGE_FILE_PATH")
+        var imageLoaded = false
+
         if (!imageFilePath.isNullOrEmpty()) {
             val imageFile = File(imageFilePath)
             if (imageFile.exists()) {
-                Log.d("NoteDetails", "로컬 이미지 파일 표시: $imageFilePath")
+                Log.d("NoteDetails", "로컬 이미지 파일 표시 시도: $imageFilePath")
 
                 Glide.with(this)
                     .load(imageFile)
+                    .error(R.drawable.ic_default_image)
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.e("NoteDetails", "로컬 파일 로드 실패: ${e?.message}", e)
+                            // 다음 방법으로 시도
+                            loadImageFromUrl()
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: Drawable?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            dataSource: DataSource?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.d("NoteDetails", "로컬 파일 로드 성공")
+                            imageLoaded = true
+                            applyImageLayoutSettings()
+                            return false
+                        }
+                    })
                     .into(binding.imageUpload)
 
-                applyImageLayoutSettings()
-                return
+                if (imageLoaded) return
             } else {
                 Log.e("NoteDetails", "이미지 파일이 존재하지 않음: $imageFilePath")
+                // 다음 방법으로 진행
             }
         }
 
         // 3. 이미지 URL이 있는 경우
+        loadImageFromUrl()
+    }
+
+    private fun loadImageFromUrl() {
+        val imageUrl = intent.getStringExtra("IMAGE_URL")
+        var imageLoaded = false
+
         if (!imageUrl.isNullOrEmpty()) {
-            Log.d("NoteDetails", "이미지 URL 사용: $imageUrl")
+            Log.d("NoteDetails", "이미지 URL 사용 시도: $imageUrl")
 
             Glide.with(this)
                 .load(imageUrl)
+                .error(R.drawable.ic_default_image)
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("NoteDetails", "URL 이미지 로드 실패: ${e?.message}", e)
+                        // 다음 방법으로 시도
+                        loadImageFromByteArray()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("NoteDetails", "URL 이미지 로드 성공")
+                        imageLoaded = true
+                        applyImageLayoutSettings()
+                        return false
+                    }
+                })
                 .into(binding.imageUpload)
 
-            applyImageLayoutSettings()
-            return
+            if (imageLoaded) return
         }
 
-        // 4. byteArray가 있는 경우 (이전 방식)
+        // 4. byteArray가 있는 경우
+        loadImageFromByteArray()
+    }
+
+    private fun loadImageFromByteArray() {
         val byteArray = intent.getByteArrayExtra("generatedImage")
+
         if (byteArray != null) {
             try {
-                Log.d("NoteDetails", "비트맵 바이트 배열 사용")
+                Log.d("NoteDetails", "비트맵 바이트 배열 사용 시도")
                 val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
                 binding.imageUpload.setImageBitmap(bitmap)
                 applyImageLayoutSettings()
+                Log.d("NoteDetails", "바이트 배열 이미지 로드 성공")
             } catch (e: Exception) {
                 Log.e("NoteDetails", "비트맵 디코딩 실패", e)
+                // 이미지 업로드 버튼으로 설정
+                binding.imageUpload.setImageResource(R.drawable.image_upload)
+                applyImageLayoutSettings()
             }
+        } else {
+            // 모든 방법이 실패한 경우 이미지 업로드 버튼으로 설정
+            Log.d("NoteDetails", "이미지를 찾을 수 없어 이미지 업로드 버튼 사용")
+            binding.imageUpload.setImageResource(R.drawable.image_upload)
+            applyImageLayoutSettings()
         }
     }
 
     private fun applyImageLayoutSettings() {
+        // SHOW_IMAGE_UPLOAD_BUTTON 플래그 확인
+        val showImageUploadButton = intent.getBooleanExtra("SHOW_IMAGE_UPLOAD_BUTTON", false)
+
         // 이미지 레이아웃 설정 적용
         val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
-        layoutParams.width = dpToPx(300)
-        layoutParams.height = dpToPx(300)
+
+        if (showImageUploadButton) {
+            // 이미지 업로드 버튼 모드
+            layoutParams.width = dpToPx(180)  // XML에서 정의된 크기
+            layoutParams.height = dpToPx(180)
+            binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_INSIDE // 중앙 정렬
+        } else {
+            // 실제 이미지 표시 모드
+            layoutParams.width = dpToPx(300)
+            layoutParams.height = dpToPx(300)
+            binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP // 크롭
+        }
+
         layoutParams.topMargin = dpToPx(0)
         binding.imageUpload.layoutParams = layoutParams
-
-        // 스케일 설정
-        binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
         binding.imageUpload.adjustViewBounds = true
         binding.imageUpload.requestLayout()
     }

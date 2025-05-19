@@ -28,6 +28,7 @@ import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.Markwon
+import io.noties.markwon.ext.tables.TablePlugin
 import kotlinx.coroutines.launch
 
 class SearchDetailActivity : AppCompatActivity() {
@@ -78,7 +79,9 @@ class SearchDetailActivity : AppCompatActivity() {
                 binding.tvTitle.text = note.title ?: "(제목 없음)"
 
                 // 마크다운 내용
-                val markwon = Markwon.create(this)
+                val markwon = Markwon.builder(this)
+                    .usePlugin(TablePlugin.create(this))
+                    .build()
                 val safeContent = note.content ?: ""
                 markwon.setMarkdown(binding.tvContent, safeContent)
 

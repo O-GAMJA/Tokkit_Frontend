@@ -31,11 +31,13 @@ class LoadingActivity : AppCompatActivity() {
         val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT") ?: ""
         val conversationText = intent.getStringExtra("CONVERSATION_TEXT") ?: ""
         val noteTitle = intent.getStringExtra("NOTE_TITLE")
+        val isRegenerate = intent.getBooleanExtra("REGENERATE", false) // 재생성 플래그 읽기
 
         // 로그 추가
         Log.d(TAG, "LoadingActivity에서 받은 데이터 - 마크다운: ${markdownContent.take(50)}...")
         Log.d(TAG, "LoadingActivity에서 받은 데이터 - 대화: ${conversationText.take(50)}...")
         Log.d(TAG, "LoadingActivity에서 받은 데이터 - 제목: $noteTitle")
+        Log.d(TAG, "재생성 모드: $isRegenerate")
 
         // 애니메이션 시작
         binding.lottieAnimationView.playAnimation()
@@ -43,8 +45,17 @@ class LoadingActivity : AppCompatActivity() {
         // 태그 기반 스타일 생성
         val style = generateStyleFromTags(tagList)
 
+        // 재생성 시 다른 스타일 사용
+        val finalStyle = if (isRegenerate) {
+            "$style, different style"  // 재생성 시 다른 결과가 나오도록 스타일 변경
+        } else {
+            style
+        }
+
+        Log.d(TAG, "사용할 스타일: $finalStyle")
+
         // API 호출
-        generateImage(noteContent, style, tagList, selectedPath, markdownContent, conversationText, noteTitle)
+        generateImage(noteContent, finalStyle, tagList, selectedPath, markdownContent, conversationText, noteTitle)
     }
 
     private fun generateStyleFromTags(tags: ArrayList<String>): String {
@@ -76,6 +87,21 @@ class LoadingActivity : AppCompatActivity() {
         conversationText: String,
         noteTitle: String?
     ) {
+        // 프롬프트에 제목 추가
+        val titleContent = if (!noteTitle.isNullOrBlank()) {
+            "Title: $noteTitle\n"
+        } else {
+            ""
+        }
+
+        // 최종 프롬프트(제목 + 내용)
+        val finalContent = titleContent + noteContent.take(1000) // 너무 길지 않게 제한
+
+        Log.d(TAG, "이미지 생성에 사용할 최종 프롬프트:")
+        Log.d(TAG, "제목: $noteTitle")
+        Log.d(TAG, "내용 샘플: ${noteContent.take(100)}...")
+        Log.d(TAG, "스타일: $style")
+
         // 프로그레스 텍스트 업데이트
         binding.loadingText.text = "노트에 어울리는\n사진을 생성하고 있어요"
 
@@ -83,13 +109,32 @@ class LoadingActivity : AppCompatActivity() {
             var retryCount = 0
             val maxRetries = 3
 
+            var lastException: Exception? = null
+
             while (retryCount < maxRetries) {
                 try {
+                    Log.d(TAG, "이미지 생성 시도 ${retryCount + 1}/$maxRetries")
+                    binding.loadingText.text = "노트에 어울리는\n사진을 생성하고 있어요 (${retryCount + 1}/$maxRetries)"
+
                     // 이미지 생성 API 호출
                     val api = RetrofitClient.imageApi
-                    val request = ImageGenerationRequest(noteContent, style)
 
-                    Log.d(TAG, "이미지 생성 API 호출 시작 (시도 ${retryCount + 1}/$maxRetries): $request")
+                    // 재시도할 때마다 약간 다른 프롬프트 사용
+                    val retryContent = if (retryCount > 0) {
+                        "$finalContent (variation ${retryCount})"
+                    } else {
+                        finalContent
+                    }
+
+                    val retryStyle = if (retryCount > 0) {
+                        "$style, variation ${retryCount}"
+                    } else {
+                        style
+                    }
+
+                    val request = ImageGenerationRequest(retryContent, retryStyle)
+
+                    Log.d(TAG, "이미지 생성 API 호출 시작 (시도 ${retryCount + 1}/$maxRetries)")
 
                     val response = api.generateImage(request)
 
@@ -98,6 +143,13 @@ class LoadingActivity : AppCompatActivity() {
                     if (response.isSuccess) {
                         // 이미지 생성 성공 - 이미지 URL 획득
                         val imageUrl = response.result.imageUrl
+
+                        if (imageUrl.isNullOrEmpty()) {
+                            Log.e(TAG, "API 응답은 성공했지만 이미지 URL이 비어있음")
+                            retryCount++
+                            delay(2000)
+                            continue
+                        }
 
                         try {
                             // S3 프리사인드 URL 발급 요청
@@ -126,10 +178,8 @@ class LoadingActivity : AppCompatActivity() {
                                 intent.putExtra("CONVERSATION_TEXT", conversationText)
                                 intent.putExtra("NOTE_TITLE", noteTitle)
 
-                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
-                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
-                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - 제목: $noteTitle")
-                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 - S3 이미지 키: $imageKey")
+                                Log.d(TAG, "GeneratedResultActivity로 제목 전달: $noteTitle")
+                                Log.d(TAG, "GeneratedResultActivity로 데이터 전달 완료")
 
                                 startActivity(intent)
                                 finish()
@@ -154,6 +204,7 @@ class LoadingActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                             // S3 URL 요청 실패 - 기존 방식으로 폴백
                             Log.e(TAG, "S3 URL 요청 중 예외 발생", e)
+                            lastException = e
 
                             val intent = Intent(this@LoadingActivity, GeneratedResultActivity::class.java)
                             intent.putExtra("IMAGE_URL", imageUrl)
@@ -170,6 +221,7 @@ class LoadingActivity : AppCompatActivity() {
                     } else {
                         // 이미지 생성 실패
                         Log.e(TAG, "이미지 생성 실패: ${response.message}")
+                        lastException = Exception("API 응답 실패: ${response.message}")
                         retryCount++
 
                         if (retryCount >= maxRetries) {
@@ -183,6 +235,7 @@ class LoadingActivity : AppCompatActivity() {
                     }
                 } catch (e: HttpException) {
                     Log.e(TAG, "HTTP 오류 (시도 ${retryCount + 1}/$maxRetries): ${e.code()}", e)
+                    lastException = e
                     retryCount++
 
                     if (retryCount >= maxRetries) {
@@ -194,6 +247,7 @@ class LoadingActivity : AppCompatActivity() {
                     delay(2000)
                 } catch (e: Exception) {
                     Log.e(TAG, "오류 발생 (시도 ${retryCount + 1}/$maxRetries): ${e.message}", e)
+                    lastException = e
                     retryCount++
 
                     if (retryCount >= maxRetries) {
@@ -205,6 +259,10 @@ class LoadingActivity : AppCompatActivity() {
                     delay(2000)
                 }
             }
+
+            // 모든 재시도가 실패한 경우
+            Log.e(TAG, "모든 재시도 실패", lastException)
+            fallbackToDefaultImage(tagList, selectedPath, markdownContent, conversationText, noteTitle)
         }
     }
 
