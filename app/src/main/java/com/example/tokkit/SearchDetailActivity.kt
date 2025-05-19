@@ -371,6 +371,8 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun showCommentBottomSheet() {
         val noteId = currentNoteId ?: return
+        var currentPage = 0
+        val allComments = mutableListOf<Comment>()
 
         // 댓글 초기화
         noteViewModel.resetComments()
@@ -392,97 +394,134 @@ class SearchDetailActivity : AppCompatActivity() {
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
 
-//        // 어댑터 설정
-//        val adapter = CommentAdapter(commentList)
-//        recyclerView.adapter = adapter
-//
-//        // 댓글 수 설정
-//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-//        commentCountView.text = commentList.size.toString()
-//
-//        // 댓글 목록이 비어있는지 확인하고 적절한 View 표시
-//        if (commentList.isEmpty()) {
-//            recyclerView.visibility = View.GONE
-//            noCommentsView.visibility = View.VISIBLE
-//            Log.d("SearchDetailActivity", "Comments list is empty, showing noCommentsView")
-//        } else {
-//            recyclerView.visibility = View.VISIBLE
-//            noCommentsView.visibility = View.GONE
-//            Log.d("SearchDetailActivity", "Showing comments in RecyclerView")
-//        }
-
         val adapter = CommentAdapter(mutableListOf())
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        noteViewModel.loadComments(noteId)
-
-        noteViewModel.comments.observe(this) { commentResponses ->
-            val comments = commentResponses.map {
-                Comment(
-                    username = it.writer,
-                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
-                    content = it.content,
-                    likeCount = it.emojis["like"]?.count ?: 0
-                )
-            }
-            adapter.appendComments(comments)
-        }
-
-        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-
-        // 댓글 개수 표시
-        noteViewModel.totalCommentCount.observe(this) { count ->
-            commentCountView.text = count.toString()
-        }
-
-        // 페이징 처리
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val lastVisible = layoutManager.findLastVisibleItemPosition()
-                val total = layoutManager.itemCount
-                if (lastVisible + 2 >= total) {
-                    noteViewModel.loadNextCommentPage(noteId)
-                }
-            }
-        })
-
+//        noteViewModel.loadComments(noteId)
+//
+//        noteViewModel.comments.observe(this) { commentResponses ->
+//            val comments = commentResponses.map {
+//                Comment(
+//                    username = it.writer,
+//                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
+//                    content = it.content,
+//                    likeCount = it.emojis["like"]?.count ?: 0
+//                )
+//            }
+//            if (currentPage == 0) {
+//                adapter.updateComments(comments) // 덮어쓰기
+//            } else {
+//                adapter.appendComments(comments) // 이어붙이기
+//            }
+//        }
+//
+//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
+//
+//        // 댓글 개수 표시
+//        noteViewModel.totalCommentCount.observe(this) { count ->
+//            commentCountView.text = count.toString()
+//        }
+//
+//        // 페이징 처리
+//        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+//                val lastVisible = layoutManager.findLastVisibleItemPosition()
+//                val total = layoutManager.itemCount
+//                if (lastVisible + 2 >= total) {
+//                    noteViewModel.loadNextCommentPage(noteId)
+//                }
+//            }
+//        })
+//
 //        // 댓글 입력 버튼 이벤트
-        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
+//        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
+//        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
 //
 //        sendButton.setOnClickListener {
 //            val commentText = etComment.text.toString().trim()
 //            if (commentText.isNotEmpty()) {
-//                // 새 댓글 추가
-//                val newComment = Comment("나", "방금", commentText, 0)
-//                commentList.add(0, newComment)
-//
-//                Log.d("SearchDetailActivity", "Added new comment: $commentText")
-//                Log.d("SearchDetailActivity", "New comments count: ${commentList.size}")
-//
-//                // 어댑터 업데이트
-//                adapter.notifyItemInserted(0)
-//                recyclerView.scrollToPosition(0)
-//
-//                // 댓글 수 업데이트
-//                commentCountView.text = commentList.size.toString()
-//
-//                // 입력창 비우기
-//                etComment.text.clear()
-//
-//                // 댓글 목록이 이제 비어있지 않으므로 no comments 뷰 숨기기
-//                if (noCommentsView.visibility == View.VISIBLE) {
-//                    noCommentsView.visibility = View.GONE
-//                    recyclerView.visibility = View.VISIBLE
-//                    Log.d("SearchDetailActivity", "Hiding noCommentsView, showing RecyclerView")
-//                }
-//
-////                // 토스트 메시지로 댓글 추가 알림
-////                Toast.makeText(this, "댓글이 추가되었습니다", Toast.LENGTH_SHORT).show()
+//                noteViewModel.postComment(
+//                    noteId = currentNoteId ?: return@setOnClickListener,
+//                    content = commentText,
+//                    onSuccess = {
+//                        etComment.text.clear()
+//                        Toast.makeText(this, "댓글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
+//                    },
+//                    onFail = {
+//                        Toast.makeText(this, "댓글 등록에 실패했습니다.", Toast.LENGTH_SHORT).show()
+//                    }
+//                )
 //            }
 //        }
+
+        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
+
+        // ✅ 댓글 observe
+        noteViewModel.comments.observe(this) { commentResponses ->
+            val newComments = commentResponses.map {
+                Comment(it.writer, "방금", it.content, it.emojis["like"]?.count ?: 0)
+            }
+
+            if (currentPage == 0) allComments.clear()
+            allComments.addAll(newComments)
+
+            if (currentPage == 0) {
+                adapter.updateComments(allComments)
+            } else {
+                adapter.appendComments(newComments)
+            }
+        }
+
+        // ✅ 댓글 수 observe
+        noteViewModel.totalCommentCount.observe(this) { count ->
+            commentCountView.text = count.toString()
+        }
+
+        // ✅ 초기 댓글 로드
+        noteViewModel.loadComments(noteId, page = 0)
+
+        // ✅ 페이징 스크롤
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val lastVisible = layoutManager.findLastVisibleItemPosition()
+                val totalItemCount = layoutManager.itemCount
+
+                if (lastVisible + 2 >= totalItemCount && noteViewModel.isLastCommentPage.value != true) {
+                    currentPage++
+                    noteViewModel.loadComments(noteId, page = currentPage)
+                }
+            }
+        })
+
+        // ✅ 댓글 작성
+        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
+        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
+
+        sendButton.setOnClickListener {
+            val text = etComment.text.toString().trim()
+            if (text.isNotEmpty()) {
+                noteViewModel.postComment(
+                    noteId = noteId,
+                    content = text,
+                    onSuccess = {
+                        etComment.text.clear()
+                        Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
+
+                        // 💡 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        currentPage = 0
+                        allComments.clear()
+                        noteViewModel.resetComments()
+                        noteViewModel.loadComments(noteId, 0)
+                    },
+                    onFail = {
+                        Toast.makeText(this, "댓글 등록 실패", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
 
         // 키보드에서 전송 버튼 클릭 시 댓글 전송
         etComment.setOnEditorActionListener { _, actionId, _ ->

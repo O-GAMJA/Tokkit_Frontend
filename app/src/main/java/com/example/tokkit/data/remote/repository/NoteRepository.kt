@@ -3,6 +3,7 @@ package com.example.tokkit.data.remote.repository
 import android.util.Log
 import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.data.remote.model.CommentPageResponse
+import com.example.tokkit.data.remote.model.CommentRequest
 import com.example.tokkit.data.remote.model.EmojiRequest
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.data.remote.model.NoteListResult
@@ -61,6 +62,16 @@ class NoteRepository {
         } catch (e: Exception) {
             Log.e("NoteRepository", "댓글 조회 실패", e)
             null
+        }
+    }
+
+    suspend fun writeComment(noteId: String, content: String, parentId: Long? = null): Boolean {
+        return try {
+            val response = api.postComment(noteId, CommentRequest(content, parentId))
+            response.isSuccess
+        } catch (e: Exception) {
+            Log.e("NoteRepository", "댓글 작성 실패", e)
+            false
         }
     }
 

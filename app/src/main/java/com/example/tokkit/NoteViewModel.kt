@@ -116,8 +116,7 @@ class NoteViewModel : ViewModel() {
         viewModelScope.launch {
             val result = repository.fetchComments(noteId, page, size)
             result?.let {
-                val currentList = if (page == 0) emptyList() else comments.value ?: emptyList()
-                comments.value = currentList + it.comments
+                comments.value = it.comments
                 _totalCommentCount.value = it.totalElements
                 _isLastCommentPage.value = it.last
                 currentCommentPage = page
@@ -136,6 +135,24 @@ class NoteViewModel : ViewModel() {
         loadComments(noteId, currentCommentPage + 1, size)
     }
 
+    fun postComment(
+        noteId: String,
+        content: String,
+        parentId: Long? = null,
+        onSuccess: () -> Unit,
+        onFail: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val success = repository.writeComment(noteId, content, parentId)
+            if (success) {
+                resetComments()                     // 기존 댓글 초기화
+                loadComments(noteId, page = 0)      // 첫 페이지 강제 로드
+                onSuccess()
+            } else {
+                onFail()
+            }
+        }
+    }
 
     private val _similarNotes = MutableLiveData<List<SimilarNoteItem>>()
     val similarNotes: LiveData<List<SimilarNoteItem>> get() = _similarNotes

@@ -68,6 +68,12 @@ interface NoteApiService {
         @Query("size") size: Int = 10
     ): ApiResponse<CommentPageResponse>
 
+    // 댓글 작성
+    @POST("/comments/{noteId}")
+    suspend fun postComment(
+        @Path("noteId") noteId: String,
+        @Body commentRequest: CommentRequest
+    ): ApiResponse<Unit>
 
     // 노트 저장 api
     @POST("/notes")
