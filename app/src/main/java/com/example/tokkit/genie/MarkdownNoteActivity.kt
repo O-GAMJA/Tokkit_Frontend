@@ -8,15 +8,19 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.NoteDetailsActivity
 import com.example.tokkit.databinding.ActivityMarkdownNoteBinding
 import io.noties.markwon.Markwon
+import io.noties.markwon.editor.MarkwonEditor
+import io.noties.markwon.editor.MarkwonEditorTextWatcher
 import android.content.Intent
 import com.example.tokkit.util.MarkdownUtil
-
+import io.noties.markwon.ext.tables.TablePlugin
+import java.util.concurrent.Executors
 
 class MarkdownNoteActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMarkdownNoteBinding
     private lateinit var markwon: Markwon
+    private lateinit var editor: MarkwonEditor
     private var markdownContent: String = ""
-    private var processedContent: String = "" // 제목이 제거된 내용을 저장
+    private var processedContent: String = ""
 
     companion object {
         const val EXTRA_MARKDOWN_CONTENT = "markdown_content"
@@ -28,8 +32,22 @@ class MarkdownNoteActivity : AppCompatActivity() {
         binding = ActivityMarkdownNoteBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Markwon 초기화
-        markwon = Markwon.create(this)
+        // Markwon 초기화 - 테이블 플러그인 추가
+        markwon = Markwon.builder(this)
+            .usePlugin(TablePlugin.create(this))
+            .build()
+
+        // Markwon 에디터 초기화
+        editor = MarkwonEditor.create(markwon)
+
+        // 마크다운 TextWatcher 적용 (실시간 하이라이팅)
+        val textWatcher = MarkwonEditorTextWatcher.withPreRender(
+            editor,
+            Executors.newCachedThreadPool(),
+            binding.markdownEditor
+        )
+
+        binding.markdownEditor.addTextChangedListener(textWatcher)
 
         // 인텐트에서 데이터 가져오기
         markdownContent = intent.getStringExtra(EXTRA_MARKDOWN_CONTENT) ?: ""
@@ -43,7 +61,12 @@ class MarkdownNoteActivity : AppCompatActivity() {
 
         // 제목이 null이거나, 비어있거나, 하드코딩된 기본값인 경우 마크다운에서 제목 추출
         if (title.isNullOrBlank() || title == "대화 요약<일단 하드코딩1>" || title == "대화 요약 하드코딩2") {
-            title = extractedTitle
+            // 볼드체 별표 제거
+            title = if (extractedTitle.contains("**")) {
+                extractedTitle.replace("**", "")
+            } else {
+                extractedTitle
+            }
         }
 
         // 로그 추가
@@ -60,7 +83,7 @@ class MarkdownNoteActivity : AppCompatActivity() {
         binding.btnEdit.setOnClickListener {
             binding.tvMarkdownContent.visibility = View.GONE
             binding.markdownEditor.visibility = View.VISIBLE
-            binding.markdownEditor.setText(processedContent) // 제목이 제거된 내용을 에디터에 설정
+            binding.markdownEditor.setText(processedContent)
             binding.btnEdit.visibility = View.GONE
             binding.btnSave.visibility = View.VISIBLE
         }
@@ -76,8 +99,16 @@ class MarkdownNoteActivity : AppCompatActivity() {
 
             // 제목이 비어있을 경우만 마크다운에서 제목 추출
             if (userTitle.isBlank()) {
-                val extractedTitle = MarkdownUtil.extractTitleFromMarkdown(editedContent)
-                binding.tvTitle.setText(extractedTitle)
+                val newExtractedTitle = MarkdownUtil.extractTitleFromMarkdown(editedContent)
+
+                // 볼드체 별표 제거
+                val finalTitle = if (newExtractedTitle.contains("**")) {
+                    newExtractedTitle.replace("**", "")
+                } else {
+                    newExtractedTitle
+                }
+
+                binding.tvTitle.setText(finalTitle)
             }
             // 그렇지 않으면 사용자가 입력한 제목 유지
 
@@ -101,8 +132,8 @@ class MarkdownNoteActivity : AppCompatActivity() {
                 processedContent
             }
 
-            // 현재 제목 가져오기
-            val currentTitle = binding.tvTitle.text.toString()
+            // 현재 제목 가져오기 - 별표 제거 확인
+            val currentTitle = binding.tvTitle.text.toString().replace("**", "")
 
             Log.d("NoteDetail", "MarkDown-> NoteDetails로 전달할 마크다운 내용: $currentMarkdownContent")
             Log.d("NoteDetail", "MarkDown-> NoteDetails로 전달할 제목: $currentTitle")
