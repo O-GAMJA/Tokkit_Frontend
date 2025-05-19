@@ -67,12 +67,15 @@ class GeneratedResultActivity : AppCompatActivity() {
         Log.d(TAG, "GeneratedResultActivity에서 받은 데이터 - 대화: ${conversationText.take(50)}...")
         Log.d(TAG, "GeneratedResultActivity에서 받은 데이터 - 제목: $noteTitle")
         Log.d(TAG, "GeneratedResultActivity에서 받은 데이터 - S3 관련: preSignedUrl=${preSignedUrl?.take(30)}..., imageKey=$imageKey")
+        val options = RequestOptions()
+            .timeout(30000)//타임아웃 30초
 
         // 이미지 로드
         if (!imageUrl.isNullOrEmpty()) {
             // 서버에서 받은 이미지 URL 사용
             Glide.with(this)
                 .load(imageUrl)
+                .apply(options)
                 .apply(RequestOptions().centerCrop())
                 .listener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(

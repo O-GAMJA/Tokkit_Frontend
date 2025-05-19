@@ -177,6 +177,8 @@ dependencies {
     // markdown
     implementation ("io.noties.markwon:core:4.6.2")
     implementation ("io.noties.markwon:editor:4.6.2")
+    implementation ("io.noties.markwon:ext-tables:4.6.2")
+
 
     // flexbox (자동 줄바꿈)
     implementation ("com.google.android.flexbox:flexbox:3.0.0")

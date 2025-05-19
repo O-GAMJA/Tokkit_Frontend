@@ -8,13 +8,17 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.NoteDetailsActivity
 import com.example.tokkit.databinding.ActivityMarkdownNoteBinding
 import io.noties.markwon.Markwon
+import io.noties.markwon.editor.MarkwonEditor
+import io.noties.markwon.editor.MarkwonEditorTextWatcher
 import android.content.Intent
 import com.example.tokkit.util.MarkdownUtil
-
+import io.noties.markwon.ext.tables.TablePlugin
+import java.util.concurrent.Executors
 
 class MarkdownNoteActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMarkdownNoteBinding
     private lateinit var markwon: Markwon
+    private lateinit var editor: MarkwonEditor
     private var markdownContent: String = ""
     private var processedContent: String = "" // 제목이 제거된 내용을 저장
 
@@ -28,8 +32,22 @@ class MarkdownNoteActivity : AppCompatActivity() {
         binding = ActivityMarkdownNoteBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Markwon 초기화
-        markwon = Markwon.create(this)
+        // Markwon 초기화 - 테이블 플러그인 추가
+        markwon = Markwon.builder(this)
+            .usePlugin(TablePlugin.create(this))
+            .build()
+
+        // Markwon 에디터 초기화
+        editor = MarkwonEditor.create(markwon)
+
+        // 마크다운 TextWatcher 적용 (실시간 하이라이팅)
+        val textWatcher = MarkwonEditorTextWatcher.withPreRender(
+            editor,
+            Executors.newCachedThreadPool(),
+            binding.markdownEditor
+        )
+
+
 
         // 인텐트에서 데이터 가져오기
         markdownContent = intent.getStringExtra(EXTRA_MARKDOWN_CONTENT) ?: ""
