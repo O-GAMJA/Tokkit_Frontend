@@ -108,6 +108,8 @@ class NoteViewModel : ViewModel() {
     val comments = MutableLiveData<List<CommentResponse>>()
     private val _isLastCommentPage = MutableLiveData<Boolean>()
     val isLastCommentPage: LiveData<Boolean> get() = _isLastCommentPage
+    private val _totalCommentCount = MutableLiveData<Int>()
+    val totalCommentCount: LiveData<Int> get() = _totalCommentCount
     private var currentCommentPage = 0
 
     fun loadComments(noteId: String, page: Int = 0, size: Int = 10) {
@@ -116,10 +118,17 @@ class NoteViewModel : ViewModel() {
             result?.let {
                 val currentList = if (page == 0) emptyList() else comments.value ?: emptyList()
                 comments.value = currentList + it.comments
+                _totalCommentCount.value = it.totalElements
                 _isLastCommentPage.value = it.last
                 currentCommentPage = page
             }
         }
+    }
+
+    fun resetComments() {
+        comments.value = emptyList()
+        _isLastCommentPage.value = false
+        currentCommentPage = 0
     }
 
     fun loadNextCommentPage(noteId: String, size: Int = 10) {

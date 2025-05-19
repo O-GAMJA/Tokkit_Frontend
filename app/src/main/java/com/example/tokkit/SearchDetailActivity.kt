@@ -367,6 +367,11 @@ class SearchDetailActivity : AppCompatActivity() {
     }
 
     private fun showCommentBottomSheet() {
+        val noteId = currentNoteId ?: return
+
+        // 댓글 초기화
+        noteViewModel.resetComments()
+
         // BottomSheetDialog 생성
         val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
@@ -380,7 +385,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // RecyclerView 설정
         val recyclerView = commentView.findViewById<RecyclerView>(R.id.rv_comments)
-        recyclerView.layoutManager = LinearLayoutManager(this)
 
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
@@ -408,8 +412,6 @@ class SearchDetailActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        val noteId = currentNoteId ?: return
-
         noteViewModel.loadComments(noteId)
 
         noteViewModel.comments.observe(this) { commentResponses ->
@@ -422,6 +424,13 @@ class SearchDetailActivity : AppCompatActivity() {
                 )
             }
             adapter.appendComments(comments)
+        }
+
+        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
+
+        // 댓글 개수 표시
+        noteViewModel.totalCommentCount.observe(this) { count ->
+            commentCountView.text = count.toString()
         }
 
         // 페이징 처리
