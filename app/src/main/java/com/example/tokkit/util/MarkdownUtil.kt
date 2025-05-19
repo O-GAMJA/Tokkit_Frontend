@@ -24,6 +24,17 @@ object MarkdownUtil {
             }
         }
 
+        // Setext 스타일 헤더 형식 찾기 (======)
+        for (i in 0 until lines.size - 1) {
+            val currentLine = lines[i].trim()
+            val nextLine = lines[i + 1].trim()
+
+            if (currentLine.isNotEmpty() && nextLine.isNotEmpty() &&
+                nextLine.matches(Regex("=+"))) {
+                return currentLine
+            }
+        }
+
         // ** 볼드체 형식 찾기
         for (line in lines) {
             val trimmedLine = line.trim()
@@ -48,18 +59,36 @@ object MarkdownUtil {
         val lines = markdown.split("\n")
         val contentBuilder = StringBuilder()
         var title = defaultTitle
-        var titleLine: String? = null
         var titleFound = false
+        var skipNextLine = false
 
         // # 헤더 형식 찾기
-        for (line in lines) {
+        for (i in lines.indices) {
+            val line = lines[i]
             val trimmedLine = line.trim()
+
+            if (skipNextLine) {
+                skipNextLine = false
+                continue
+            }
+
             if (!titleFound && trimmedLine.startsWith("# ")) {
                 title = trimmedLine.substring(2).trim()
-                titleLine = line
                 titleFound = true
                 continue
             }
+
+            // Setext 스타일 헤더 형식 찾기 (======)
+            if (!titleFound && i < lines.size - 1) {
+                val nextLine = lines[i + 1].trim()
+                if (trimmedLine.isNotEmpty() && nextLine.matches(Regex("=+"))) {
+                    title = trimmedLine
+                    titleFound = true
+                    skipNextLine = true  // 다음 줄의 === 부분도 건너뛰기
+                    continue
+                }
+            }
+
             contentBuilder.append(line).append("\n")
         }
 
