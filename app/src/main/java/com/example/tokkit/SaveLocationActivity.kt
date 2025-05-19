@@ -69,10 +69,11 @@ class SaveLocationActivity : AppCompatActivity() {
                 "\"$noteTitle\""
             }
 
+            Log.d("SaveLocation", "저장 시 선택된 디렉토리 ID: $selectedDirectoryId")
+
             val resultIntent = Intent().apply {
                 putExtra("selectedPath", resultPath)
                 putExtra("selectedDirectoryId", selectedDirectoryId)
-                // 폴더 구조 정보도 함께 전달 (필요시)
                 putStringArrayListExtra("folderStructure", ArrayList(selectedFolderPath))
             }
             setResult(RESULT_OK, resultIntent)

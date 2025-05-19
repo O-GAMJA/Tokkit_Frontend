@@ -71,6 +71,8 @@ interface NoteApiService {
 
     // 노트 저장 api
     @POST("/notes")
-    suspend fun createNote(@Body notes: List<NoteCreateRequest>): ApiResponse<NoteCreateResponse>
-
+    suspend fun createNote(
+        @Query("memberId") memberId: Long,
+        @Body notes: List<NoteCreateRequest>
+    ): ApiResponse<NoteCreateResponse>
 }

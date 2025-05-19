@@ -16,6 +16,7 @@ class MarkdownNoteActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMarkdownNoteBinding
     private lateinit var markwon: Markwon
     private var markdownContent: String = ""
+    private var processedContent: String = "" // 제목이 제거된 내용을 저장
 
     companion object {
         const val EXTRA_MARKDOWN_CONTENT = "markdown_content"
@@ -32,27 +33,34 @@ class MarkdownNoteActivity : AppCompatActivity() {
 
         // 인텐트에서 데이터 가져오기
         markdownContent = intent.getStringExtra(EXTRA_MARKDOWN_CONTENT) ?: ""
+
+        // 제목 추출 및 내용에서 제거하는 새로운 로직 적용
+        val (extractedTitle, contentWithoutTitle) = MarkdownUtil.extractTitleAndRemoveFromContent(markdownContent)
+        processedContent = contentWithoutTitle
+
+        // 인텐트에서 가져온 제목이 있는지 확인
         var title = intent.getStringExtra(EXTRA_TITLE)
 
         // 제목이 null이거나, 비어있거나, 하드코딩된 기본값인 경우 마크다운에서 제목 추출
         if (title.isNullOrBlank() || title == "대화 요약<일단 하드코딩1>" || title == "대화 요약 하드코딩2") {
-            title = MarkdownUtil.extractTitleFromMarkdown(markdownContent)
+            title = extractedTitle
         }
 
         // 로그 추가
         Log.d("MarkdownNote", "수신된 마크다운 내용: $markdownContent")
-        Log.d("MarkdownNote", "사용할 제목: $title")
+        Log.d("MarkdownNote", "추출된 제목: $title")
+        Log.d("MarkdownNote", "제목이 제거된 내용: $processedContent")
 
         binding.tvTitle.setText(title)
 
-        // 마크다운 내용 표시
-        markwon.setMarkdown(binding.tvMarkdownContent, markdownContent)
+        // 제목이 제거된 마크다운 내용 표시
+        markwon.setMarkdown(binding.tvMarkdownContent, processedContent)
 
         // 편집 모드로 전환
         binding.btnEdit.setOnClickListener {
             binding.tvMarkdownContent.visibility = View.GONE
             binding.markdownEditor.visibility = View.VISIBLE
-            binding.markdownEditor.setText(markdownContent)
+            binding.markdownEditor.setText(processedContent) // 제목이 제거된 내용을 에디터에 설정
             binding.btnEdit.visibility = View.GONE
             binding.btnSave.visibility = View.VISIBLE
         }
@@ -60,7 +68,7 @@ class MarkdownNoteActivity : AppCompatActivity() {
         // 저장 버튼
         binding.btnSave.setOnClickListener {
             val editedContent = binding.markdownEditor.text.toString()
-            markdownContent = editedContent // 업데이트된 내용 저장
+            processedContent = editedContent // 업데이트된 내용 저장
             markwon.setMarkdown(binding.tvMarkdownContent, editedContent)
 
             // 사용자가 직접 입력한 제목 유지
@@ -80,17 +88,17 @@ class MarkdownNoteActivity : AppCompatActivity() {
 
             Toast.makeText(this, "노트가 저장되었습니다", Toast.LENGTH_SHORT).show()
         }
+
         //노트 저장 버튼
         binding.btnSaveNext.setOnClickListener {
-
             val intent = Intent(this, NoteDetailsActivity::class.java)
 
             // 현재 마크다운 내용을 가져옴 (편집 모드인 경우 에디터 내용, 아닌 경우 원본 내용)
             val currentMarkdownContent = if (binding.markdownEditor.visibility == View.VISIBLE) {
                 binding.markdownEditor.text.toString()
             } else {
-                // 인텐트에서 가져오려 하지 말고, 직접 markdownContent 변수 사용
-                markdownContent
+                // 제목이 제거된 내용을 사용
+                processedContent
             }
 
             // 현재 제목 가져오기
