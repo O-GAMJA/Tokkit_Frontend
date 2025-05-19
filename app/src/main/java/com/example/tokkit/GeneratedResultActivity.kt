@@ -254,9 +254,18 @@ class GeneratedResultActivity : AppCompatActivity() {
         noteTitle: String?,
         imageKey: String
     ) {
-        // 노트 상세 화면으로 바로 이동
+        // 노트 상세 화면으로 이동
         val intent = Intent(this, NoteDetailsActivity::class.java)
-        intent.putExtra("S3_IMAGE_KEY", imageKey)  // S3 이미지 키 전달
+
+        // 이미지 식별자 전달 (우선순위 1)
+        intent.putExtra("S3_IMAGE_KEY", imageKey)
+
+        // 원본 이미지 URL도 백업으로 전달 (우선순위 3)
+        if (!imageUrl.isNullOrEmpty()) {
+            intent.putExtra("IMAGE_URL", imageUrl)
+        }
+
+        // 태그 및 경로 정보
         intent.putStringArrayListExtra("selectedTags", tagList)
         intent.putExtra("selectedPath", selectedPath)
 
@@ -266,6 +275,7 @@ class GeneratedResultActivity : AppCompatActivity() {
         intent.putExtra("NOTE_TITLE", noteTitle)
 
         Log.d(TAG, "NoteDetailsActivity로 S3 이미지 키 전달: $imageKey")
+        Log.d(TAG, "NoteDetailsActivity로 원본 이미지 URL 전달: $imageUrl")
 
         startActivity(intent)
         finish()
@@ -283,6 +293,18 @@ class GeneratedResultActivity : AppCompatActivity() {
             val drawable = binding.generatedImage.drawable
             if (drawable !is BitmapDrawable) {
                 Log.e(TAG, "drawable이 BitmapDrawable이 아님")
+
+                // 원본 이미지 URL만 전달
+                val intent = Intent(this, NoteDetailsActivity::class.java)
+                intent.putExtra("IMAGE_URL", imageUrl)
+                intent.putStringArrayListExtra("selectedTags", tagList)
+                intent.putExtra("selectedPath", selectedPath)
+                intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                intent.putExtra("CONVERSATION_TEXT", conversationText)
+                intent.putExtra("NOTE_TITLE", noteTitle)
+
+                startActivity(intent)
+                finish()
                 return
             }
 
@@ -303,40 +325,61 @@ class GeneratedResultActivity : AppCompatActivity() {
 
                 Log.d(TAG, "이미지 파일 저장 완료: ${imageFile.absolutePath}, 크기: ${imageFile.length()} 바이트")
 
-                // Intent로 이미지 파일 경로만 전달 + 원본 데이터도 함께 전달
+                // Intent로 여러 방식의 이미지 참조를 전달 (우선순위에 따라 사용)
                 val intent = Intent(this, NoteDetailsActivity::class.java)
+
+                // 우선순위 2: 파일 경로
                 intent.putExtra("IMAGE_FILE_PATH", imageFile.absolutePath)
-                intent.putExtra("IMAGE_URL", imageUrl)
+
+                // 우선순위 3: 원본 URL
+                if (!imageUrl.isNullOrEmpty()) {
+                    intent.putExtra("IMAGE_URL", imageUrl)
+                }
+
                 intent.putStringArrayListExtra("selectedTags", tagList)
                 intent.putExtra("selectedPath", selectedPath)
+
                 // 원본 데이터 추가
                 intent.putExtra("MARKDOWN_CONTENT", markdownContent)
                 intent.putExtra("CONVERSATION_TEXT", conversationText)
                 intent.putExtra("NOTE_TITLE", noteTitle)
 
-                Log.d(TAG, "NoteDetailsActivity로 데이터 전달 - 마크다운: ${markdownContent.take(50)}...")
-                Log.d(TAG, "NoteDetailsActivity로 데이터 전달 - 대화: ${conversationText.take(50)}...")
-                Log.d(TAG, "NoteDetailsActivity로 데이터 전달 - 제목: $noteTitle")
+                Log.d(TAG, "NoteDetailsActivity로 이미지 파일 경로 전달: ${imageFile.absolutePath}")
+                Log.d(TAG, "NoteDetailsActivity로 원본 이미지 URL 전달: $imageUrl")
 
                 startActivity(intent)
                 finish()
 
             } catch (e: Exception) {
                 Log.e(TAG, "이미지 파일 저장 실패", e)
-                android.widget.Toast.makeText(
-                    this,
-                    "이미지 저장에 실패했습니다: ${e.message}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+
+                // 파일 저장 실패 시 URL만 전달
+                val intent = Intent(this, NoteDetailsActivity::class.java)
+                intent.putExtra("IMAGE_URL", imageUrl)
+                intent.putStringArrayListExtra("selectedTags", tagList)
+                intent.putExtra("selectedPath", selectedPath)
+                intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+                intent.putExtra("CONVERSATION_TEXT", conversationText)
+                intent.putExtra("NOTE_TITLE", noteTitle)
+
+                startActivity(intent)
+                finish()
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "이미지 저장 과정에서 예외 발생", e)
-            android.widget.Toast.makeText(
-                this,
-                "이미지 처리 중 오류가 발생했습니다: ${e.message}",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+
+            // 오류 발생 시 URL만 전달
+            val intent = Intent(this, NoteDetailsActivity::class.java)
+            intent.putExtra("IMAGE_URL", imageUrl)
+            intent.putStringArrayListExtra("selectedTags", tagList)
+            intent.putExtra("selectedPath", selectedPath)
+            intent.putExtra("MARKDOWN_CONTENT", markdownContent)
+            intent.putExtra("CONVERSATION_TEXT", conversationText)
+            intent.putExtra("NOTE_TITLE", noteTitle)
+
+            startActivity(intent)
+            finish()
         }
     }
 }

@@ -59,6 +59,9 @@ class NoteMarkdownActivity : AppCompatActivity() {
             // TODO: 저장 로직 구현
 
             val intent = Intent(this, NoteDetailsActivity::class.java)
+            intent.putExtra("MARKDOWN_CONTENT", noteContent)
+            intent.putExtra("NOTE_TITLE", "새 노트") // 적절한 제목 설정
+            intent.putExtra("SHOW_IMAGE_UPLOAD_BUTTON", true) // 이미지 업로드 버튼 표시 플래그 추가
             startActivity(intent)
         }
     }
