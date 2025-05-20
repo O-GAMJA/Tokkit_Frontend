@@ -80,8 +80,12 @@ class CardViewFragment : Fragment() {
                 val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
 
                 if (lastVisibleItem + 3 >= totalItemCount) {
-                    // 현재 리스트의 끝 근처에 도달했을 때 다음 페이지 요청
-                    noteViewModel.loadMoreNotes(memberId = 1L)
+                    // 태그 검색 모드 여부 확인
+                    if (noteViewModel.isTagSearchMode.value == true) {
+                        noteViewModel.loadMoreNotesByTag()
+                    } else {
+                        noteViewModel.loadMoreNotes(memberId = 1L)
+                    }
                 }
             }
         })
@@ -90,6 +94,7 @@ class CardViewFragment : Fragment() {
     private fun observeViewModel() {
         // 노트 데이터 관찰
         noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("CardViewFragment", "노트 목록 업데이트됨: ${notes.size}개")
             adapter.submitList(notes)
         }
 
@@ -101,7 +106,7 @@ class CardViewFragment : Fragment() {
         // 에러 상태 관찰
         noteViewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                //Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -116,5 +121,11 @@ class CardViewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // ViewModel 관찰 다시 설정
+        observeViewModel()
     }
 }

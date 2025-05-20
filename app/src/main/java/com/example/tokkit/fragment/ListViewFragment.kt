@@ -3,6 +3,7 @@ package com.example.tokkit.fragment
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -90,6 +91,7 @@ class ListViewFragment : Fragment() {
     private fun observeViewModel() {
         // 노트 데이터 관찰
         noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("CardViewFragment", "노트 목록 업데이트됨: ${notes.size}개")
             adapter.submitList(notes)
         }
 
@@ -109,5 +111,11 @@ class ListViewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // ViewModel 관찰 다시 설정
+        observeViewModel()
     }
 }

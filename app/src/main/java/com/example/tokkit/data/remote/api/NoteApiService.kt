@@ -60,7 +60,7 @@ interface NoteApiService {
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
 
-    // 뎃글 목록 조회
+    // 댓글 목록 조회
     @GET("/comments/{noteId}")
     suspend fun getComments(
         @Path("noteId") noteId: String,
@@ -75,4 +75,12 @@ interface NoteApiService {
         @Query("memberId") memberId: Long,
         @Body notes: List<NoteCreateRequest>
     ): ApiResponse<NoteCreateResponse>
+
+    @GET("/notes/tags/{tagName}")
+    suspend fun getNotesByTag(
+        @Path("tagName") tagName: String,
+        @Query("memberId") memberId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): ApiResponse<NoteListResult>
 }
