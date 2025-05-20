@@ -2,14 +2,48 @@ package com.example.tokkit.data.remote.model
 
 data class Note(
     val id: String,
+    val note_id: String?,
     val title: String,
-    val content: String,
+    val content: String?,
     val imageUrl: String?,
-    val createdAt: String,
-    val updatedAt: String,
+    val createdAt: String?,
+    val updatedAt: String?,
     val emojiStatus: EmojiStatus,
-    val bookmarkStatus: BookmarkStatus,
-    val tags: List<String>
+    val bookmarkStatus: BookmarkStatus?,
+    val tags: List<String>?
+)
+
+data class NoteListResult(
+    val notes: List<Note>,
+    val paginationInfo: PaginationInfo
+)
+
+data class PaginationInfo(
+    val page: Int,
+    val size: Int,
+    val totalElements: Int,
+    val totalPages: Int,
+    val isLast: Boolean
+)
+
+data class SimilarNoteResponse(
+    val noteSearchResults: List<SimilarNoteItem>
+)
+
+data class SimilarNoteItem(
+    val noteId: String,
+    val memberInfo: MemberInfo,
+    val noteTitle: String,
+    val noteSnippet: String,
+    val noteImageUrl: String?,
+    val tags: List<String>,
+    val score: Double
+)
+
+data class MemberInfo(
+    val memberId: Long,
+    val nickname: String,
+    val imageUrl: String?
 )
 
 data class EmojiStatus(
@@ -17,9 +51,18 @@ data class EmojiStatus(
     val clicked: Map<String, Boolean>
 )
 
+data class EmojiRequest(
+    val emojiType: String
+)
+
 data class BookmarkStatus(
     val count: Int,
     val clicked: Boolean
+)
+
+data class BookmarkResponse(
+    val noteId: String,
+    val bookmarkStatusDTO: BookmarkStatus
 )
 
 data class ApiResponse<T>(
@@ -34,15 +77,65 @@ data class NoteCreateRequest(
     val title: String,
     val content: String,
     val isPublic: Boolean,
-    val directoryName: String,
-    val imageUrl: String,
+    val directoryId: Int? = null,
+    val bannerImageKey: String,
     val conversationLog: String,
-    val stage: String = "STAGE0"
-    )
+    val stage: String = "STAGE0",
+    val tags: List<String>? = null,
+)
 
 data class NoteCreateResponse(
     val total_note_chunks: Int,
     val total_note_count: Int
 )
 
+// 이미지 생성 요청 모델
+data class ImageGenerationRequest(
+    val noteContent: String,
+    val style: String
+)
 
+// 이미지 생성 응답 모델
+data class ImageGenerationResponse(
+    val isSuccess: Boolean,
+    val code: String,
+    val message: String,
+    val result: ImageResult
+)
+
+data class ImageResult(
+    val imageUrl: String
+)
+
+data class DirectoryTreeResponse(
+    val isSuccess: Boolean,
+    val code: String,
+    val message: String,
+    val result: List<Directory>
+)
+
+data class Directory(
+    val name: String,
+    val notes: List<Note>,
+    val children: List<Directory>,
+    val directory_id: Int
+)
+
+data class S3UrlResponse(
+    val preSignedUrl: String,
+    val imageKey: String
+)
+
+//검색 응답
+data class SearchResponse(
+    val noteSearchResults: List<SimilarNoteItem>,
+    val paginationInfo: SearchPaginationInfo
+)
+
+//검색 페이지네이션 정보
+data class SearchPaginationInfo(
+    val page: Int,
+    val page_size: Int,
+    val result_count: Int,
+    val has_more: Boolean
+)

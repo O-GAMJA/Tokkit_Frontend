@@ -19,14 +19,16 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
-import com.example.tokkit.adapter.RelatedArticlesAdapter
+import com.example.tokkit.adapter.SimilarNoteAdapter
+import com.example.tokkit.data.remote.model.BookmarkStatus
+import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
-import com.example.tokkit.model.Article
 import com.example.tokkit.model.Comment
 import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.Markwon
+import io.noties.markwon.ext.tables.TablePlugin
 import kotlinx.coroutines.launch
 
 class SearchDetailActivity : AppCompatActivity() {
@@ -35,6 +37,8 @@ class SearchDetailActivity : AppCompatActivity() {
     private var bookmarkCount = 3 // 초기 북마크 카운트
     private var isBookmarked = false // 북마크 상태
     private lateinit var dotsIndicator: List<ImageView>
+    private var currentNote: Note? = null // 현재 노트 정보
+    private var isModified = false // 노트 수정 여부 플래그
 
     private val noteViewModel: NoteViewModel by viewModels()
     private var isEditMode = false
@@ -45,11 +49,11 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_DELETE_ID = 3
 
     // 댓글 목록 데이터 (전역 변수로 변경)
-    private val commentList = mutableListOf(
-        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
-        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
-        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
-    )
+//    private val commentList = mutableListOf(
+//        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
+//        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
+//        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
+//    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,57 +65,93 @@ class SearchDetailActivity : AppCompatActivity() {
 
         noteViewModel.loadNoteById(noteId)
 
+        noteViewModel.loadSimilarNotes(noteId)
+
         noteViewModel.selectedNote.observe(this) { note ->
+            currentNote = note
             if (note != null) {
-                // 더보기 버튼 설정
+                // 더보기 버튼
                 binding.btnMore.setOnClickListener { view ->
                     showPopupMenu(view, note.id)
                 }
 
-                // 노트 제목
-                binding.tvTitle.text = note.title
+                // 제목
+                binding.tvTitle.text = note.title ?: "(제목 없음)"
 
-                // 마크다운 처리
-                val markwon = Markwon.create(this)
-                markwon.setMarkdown(binding.tvContent, note.content)
+                // 마크다운 내용
+                val markwon = Markwon.builder(this)
+                    .usePlugin(TablePlugin.create(this))
+                    .build()
+                val safeContent = note.content ?: ""
+                markwon.setMarkdown(binding.tvContent, safeContent)
 
                 // 이미지
-                Glide.with(this).load(note.imageUrl).into(binding.ivArticleImage)
+                val imageUrl = note.imageUrl
+                if (!imageUrl.isNullOrBlank()) {
+                    Glide.with(this).load(imageUrl).into(binding.ivArticleImage)
+                } else {
+                    binding.ivArticleImage.setImageDrawable(null)
+                }
 
-                // 북마크
-                bookmarkCount = note.bookmarkStatus.count
-                isBookmarked = note.bookmarkStatus.clicked
+                // 북마크 상태
+                val bookmarkStatus: BookmarkStatus = note.bookmarkStatus ?: BookmarkStatus(0, false)
+                bookmarkCount = bookmarkStatus.count
+                isBookmarked = bookmarkStatus.clicked
                 binding.bookmarkCount.text = bookmarkCount.toString()
                 binding.btnBookmark.setImageResource(
                     if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark
                 )
 
-                // 이모지 카운트
-                binding.likeCount.text = note.emojiStatus.count["like"]?.toString() ?: "0"
-                binding.heartCount.text = note.emojiStatus.count["thumbsUp"]?.toString() ?: "0"
-                binding.thinkingCount.text = note.emojiStatus.count["thinking"]?.toString() ?: "0"
-                binding.fireCount.text = note.emojiStatus.count["fire"]?.toString() ?: "0"
-                binding.hundredCount.text = note.emojiStatus.count["hundred"]?.toString() ?: "0"
-
+                // 이모지 상태
+                val emojiStatus = note.emojiStatus ?: return@observe
+                binding.likeCount.text = emojiStatus.count["like"]?.toString() ?: "0"
+                binding.heartCount.text = emojiStatus.count["thumbsUp"]?.toString() ?: "0"
+                binding.thinkingCount.text = emojiStatus.count["thinking"]?.toString() ?: "0"
+                binding.fireCount.text = emojiStatus.count["fire"]?.toString() ?: "0"
+                binding.hundredCount.text = emojiStatus.count["hundred"]?.toString() ?: "0"
             } else {
                 Toast.makeText(this, "노트를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             }
         }
 
+        noteViewModel.similarNotes.observe(this) { similarNotes ->
+            if (similarNotes.isNotEmpty()) {
+                val adapter = SimilarNoteAdapter(similarNotes) { noteItem ->
+                    val intent = Intent(this, SearchDetailActivity::class.java)
+                    intent.putExtra("NOTE_ID", noteItem.noteId)
+                    startActivity(intent)
+                }
+
+                binding.relatedArticlesViewPager.adapter = adapter
+                binding.relatedArticlesViewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+
+                setupDotIndicators(similarNotes.size)
+                binding.relatedArticlesViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                    override fun onPageSelected(position: Int) {
+                        updateDots(position)
+                    }
+                })
+            }
+        }
 
         // 뒤로가기 버튼 설정
         binding.btnBack.setOnClickListener {
+            val result = Intent().apply {
+                putExtra("noteModified", true)
+                // 태그 검색 상태가 있었는지 확인 데이터
+                putExtra("wasTagSearch", intent.getBooleanExtra("isTagSearch", false))
+                putExtra("tagName", intent.getStringExtra("tagName"))
+            }
+            setResult(RESULT_OK, result)
             finish()
         }
+
 
         // 북마크 버튼 설정
         setupBookmarkButton()
 
         // 이모티콘 버튼 기능
         setupReactionButtons()
-
-        // 연관 글 ViewPager 설정
-        setupRelatedArticlesViewPager()
 
         // 댓글 버튼 클릭 이벤트 설정
         binding.commentButton.setOnClickListener {
@@ -163,7 +203,7 @@ class SearchDetailActivity : AppCompatActivity() {
         // 본문 수정 가능
         binding.tvContent.visibility = View.GONE
         binding.etContentEditor.visibility = View.VISIBLE
-        binding.etContentEditor.setText(binding.tvContent.text.toString())
+        binding.etContentEditor.setText(currentNote?.content ?: "")
 
         // 불필요한 뷰 숨기기
         binding.bookmarkContainer.visibility = View.GONE
@@ -187,11 +227,13 @@ class SearchDetailActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.noteApi.updateNote(noteId, patchData)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    isModified = true
                     Toast.makeText(this@SearchDetailActivity, "노트가 수정되었습니다.", Toast.LENGTH_SHORT).show()
 
                     // 마크다운 결과 반영
                     binding.tvTitle.text = newTitle
-                    binding.tvContent.text = newContent
+                    val markwon = Markwon.create(this@SearchDetailActivity)
+                    markwon.setMarkdown(binding.tvContent, newContent)
 
                     // 수정 UI 비활성화
                     binding.modeExplain.visibility = View.GONE
@@ -241,124 +283,65 @@ class SearchDetailActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
-        val bookmarkIcon = binding.btnBookmark
-        val countTextView = binding.bookmarkCount
+        //val bookmarkIcon = binding.btnBookmark
+        //val countTextView = binding.bookmarkCount
 
-        // 초기 카운트 표시
-        countTextView.text = bookmarkCount.toString()
-
-        // 북마크 컨테이너 클릭 이벤트
         bookmarkContainer.setOnClickListener {
-            // 북마크 상태 토글
-            isBookmarked = !isBookmarked
+            val noteId = currentNoteId ?: return@setOnClickListener
+            val currentNote = noteViewModel.selectedNote.value ?: return@setOnClickListener
+            val isCurrentlyBookmarked = currentNote.bookmarkStatus?.clicked ?: false
 
-            // 카운트 증가/감소 및 업데이트
-            if (isBookmarked) {
-                // 북마크 활성화 시 카운트 증가
-                bookmarkCount++
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark_filled)
-            } else {
-                // 북마크 비활성화 시 카운트 감소
-                bookmarkCount--
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark)
+            // 서버 요청
+            noteViewModel.toggleBookmark(noteId, isCurrentlyBookmarked)
+        }
+
+        // UI 반영
+        noteViewModel.selectedNote.observe(this) { note ->
+            note?.bookmarkStatus?.let { status ->
+                isBookmarked = status.clicked
+                bookmarkCount = status.count
+
+                binding.bookmarkCount.text = bookmarkCount.toString()
+                binding.btnBookmark.setImageResource(
+                    if (isBookmarked) R.drawable.ic_bookmark_filled
+                    else R.drawable.ic_bookmark
+                )
             }
-
-            countTextView.text = bookmarkCount.toString()
         }
     }
+
 
     private fun setupReactionButtons() {
-        // 좋아요 버튼
-        binding.likeContainer.setOnClickListener {
-            // 좋아요 카운트 증가 로직
-            val currentCount = binding.likeCount.text.toString().toInt()
-            binding.likeCount.text = (currentCount + 1).toString()
-        }
 
-        // 하트 버튼
-        binding.heartContainer.setOnClickListener {
-            // 하트 카운트 증가 로직
-            val currentCount = binding.heartCount.text.toString().toInt()
-            binding.heartCount.text = (currentCount + 1).toString()
-        }
-
-        // 궁금해요 버튼
-        binding.thinkingContainer.setOnClickListener {
-            // 궁금해요 카운트 증가 로직
-            val currentCount = binding.thinkingCount.text.toString().toInt()
-            binding.thinkingCount.text = (currentCount + 1).toString()
-        }
-
-        // 불 버튼
-        binding.fireContainer.setOnClickListener {
-            // 불 카운트 증가 로직
-            val currentCount = binding.fireCount.text.toString().toInt()
-            binding.fireCount.text = (currentCount + 1).toString()
-        }
-
-        // 100점 버튼
-        binding.hundredContainer.setOnClickListener {
-            // 100점 카운트 증가 로직
-            val currentCount = binding.hundredCount.text.toString().toInt()
-            binding.hundredCount.text = (currentCount + 1).toString()
-        }
+        setupEmojiToggle(binding.likeContainer, "LIKE")
+        setupEmojiToggle(binding.heartContainer, "THUMBS_UP")
+        setupEmojiToggle(binding.thinkingContainer, "THINKING")
+        setupEmojiToggle(binding.fireContainer, "FIRE")
+        setupEmojiToggle(binding.hundredContainer, "HUNDRED")
     }
 
-    private fun setupRelatedArticlesViewPager() {
-        // 샘플 연관 글 데이터
-        val relatedArticles = listOf(
-            Article(
-                "네트워크 - OSI 7계층",
-                "OSI 7계층은 네트워크 통신을 체계적으로 이해하고 설계할 수 있도록 국제표준화기구(ISO)에서 정의한 참조 모델입니다. 각 계층은 물리, 데이터링크, 네트워크, 전송, 세션, 표현, 응용 계층으로 구성되며, 각각의 계층은 특정한 기능을 수행하여 데이터가 송수신되는 과정을 단계적으로 처리합니다. 예를 들어, 물리 계층은 실제 전기적 신호의 전송을 담당하고, 전송 계층은 오류 복구 및 흐름 제어를 통해 안정적인 데이터 전송을 보장합니다. 이러한 계층 구조는 네트워크 장비와 소프트웨어가 상호 운용되기 쉽게 만들고, 문제를 특정 계층으로 국한하여 디버깅할 수 있게 도와줍니다.",
-                "2024.01.05",
-                R.drawable.ic_tcp_ip
-            ),
-            Article(
-                "HTTP 프로토콜",
-                "HTTP(HyperText Transfer Protocol)는 웹 브라우저와 웹 서버 간의 통신에 사용되는 대표적인 애플리케이션 계층 프로토콜입니다. 클라이언트는 HTTP 요청(request)을 통해 특정 웹 리소스(HTML, 이미지 등)를 서버에 요청하고, 서버는 이에 대한 HTTP 응답(response)을 반환합니다. HTTP는 기본적으로 텍스트 기반의 프로토콜이며, 상태를 저장하지 않는 비연결형(stateless) 프로토콜이지만, 쿠키나 세션을 활용하여 상태를 관리할 수 있습니다. 또한, HTTP/2와 HTTP/3 등 최신 버전에서는 성능 개선과 보안 강화가 이루어졌으며, HTTPS는 TLS 암호화를 통해 데이터 전송의 보안성을 보장합니다.",
-                "2024.01.06",
-                R.drawable.ic_tcp_ip
-            ),
-            Article(
-                "네트워크 보안",
-                "네트워크 보안은 외부 침입이나 내부 위협으로부터 네트워크 자원과 데이터를 보호하기 위한 기술과 정책의 집합입니다. 주요 목표는 기밀성(confidentiality), 무결성(integrity), 가용성(availability)을 보장하는 것이며, 이를 위해 방화벽, 침입 탐지 시스템(IDS), 가상 사설망(VPN), 암호화 기법 등이 사용됩니다. 특히, 사이버 공격의 형태가 점점 고도화됨에 따라, 네트워크 보안은 단순한 접근 통제를 넘어, 지속적인 모니터링과 위협 탐지, 사고 대응 체계를 갖추는 것이 중요해졌습니다. 기업과 기관은 보안 정책을 수립하고 정기적인 취약점 점검을 통해 보안 수준을 유지해야 합니다.",
-                "2024.01.07",
-                R.drawable.ic_tcp_ip
-            ),
-            Article(
-                "라우팅 프로토콜",
-                "라우팅 프로토콜은 네트워크 상의 라우터들이 서로 정보를 교환하며, 데이터 패킷을 가장 효율적으로 전달할 수 있는 경로를 결정하는 데 사용되는 규칙들의 집합입니다. 대표적인 라우팅 프로토콜에는 RIP(Routing Information Protocol), OSPF(Open Shortest Path First), BGP(Border Gateway Protocol) 등이 있으며, 이들은 거리 벡터(Distance Vector)나 링크 상태(Link State) 알고리즘을 기반으로 경로를 계산합니다. 라우팅 프로토콜은 네트워크의 구조 변화에 따라 자동으로 경로를 재조정하여 유연한 데이터 전달을 가능하게 하며, 특히 대규모 네트워크에서는 효율적인 라우팅이 네트워크 성능에 큰 영향을 미칩니다.",
-                "2024.01.08",
-                R.drawable.ic_tcp_ip
+    private fun setupEmojiToggle(container: View, emojiType: String) {
+        container.setOnClickListener {
+            val noteId = currentNoteId ?: return@setOnClickListener
+            val currentNote = noteViewModel.selectedNote.value ?: return@setOnClickListener
+
+            // 서버 enum 값이 대문자로 기대되므로 매핑을 정확히 맞춰야 함
+            val emojiKeyMap = mapOf(
+                "LIKE" to "like",
+                "THUMBS_UP" to "thumbsUp",
+                "THINKING" to "thinking",
+                "FIRE" to "fire",
+                "HUNDRED" to "hundred"
             )
-        )
 
-        // 어댑터 설정
-        val adapter = RelatedArticlesAdapter(relatedArticles) { article ->
-            // 아이템 클릭 시 해당 글로 이동
-            val intent = Intent(this, SearchDetailActivity::class.java)
-            intent.putExtra("ARTICLE_TITLE", article.title)
-            intent.putExtra("ARTICLE_CONTENT", article.content)
-            intent.putExtra("ARTICLE_IMAGE", article.imageResId)
-            startActivity(intent)
+            val clickedKey = emojiKeyMap[emojiType] ?: return@setOnClickListener
+            val isClicked = currentNote.emojiStatus.clicked[clickedKey] ?: false
+
+            // ViewModel 호출 (isClicked는 Boolean 확정됨)
+            noteViewModel.toggleEmoji(noteId, emojiType, isClicked)
         }
-
-        binding.relatedArticlesViewPager.adapter = adapter
-        binding.relatedArticlesViewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-
-        // 페이지 변경 리스너 설정
-        binding.relatedArticlesViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateDots(position)
-            }
-        })
-
-        // 도트 인디케이터 초기화
-        setupDotIndicators(relatedArticles.size)
     }
 
     private fun setupDotIndicators(size: Int) {
@@ -393,76 +376,100 @@ class SearchDetailActivity : AppCompatActivity() {
     }
 
     private fun showCommentBottomSheet() {
+        val noteId = currentNoteId ?: return
+        var currentPage = 0
+        val allComments = mutableListOf<Comment>()
+
+        // 댓글 초기화
+        noteViewModel.resetComments()
+
         // BottomSheetDialog 생성
         val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
         bottomSheetDialog.setContentView(commentView)
-
-        // 로그 추가 - 디버깅용
-        Log.d("SearchDetailActivity", "Comments count: ${commentList.size}")
 
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
 
         // RecyclerView 설정
         val recyclerView = commentView.findViewById<RecyclerView>(R.id.rv_comments)
-        recyclerView.layoutManager = LinearLayoutManager(this)
 
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
 
-        // 어댑터 설정
-        val adapter = CommentAdapter(commentList)
+        val adapter = CommentAdapter(mutableListOf())
         recyclerView.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // 댓글 수 설정
         val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-        commentCountView.text = commentList.size.toString()
 
-        // 댓글 목록이 비어있는지 확인하고 적절한 View 표시
-        if (commentList.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            noCommentsView.visibility = View.VISIBLE
-            Log.d("SearchDetailActivity", "Comments list is empty, showing noCommentsView")
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            noCommentsView.visibility = View.GONE
-            Log.d("SearchDetailActivity", "Showing comments in RecyclerView")
+        // 댓글 observe
+        noteViewModel.comments.observe(this) { commentResponses ->
+            val newComments = commentResponses.map {
+                Comment(
+                    it.writer,
+                    "방금",
+                    it.content,
+                    it.emojis["like"]?.count ?: 0,
+                    it.commentId)
+            }
+
+            if (currentPage == 0) allComments.clear()
+            allComments.addAll(newComments)
+
+            val sortedComments = allComments
+                .distinctBy { it.commentId }
+                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+
+            adapter.updateComments(sortedComments)
         }
 
-        // 댓글 입력 버튼 이벤트
+        // 댓글 수 observe
+        noteViewModel.totalCommentCount.observe(this) { count ->
+            commentCountView.text = count.toString()
+        }
+
+        // 초기 댓글 로드
+        noteViewModel.loadComments(noteId, page = 0)
+
+        // 페이징 스크롤
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val lastVisible = layoutManager.findLastVisibleItemPosition()
+                val totalItemCount = layoutManager.itemCount
+
+                if (lastVisible + 2 >= totalItemCount && noteViewModel.isLastCommentPage.value != true) {
+                    currentPage++
+                    noteViewModel.loadComments(noteId, page = currentPage)
+                }
+            }
+        })
+
+        // 댓글 작성
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
         val etComment = commentView.findViewById<EditText>(R.id.et_comment)
 
         sendButton.setOnClickListener {
-            val commentText = etComment.text.toString().trim()
-            if (commentText.isNotEmpty()) {
-                // 새 댓글 추가
-                val newComment = Comment("나", "방금", commentText, 0)
-                commentList.add(0, newComment)
+            val text = etComment.text.toString().trim()
+            if (text.isNotEmpty()) {
+                noteViewModel.postComment(
+                    noteId = noteId,
+                    content = text,
+                    onSuccess = {
+                        etComment.text.clear()
+                        Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
-                Log.d("SearchDetailActivity", "Added new comment: $commentText")
-                Log.d("SearchDetailActivity", "New comments count: ${commentList.size}")
-
-                // 어댑터 업데이트
-                adapter.notifyItemInserted(0)
-                recyclerView.scrollToPosition(0)
-
-                // 댓글 수 업데이트
-                commentCountView.text = commentList.size.toString()
-
-                // 입력창 비우기
-                etComment.text.clear()
-
-                // 댓글 목록이 이제 비어있지 않으므로 no comments 뷰 숨기기
-                if (noCommentsView.visibility == View.VISIBLE) {
-                    noCommentsView.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    Log.d("SearchDetailActivity", "Hiding noCommentsView, showing RecyclerView")
-                }
-
-//                // 토스트 메시지로 댓글 추가 알림
-//                Toast.makeText(this, "댓글이 추가되었습니다", Toast.LENGTH_SHORT).show()
+                        // 💡 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        currentPage = 0
+                        allComments.clear()
+                        noteViewModel.resetComments()
+                        noteViewModel.loadComments(noteId, 0)
+                    },
+                    onFail = {
+                        Toast.makeText(this, "댓글 등록 실패", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
         }
 
@@ -475,13 +482,9 @@ class SearchDetailActivity : AppCompatActivity() {
             false
         }
 
-        // 댓글이 있는 경우 BottomSheet의 높이 설정
-        if (commentList.size > 0) {
-            val params = recyclerView.layoutParams
-            params.height = resources.displayMetrics.heightPixels / 2
-            recyclerView.layoutParams = params
-            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
-        }
+        val params = recyclerView.layoutParams
+        params.height = resources.displayMetrics.heightPixels / 2
+        recyclerView.layoutParams = params
 
         // BottomSheet 동작 설정
         val behavior = bottomSheetDialog.behavior
@@ -495,4 +498,17 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // BottomSheet 표시
         bottomSheetDialog.show()
-    }}
+    }
+
+    override fun onBackPressed() {
+        val result = Intent().apply {
+            putExtra("noteModified", true)
+            // 태그 검색 상태가 있었는지 확인 데이터
+            putExtra("wasTagSearch", intent.getBooleanExtra("isTagSearch", false))
+            putExtra("tagName", intent.getStringExtra("tagName"))
+        }
+        setResult(RESULT_OK, result)
+        super.onBackPressed()
+    }
+
+}

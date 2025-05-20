@@ -3,18 +3,25 @@ package com.example.tokkit
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.tokkit.adapter.HomePagerAdapter
 import com.example.tokkit.adapter.TagListAdapter
 import com.example.tokkit.data.local.entities.Tag
+import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.databinding.FragmentHomeBinding
+import com.example.tokkit.util.RetrofitClient
+import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
 
 class HomeFragment : Fragment() {
@@ -23,8 +30,11 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val tagViewModel: TagViewModel by viewModels()
+    private val noteViewModel: NoteViewModel by activityViewModels()
     private val addedTags = mutableListOf<Tag>()
     private lateinit var tagAdapter: TagListAdapter
+    private var selectedTag: String? = null
+    private var isSearchByTag = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -42,7 +52,19 @@ class HomeFragment : Fragment() {
         binding.viewPager.adapter = pagerAdapter
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) = updateTabs(position)
+            override fun onPageSelected(position: Int) {
+                updateTabs(position)
+
+                // 현재 선택된 탭에 맞게 데이터 갱신
+                if (isSearchByTag && selectedTag != null) {
+                    // 검색 중이면 검색 결과 다시 적용
+                    searchNotesByTag(selectedTag!!)
+                } else {
+                    // 아니면 기본 노트 목록 로드
+                    noteViewModel.resetNotes()
+                    noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
+                }
+            }
         })
 
         binding.tabCard.setOnClickListener { binding.viewPager.currentItem = 0 }
@@ -53,6 +75,11 @@ class HomeFragment : Fragment() {
             addTagIfNotExists(clickedTag.name)
             binding.etSearch.text.clear()
             binding.cardRecyclerWrapper.visibility = View.GONE
+
+            // 태그 선택 시 해당 태그로 노트 검색
+            selectedTag = clickedTag.name
+            isSearchByTag = true
+            searchNotesByTag(selectedTag!!)
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = tagAdapter
@@ -84,6 +111,12 @@ class HomeFragment : Fragment() {
 
         binding.ivClearSearch.setOnClickListener {
             binding.etSearch.text.clear()
+            // 검색어를 지울 때 원래 전체 노트 목록으로 복원
+            if (isSearchByTag) {
+                isSearchByTag = false
+                selectedTag = null
+                resetNoteSearch()
+            }
         }
 
         binding.etSearch.setOnEditorActionListener { _, _, _ ->
@@ -91,13 +124,47 @@ class HomeFragment : Fragment() {
             if (tagName.isNotEmpty()) {
                 addTagIfNotExists(tagName)
                 binding.etSearch.text.clear()
+
+                // 태그 입력 후 엔터 시 해당 태그로 노트 검색
+                selectedTag = tagName
+                isSearchByTag = true
+                searchNotesByTag(selectedTag!!)
             }
             true
         }
 
         // LiveData 관찰 (원하면 RecyclerView로 보여주기 가능)
         tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
-            // 예: Log 출력하거나 RecyclerView에 연동 가능
+        }
+    }
+
+    private fun resetNoteSearch() {
+        // 전체 노트 목록으로 복원
+        noteViewModel.resetNotes() // resetNotes() 내부에서 exitTagSearchMode()가 호출됨
+        noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
+
+        // 로딩 상태 확인을 위해 로그 추가
+        Log.d("HomeFragment", "노트 목록 리셋 실행(태그)")
+
+        // HomeFragment의 상태 변수도 초기화
+        isSearchByTag = false
+        selectedTag = null
+
+        // 선택된 태그 칩 초기화
+        binding.horizontalTagContainer.removeAllViews()
+        addedTags.clear()
+    }
+    fun searchNotesByTag(tagName: String) {
+        // 기존 직접 API 호출하는 코드 대신 ViewModel 함수 활용
+        noteViewModel.searchNotesByTag(tagName, 1L, 0, 10)
+
+        // LiveData 관찰을 통한 처리
+        noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            if (notes.isEmpty()) {
+                //Toast.makeText(requireContext(), "'$tagName' 태그가 포함된 노트가 없습니다", Toast.LENGTH_SHORT).show()
+            } else {
+                // Toast.makeText(requireContext(), "'$tagName' 태그 검색 결과: ${notes.size}개의 노트", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -147,6 +214,20 @@ class HomeFragment : Fragment() {
         btnDelete.setOnClickListener {
             addedTags.removeIf { it.name.equals(tag.name, ignoreCase = true) }
             (chipView.parent as? ViewGroup)?.removeView(chipView)
+
+            // 선택된 태그를 삭제한 경우, 원래 노트 목록으로 돌아가기
+            if (isSearchByTag && selectedTag == tag.name) {
+                isSearchByTag = false
+                selectedTag = null
+                resetNoteSearch()
+            }
+        }
+
+        // 태그 클릭 시 해당 태그로 검색
+        chipView.setOnClickListener {
+            selectedTag = tag.name
+            isSearchByTag = true
+            searchNotesByTag(selectedTag!!)
         }
 
         //  여기에 마진을 설정하여 칩 간 여백 주기
@@ -164,5 +245,9 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    fun getCurrentTagSearchState(): Pair<Boolean, String?> {
+        return Pair(isSearchByTag, selectedTag)
     }
 }

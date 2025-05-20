@@ -74,7 +74,7 @@
                 android:id="@+id/bookmarkCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="3"
+                android:text="0"
                 android:textSize="15sp"
                 android:textColor="#666666"
                 android:layout_gravity="center"
@@ -229,7 +229,7 @@
                 android:id="@+id/hundredCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1"
+                android:text="0"
                 android:textSize="14sp"
                 android:layout_marginStart="4dp" />
         </LinearLayout>
@@ -256,7 +256,7 @@
                 android:id="@+id/fireCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1"
+                android:text="0"
                 android:textSize="14sp"
                 android:layout_marginStart="4dp" />
         </LinearLayout>
@@ -283,7 +283,7 @@
                 android:id="@+id/thinkingCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1"
+                android:text="0"
                 android:textSize="14sp"
                 android:layout_marginStart="4dp" />
         </LinearLayout>
@@ -310,7 +310,7 @@
                 android:id="@+id/heartCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="2"
+                android:text="0"
                 android:textSize="14sp"
                 android:layout_marginStart="4dp" />
         </LinearLayout>
@@ -337,7 +337,7 @@
                 android:id="@+id/likeCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="3"
+                android:text="0"
                 android:textSize="14sp"
                 android:layout_marginStart="4dp" />
         </LinearLayout>

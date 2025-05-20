@@ -3,6 +3,7 @@ package com.example.tokkit.fragment
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.tokkit.HomeFragment
 import com.example.tokkit.NoteViewModel
 import com.example.tokkit.databinding.FragmentListViewBinding
 import com.example.tokkit.SearchDetailActivity
@@ -23,12 +26,24 @@ class ListViewFragment : Fragment() {
     private val binding get() = _binding!!
     private val noteViewModel: NoteViewModel by activityViewModels()
     private lateinit var adapter: NoteAdapter
+    private var currentPage: Int = 0
 
     private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val deleted = result.data?.getBooleanExtra("noteDeleted", false) ?: false
-            if (deleted) {
-                noteViewModel.loadNotes(1L) // 실사용자 ID로 교체 가능
+            val modified = result.data?.getBooleanExtra("noteModified", false) ?: false
+            val wasTagSearch = result.data?.getBooleanExtra("wasTagSearch", false) ?: false
+            val tagName = result.data?.getStringExtra("tagName")
+
+            if (deleted || modified) {
+                if (wasTagSearch && tagName != null) {
+                    // 태그 검색 상태였으면 태그 검색 결과 다시 로드
+                    val homeFragment = parentFragment as? HomeFragment
+                    homeFragment?.searchNotesByTag(tagName)
+                } else {
+                    // 일반 상태였으면 전체 노트 로드
+                    noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
+                }
             }
         }
     }
@@ -58,19 +73,42 @@ class ListViewFragment : Fragment() {
             onItemClick = { note ->
                 val intent = Intent(requireContext(), SearchDetailActivity::class.java)
                 intent.putExtra("NOTE_ID", note.id)
+
+                // 태그 검색 상태 전달 추가
+                val homeFragment = parentFragment as? HomeFragment
+                val (isTagSearch, tagName) = homeFragment?.getCurrentTagSearchState() ?: Pair(false, null)
+                intent.putExtra("isTagSearch", isTagSearch)
+                intent.putExtra("tagName", tagName)
+
                 detailLauncher.launch(intent)
             },
-            useCardLayout = false,
+            useCardLayout = true,
             markwon = markwon
         )
 
-        binding.recyclerListView.layoutManager = LinearLayoutManager(requireContext())
+        val layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerListView.layoutManager = layoutManager
         binding.recyclerListView.adapter = adapter
+
+        binding.recyclerListView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val totalItemCount = layoutManager.itemCount
+                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                if (lastVisibleItem + 3 >= totalItemCount) {
+                    // 현재 리스트의 끝 근처에 도달했을 때 다음 페이지 요청
+                    noteViewModel.loadMoreNotes(memberId = 1L)
+                }
+            }
+        })
     }
 
     private fun observeViewModel() {
         // 노트 데이터 관찰
         noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("CardViewFragment", "노트 목록 업데이트됨: ${notes.size}개")
             adapter.submitList(notes)
         }
 
@@ -90,5 +128,11 @@ class ListViewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // ViewModel 관찰 다시 설정
+        observeViewModel()
     }
 }

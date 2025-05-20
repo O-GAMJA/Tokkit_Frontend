@@ -67,4 +67,10 @@ class CommentAdapter(private val comments: MutableList<Comment>) :
         comments.addAll(newComments)
         notifyDataSetChanged()
     }
+
+    fun appendComments(newComments: List<Comment>) {
+        val start = comments.size
+        comments.addAll(newComments)
+        notifyItemRangeInserted(start, newComments.size)
+    }
 }
