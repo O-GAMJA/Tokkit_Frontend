@@ -119,8 +119,8 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             if (!tempOcrText.isNullOrEmpty()) {
                 genieWrapper.setOcrText(tempOcrText!!)
 
-                // OCR 텍스트를 참고한다는 메시지 표시 (선택적)
-                val ocrMessage = ChatMessage("다음 학습 노트 내용을 참고하여 답변드리겠습니다:\n\n$tempOcrText", MessageSender.BOT)
+                // OCR 텍스트를 참고한다는 메시지 표시 (내용 포함 x)
+                val ocrMessage = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다", MessageSender.BOT)
                 ConversationManager.addMessage(ocrMessage)
             }
 

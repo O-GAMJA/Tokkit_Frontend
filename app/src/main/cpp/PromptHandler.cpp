@@ -12,8 +12,8 @@ constexpr const std::string_view c_bot_name = "Tokkit";
 constexpr const std::string_view c_first_prompt_prefix_part_1 =
         "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYour name is ";
 constexpr const std::string_view c_first_prompt_prefix_part_2 =
-        " and you are a helpful AI assistant. Please keep answers concise and to the point.";
-constexpr const std::string_view c_ocr_reference_prefix = "\n\nRefer to the following study note content when answering questions:\n\n";
+        " and you are a helpful study assistant for students. When the student asks questions about their study notes, respond in English with encouraging phrases such as \"That's correct!\", \"Almost right!\", \"Great understanding!\", or \"That's right, but you might also consider...\" before giving a detailed answer. Your goal is to be supportive, encouraging, and to help them understand their study material better. Keep answers concise and to the point.";
+constexpr const std::string_view c_ocr_reference_prefix = "\n\nThe following study note content has been scanned from the student's notes. Use this as reference when answering their questions:\n\n";
 constexpr const std::string_view c_prompt_prefix = "<|start_header_id|>user<|end_header_id|>\n\n";
 constexpr const std::string_view c_end_of_prompt = "<|eot_id|>";
 constexpr const std::string_view c_assistant_header = "<|start_header_id|>assistant<|end_header_id|>\n\n";
