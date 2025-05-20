@@ -39,28 +39,42 @@ interface NoteApiService {
         @Body request: Map<String, @JvmSuppressWildcards Any?>
     ): Response<ApiResponse<Unit>>
 
-    // 유사한 노트 조회
+    // 유사한 노트 조회 api
     @GET("/search/similarNotes")
     suspend fun getSimilarNotes(
         @Query("noteId") noteId: String,
         @Query("size") size: Int = 5
     ): ApiResponse<SimilarNoteResponse>
 
-    // 이모지 추가
+    // 이모지 추가 api
     @POST("/notes/{noteId}/emoji")
     suspend fun addEmoji(
         @Path("noteId") noteId: String,
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
 
-    // 이모지 삭제
+    // 이모지 삭제 api
     @HTTP(method = "DELETE", path = "/notes/{noteId}/emoji", hasBody = true)
     suspend fun removeEmoji(
         @Path("noteId") noteId: String,
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
 
-    // 댓글 목록 조회
+
+    // 북마크 달기 api
+    @POST("/notes/{noteId}/bookmark")
+    suspend fun addBookmark(
+        @Path("noteId") noteId: String
+    ): ApiResponse<BookmarkResponse>
+
+    // 북마크 해제 api
+    @DELETE("/notes/{noteId}/bookmark")
+    suspend fun removeBookmark(
+        @Path("noteId") noteId: String
+    ): ApiResponse<BookmarkResponse>
+
+
+    // 댓글 목록 조회 api
     @GET("/comments/{noteId}")
     suspend fun getComments(
         @Path("noteId") noteId: String,
@@ -68,6 +82,12 @@ interface NoteApiService {
         @Query("size") size: Int = 10
     ): ApiResponse<CommentPageResponse>
 
+    // 댓글 작성 api
+    @POST("/comments/{noteId}")
+    suspend fun postComment(
+        @Path("noteId") noteId: String,
+        @Body commentRequest: CommentRequest
+    ): ApiResponse<Unit>
 
     // 노트 저장 api
     @POST("/notes")
