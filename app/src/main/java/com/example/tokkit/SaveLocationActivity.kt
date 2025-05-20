@@ -3,6 +3,7 @@ package com.example.tokkit
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.airbnb.lottie.LottieAnimationView
 import com.example.tokkit.data.remote.api.DirectoryApiService
 import com.example.tokkit.data.remote.model.Directory
 import com.example.tokkit.databinding.ActivitySavelocationBinding
@@ -284,11 +286,26 @@ class SaveLocationActivity : AppCompatActivity() {
             if (folderName.isNotEmpty()) {
                 lifecycleScope.launch {
                     try {
-                        // 로딩 표시
-                        val loadingDialog = AlertDialog.Builder(this@SaveLocationActivity)
-                            .setMessage("폴더를 추가하는 중...")
+
+                        // Lottie 로딩 뷰 생성
+                        val loadingView = LayoutInflater.from(this@SaveLocationActivity)
+                            .inflate(R.layout.loading_folder_add, null)
+
+                        // Lottie 애니메이션 뷰 찾기
+                        val lottieView = loadingView.findViewById<LottieAnimationView>(R.id.lottieAnimationView)
+
+                        // 다이얼로그 생성 및 설정
+                        val loadingDialog = AlertDialog.Builder(this@SaveLocationActivity, R.style.TransparentDialog)
+                            .setView(loadingView)
                             .setCancelable(false)
                             .create()
+
+                        // 다이얼로그 배경 투명하게 설정
+                        loadingDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+                        // 애니메이션 시작 및 다이얼로그 표시
+                        lottieView.setAnimation(R.raw.folder_add)
+                        lottieView.playAnimation()
                         loadingDialog.show()
 
                         // API 요청 준비
@@ -310,8 +327,7 @@ class SaveLocationActivity : AppCompatActivity() {
                         loadingDialog.dismiss()
 
                         if (response.isSuccess) {
-                            // 성공적으로 폴더가 추가됨
-                            Toast.makeText(this@SaveLocationActivity, "폴더가 추가되었습니다", Toast.LENGTH_SHORT).show()
+                            // 성공적으로 폴더 추가
 
                             // 트리 다시 로드
                             loadDirectoryTree()
