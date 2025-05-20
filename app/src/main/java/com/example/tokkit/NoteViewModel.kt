@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tokkit.data.remote.model.CommentResponse
 import com.example.tokkit.data.remote.model.Note
+import com.example.tokkit.data.remote.model.NoteListResult
 import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.data.remote.repository.NoteRepository
 import kotlinx.coroutines.launch
@@ -14,7 +15,7 @@ import kotlinx.coroutines.launch
 class NoteViewModel : ViewModel() {
     private val repository = NoteRepository()
 
-    private val _notes = MutableLiveData<List<Note>>()
+    internal val _notes = MutableLiveData<List<Note>>()
     val notes: LiveData<List<Note>> get() = _notes
 
     private val _isLoading = MutableLiveData<Boolean>()
@@ -29,6 +30,14 @@ class NoteViewModel : ViewModel() {
     private var currentPage = 0
     private val pageSize = 10
     private var isLoadingPage = false
+
+    // 태그 검색 모드 여부를 나타내는 변수
+    private val _isTagSearchMode = MutableLiveData<Boolean>(false)
+    val isTagSearchMode: LiveData<Boolean> get() = _isTagSearchMode
+
+    // 현재 검색 중인 태그 이름
+    private var currentTagName: String? = null
+    private var tagSearchPage = 0
 
     fun loadNotes(memberId: Long, page: Int= 0, size: Int = 10) {
         _isLoading.value = true
@@ -55,6 +64,7 @@ class NoteViewModel : ViewModel() {
         currentPage = 0
         _notes.value = emptyList()
         _isLastPage.value = false
+        exitTagSearchMode()  // 태그 검색 모드 종료
     }
 
     fun loadMoreNotes(memberId: Long) {
@@ -187,5 +197,72 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    fun setLoading(isLoading: Boolean) {
+        _isLoading.value = isLoading
+    }
 
+    fun clearNotes() {
+        _notes.value = emptyList()
+    }
+
+    fun updateNotesFromTagSearch(noteListResult: NoteListResult) {
+        // 먼저 기존 목록 초기화
+        resetNotes()
+
+        // 새 목록으로 업데이트
+        _notes.value = noteListResult.notes
+        _isLastPage.value = noteListResult.paginationInfo.isLast
+        currentPage = noteListResult.paginationInfo.page
+
+        Log.d("NoteViewModel", "태그 검색 결과 업데이트: ${noteListResult.notes.size}개")
+    }
+
+    // 태그로 검색 시 호출하는 함수
+    fun searchNotesByTag(tagName: String, memberId: Long, page: Int = 0, size: Int = 10) {
+        _isLoading.value = true
+        currentTagName = tagName
+        tagSearchPage = page
+        _isTagSearchMode.value = true
+
+        viewModelScope.launch {
+            try {
+                val result = repository.getNotesByTag(tagName, memberId, page, size)
+                // 태그 검색 결과로 노트 목록 초기화
+                _notes.value = result.notes
+                _isLastPage.value = result.paginationInfo.isLast
+            } catch (e: Exception) {
+                _error.value = e.message ?: "태그 검색 실패"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // 태그 검색 모드에서 더 많은 노트 로드
+    fun loadMoreNotesByTag() {
+        if (isLoadingPage || _isLastPage.value == true || currentTagName == null) return
+
+        isLoadingPage = true
+        tagSearchPage++
+
+        viewModelScope.launch {
+            try {
+                val result = repository.getNotesByTag(currentTagName!!, 1L, tagSearchPage, pageSize)
+                val currentList = _notes.value ?: emptyList()
+                _notes.value = currentList + result.notes
+                _isLastPage.value = result.paginationInfo.isLast
+            } catch (e: Exception) {
+                Log.e("NoteViewModel", "태그 검색 추가 페이지 로드 실패", e)
+            } finally {
+                isLoadingPage = false
+            }
+        }
+    }
+
+    // 태그 검색 모드 종료
+    fun exitTagSearchMode() {
+        _isTagSearchMode.value = false
+        currentTagName = null
+        tagSearchPage = 0
+    }
 }

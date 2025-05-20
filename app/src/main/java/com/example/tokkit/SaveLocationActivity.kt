@@ -1,12 +1,15 @@
 package com.example.tokkit
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -14,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.airbnb.lottie.LottieAnimationView
 import com.example.tokkit.data.remote.api.DirectoryApiService
 import com.example.tokkit.data.remote.model.Directory
 import com.example.tokkit.databinding.ActivitySavelocationBinding
@@ -282,15 +286,60 @@ class SaveLocationActivity : AppCompatActivity() {
         dialogBinding.btnAdd.setOnClickListener {
             val folderName = dialogBinding.etFolderName.text.toString().trim()
             if (folderName.isNotEmpty()) {
+                // 키보드 숨기기
+                val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                inputMethodManager.hideSoftInputFromWindow(dialogBinding.etFolderName.windowToken, 0)
+
+                // 현재 포커스 제거
+                dialogBinding.etFolderName.clearFocus()
+
                 lifecycleScope.launch {
                     try {
-                        // API를 통해 폴더 추가
-                        val parentId = if (selectedDirectoryId != null && parentPath != null) selectedDirectoryId else null
-                        val response = directoryApi.createDirectory(folderName, parentId)
+
+                        // Lottie 로딩 뷰 생성
+                        val loadingView = LayoutInflater.from(this@SaveLocationActivity)
+                            .inflate(R.layout.loading_folder_add, null)
+
+                        // Lottie 애니메이션 뷰 찾기
+                        val lottieView = loadingView.findViewById<LottieAnimationView>(R.id.lottieAnimationView)
+
+                        // 다이얼로그 생성 및 설정
+                        val loadingDialog = AlertDialog.Builder(this@SaveLocationActivity, R.style.TransparentDialog)
+                            .setView(loadingView)
+                            .setCancelable(false)
+                            .create()
+
+                        // 다이얼로그 배경 투명하게 설정
+                        loadingDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+                        // 폴더 추가 다이얼로그 닫기 (키보드를 완전히 닫기)
+                        dialog.dismiss()
+
+                        // 애니메이션 시작 및 다이얼로그 표시
+                        lottieView.setAnimation(R.raw.folder_add)
+                        lottieView.playAnimation()
+                        loadingDialog.show()
+
+                        // API 요청 준비
+                        val directoryApi = RetrofitClient.createService(DirectoryApiService::class.java)
+
+                        // API에 맞게 요청 본문 구성
+                        val requestBody = HashMap<String, String>().apply {
+                            put("directoryName", folderName)
+                            put("parentId", selectedDirectoryId?.toString() ?: "")
+                        }
+
+                        // 사용자 ID (실제로는 로그인한 사용자 ID 사용)
+                        val memberId = 1L
+
+                        // API 호출
+                        val response = directoryApi.createDirectory(memberId, requestBody)
+
+                        // 로딩 다이얼로그 닫기
+                        loadingDialog.dismiss()
 
                         if (response.isSuccess) {
-                            // 성공적으로 폴더가 추가됨
-                            Toast.makeText(this@SaveLocationActivity, "폴더가 추가되었습니다", Toast.LENGTH_SHORT).show()
+                            // 성공적으로 폴더 추가
 
                             // 트리 다시 로드
                             loadDirectoryTree()
@@ -300,21 +349,11 @@ class SaveLocationActivity : AppCompatActivity() {
                         }
                     } catch (e: Exception) {
                         Log.e("SaveLocation", "폴더 추가 중 오류 발생", e)
-                        Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
-
-                        // 오프라인 모드에서는 임시로 UI에만 추가
-                        if (parentContainer != null && parentPath != null) {
-                            // 선택된 폴더 하위에 추가
-                            addSubFolderToSelected(folderName, parentContainer, parentPath)
-                        } else {
-                            // 최상위 레벨에 추가
-                            addMainFolder(folderName, emptyList())
-                        }
+                        Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
-                dialog.dismiss()
             } else {
-                Toast.makeText(this, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SaveLocationActivity, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -18,6 +18,7 @@ import io.noties.markwon.Markwon
 import android.app.Activity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tokkit.HomeFragment
 
 class CardViewFragment : Fragment() {
 
@@ -31,9 +32,18 @@ class CardViewFragment : Fragment() {
         if (result.resultCode == Activity.RESULT_OK) {
             val deleted = result.data?.getBooleanExtra("noteDeleted", false) ?: false
             val modified = result.data?.getBooleanExtra("noteModified", false) ?: false
+            val wasTagSearch = result.data?.getBooleanExtra("wasTagSearch", false) ?: false
+            val tagName = result.data?.getStringExtra("tagName")
 
             if (deleted || modified) {
-                noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
+                if (wasTagSearch && tagName != null) {
+                    // 태그 검색 상태였으면 태그 검색 결과 다시 로드
+                    val homeFragment = parentFragment as? HomeFragment
+                    homeFragment?.searchNotesByTag(tagName)
+                } else {
+                    // 일반 상태였으면 전체 노트 로드
+                    noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
+                }
             }
         }
     }
@@ -62,6 +72,13 @@ class CardViewFragment : Fragment() {
             onItemClick = { note ->
                 val intent = Intent(requireContext(), SearchDetailActivity::class.java)
                 intent.putExtra("NOTE_ID", note.id)
+
+                // 태그 검색 상태 전달 추가
+                val homeFragment = parentFragment as? HomeFragment
+                val (isTagSearch, tagName) = homeFragment?.getCurrentTagSearchState() ?: Pair(false, null)
+                intent.putExtra("isTagSearch", isTagSearch)
+                intent.putExtra("tagName", tagName)
+
                 detailLauncher.launch(intent)
             },
             useCardLayout = true,
@@ -80,8 +97,12 @@ class CardViewFragment : Fragment() {
                 val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
 
                 if (lastVisibleItem + 3 >= totalItemCount) {
-                    // 현재 리스트의 끝 근처에 도달했을 때 다음 페이지 요청
-                    noteViewModel.loadMoreNotes(memberId = 1L)
+                    // 태그 검색 모드 여부 확인
+                    if (noteViewModel.isTagSearchMode.value == true) {
+                        noteViewModel.loadMoreNotesByTag()
+                    } else {
+                        noteViewModel.loadMoreNotes(memberId = 1L)
+                    }
                 }
             }
         })
@@ -90,6 +111,7 @@ class CardViewFragment : Fragment() {
     private fun observeViewModel() {
         // 노트 데이터 관찰
         noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("CardViewFragment", "노트 목록 업데이트됨: ${notes.size}개")
             adapter.submitList(notes)
         }
 
@@ -101,7 +123,7 @@ class CardViewFragment : Fragment() {
         // 에러 상태 관찰
         noteViewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                //Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -116,5 +138,11 @@ class CardViewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // ViewModel 관찰 다시 설정
+        observeViewModel()
     }
 }
