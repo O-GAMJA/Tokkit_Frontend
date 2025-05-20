@@ -397,67 +397,9 @@ class SearchDetailActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-//        noteViewModel.loadComments(noteId)
-//
-//        noteViewModel.comments.observe(this) { commentResponses ->
-//            val comments = commentResponses.map {
-//                Comment(
-//                    username = it.writer,
-//                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
-//                    content = it.content,
-//                    likeCount = it.emojis["like"]?.count ?: 0
-//                )
-//            }
-//            if (currentPage == 0) {
-//                adapter.updateComments(comments) // 덮어쓰기
-//            } else {
-//                adapter.appendComments(comments) // 이어붙이기
-//            }
-//        }
-//
-//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-//
-//        // 댓글 개수 표시
-//        noteViewModel.totalCommentCount.observe(this) { count ->
-//            commentCountView.text = count.toString()
-//        }
-//
-//        // 페이징 처리
-//        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-//                val lastVisible = layoutManager.findLastVisibleItemPosition()
-//                val total = layoutManager.itemCount
-//                if (lastVisible + 2 >= total) {
-//                    noteViewModel.loadNextCommentPage(noteId)
-//                }
-//            }
-//        })
-//
-//        // 댓글 입력 버튼 이벤트
-//        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-//        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-//
-//        sendButton.setOnClickListener {
-//            val commentText = etComment.text.toString().trim()
-//            if (commentText.isNotEmpty()) {
-//                noteViewModel.postComment(
-//                    noteId = currentNoteId ?: return@setOnClickListener,
-//                    content = commentText,
-//                    onSuccess = {
-//                        etComment.text.clear()
-//                        Toast.makeText(this, "댓글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
-//                    },
-//                    onFail = {
-//                        Toast.makeText(this, "댓글 등록에 실패했습니다.", Toast.LENGTH_SHORT).show()
-//                    }
-//                )
-//            }
-//        }
-
         val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
 
-        // ✅ 댓글 observe
+        // 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
             val newComments = commentResponses.map {
                 Comment(
@@ -473,20 +415,20 @@ class SearchDetailActivity : AppCompatActivity() {
 
             val sortedComments = allComments
                 .distinctBy { it.commentId }
-                .sortedBy { it.commentId } // ✅ 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
 
             adapter.updateComments(sortedComments)
         }
 
-        // ✅ 댓글 수 observe
+        // 댓글 수 observe
         noteViewModel.totalCommentCount.observe(this) { count ->
             commentCountView.text = count.toString()
         }
 
-        // ✅ 초기 댓글 로드
+        // 초기 댓글 로드
         noteViewModel.loadComments(noteId, page = 0)
 
-        // ✅ 페이징 스크롤
+        // 페이징 스크롤
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -500,7 +442,7 @@ class SearchDetailActivity : AppCompatActivity() {
             }
         })
 
-        // ✅ 댓글 작성
+        // 댓글 작성
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
         val etComment = commentView.findViewById<EditText>(R.id.et_comment)
 
@@ -539,14 +481,6 @@ class SearchDetailActivity : AppCompatActivity() {
         val params = recyclerView.layoutParams
         params.height = resources.displayMetrics.heightPixels / 2
         recyclerView.layoutParams = params
-
-//        // 댓글이 있는 경우 BottomSheet의 높이 설정
-//        if (commentList.size > 0) {
-//            val params = recyclerView.layoutParams
-//            params.height = resources.displayMetrics.heightPixels / 2
-//            recyclerView.layoutParams = params
-//            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
-//        }
 
         // BottomSheet 동작 설정
         val behavior = bottomSheetDialog.behavior
