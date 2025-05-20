@@ -60,6 +60,11 @@ data class BookmarkStatus(
     val clicked: Boolean
 )
 
+data class BookmarkResponse(
+    val noteId: String,
+    val bookmarkStatusDTO: BookmarkStatus
+)
+
 data class ApiResponse<T>(
     val isSuccess: Boolean,
     val code: String,

@@ -21,3 +21,8 @@ data class EmojiReaction(
     val count: Int,
     val reactedByCurrentUser: Boolean
 )
+
+data class CommentRequest(
+    val content: String,
+    val parentId: Long? = null  // null이 기본값( = 일반 댓글)
+)
