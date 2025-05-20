@@ -1,10 +1,16 @@
 package com.example.tokkit
 
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
+import android.view.Window
+import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -573,7 +579,6 @@ class SearchDetailActivity : AppCompatActivity() {
                 "삭제" -> {
                     noteViewModel.deleteComment(comment.commentId) { success ->
                         if (success) {
-                            //Toast.makeText(this, "삭제 완료", Toast.LENGTH_SHORT).show()
                             // 댓글 리스트 갱신
                             currentPage = 0
                             allComments.clear()
@@ -593,41 +598,42 @@ class SearchDetailActivity : AppCompatActivity() {
     }
 
     private fun showEditCommentDialog(comment: Comment) {
-        val padding = (20 * resources.displayMetrics.density).toInt()
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_edit_comment)
 
-        val editText = EditText(this).apply {
-            setText(comment.content)
-            setPadding(padding, padding, padding, padding)
-            background = null
+        // 배경 투명하게 지정 (중요)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        // 내부 View 처리
+        val editText = dialog.findViewById<EditText>(R.id.edit_comment)
+        val btnCancel = dialog.findViewById<Button>(R.id.btn_cancel)
+        val btnSave = dialog.findViewById<Button>(R.id.btn_save)
+
+        editText.setText(comment.content)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
         }
 
-        val container = FrameLayout(this).apply {
-            setPadding(padding, 0, padding, 0)
-            addView(editText)
-        }
-
-        // 핵심: 매번 새로 생성된 container만 사용!
-        AlertDialog.Builder(this)
-            .setTitle("댓글 수정")
-            .setView(container)
-            .setPositiveButton("저장") { _, _ ->
-                val newContent = editText.text.toString().trim()
-                if (newContent.isNotBlank()) {
-                    noteViewModel.updateComment(comment.commentId, newContent) { success ->
-                        if (success) {
-                            //Toast.makeText(this, "수정 완료", Toast.LENGTH_SHORT).show()
-                            currentPage = 0
-                            allComments.clear()
-                            noteViewModel.resetComments()
-                            noteViewModel.loadComments(currentNoteId!!, 0)
-                        } else {
-                            Toast.makeText(this, "수정 실패", Toast.LENGTH_SHORT).show()
-                        }
+        btnSave.setOnClickListener {
+            val newContent = editText.text.toString().trim()
+            if (newContent.isNotBlank()) {
+                noteViewModel.updateComment(comment.commentId, newContent) { success ->
+                    if (success) {
+                        currentPage = 0
+                        allComments.clear()
+                        noteViewModel.resetComments()
+                        noteViewModel.loadComments(currentNoteId!!, 0)
+                    } else {
+                        Toast.makeText(this, "수정 실패", Toast.LENGTH_SHORT).show()
                     }
+                    dialog.dismiss()
                 }
             }
-            .setNegativeButton("취소", null)
-            .show()
+        }
+
+        dialog.show()
     }
 
     private fun toggleEmoji(commentId: Long, emojiName: String, isAlreadyReacted: Boolean) {
