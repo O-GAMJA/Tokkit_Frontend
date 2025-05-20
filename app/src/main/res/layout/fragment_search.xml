@@ -39,6 +39,7 @@
             android:background="@null"
             android:hint="검색어를 입력하세요"
             android:inputType="text"
+            android:imeOptions="actionSearch"
             android:singleLine="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/ivClearSearch"
@@ -59,60 +60,16 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 필터 버튼 3개 -->
-    <LinearLayout
-        android:id="@+id/filterContainer"
-        android:layout_width="0dp"
+    <!-- 로딩 프로그레스 -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer">
-
-        <!-- 유사도순 버튼 -->
-        <TextView
-            android:id="@+id/btnSimilarity"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/rounded_stage_bg"
-            android:gravity="center"
-            android:paddingVertical="8dp"
-            android:text="유사도순"
-            android:textColor="@color/stageBtn" />
-
-        <!-- 스크랩순 버튼 -->
-        <TextView
-            android:id="@+id/btnScrap"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/rounded_stage_bg2"
-            android:gravity="center"
-            android:paddingVertical="8dp"
-            android:text="스크랩순"
-            android:textColor="@color/gray" />
-
-        <!-- 최신순 버튼 -->
-        <TextView
-            android:id="@+id/btnLatest"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:background="@drawable/rounded_stage_bg2"
-            android:gravity="center"
-            android:paddingVertical="8dp"
-            android:text="최신순"
-            android:textColor="@color/gray" />
-    </LinearLayout>
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- 검색 결과 리사이클러뷰 -->
     <androidx.recyclerview.widget.RecyclerView
@@ -126,7 +83,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterContainer" />
+        app:layout_constraintTop_toBottomOf="@id/searchContainer" />
 
     <!-- 검색 결과 없음 View -->
     <LinearLayout
@@ -138,7 +95,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterContainer">
+        app:layout_constraintTop_toBottomOf="@id/searchContainer">
 
         <ImageView
             android:layout_width="120dp"
