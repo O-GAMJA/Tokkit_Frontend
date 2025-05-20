@@ -11,6 +11,7 @@ import com.example.tokkit.data.remote.model.NoteListResult
 import com.example.tokkit.data.remote.model.PaginationInfo
 import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.util.RetrofitClient
+import retrofit2.HttpException
 
 class NoteRepository {
     private val api: NoteApiService = RetrofitClient.noteApi
@@ -107,6 +108,26 @@ class NoteRepository {
             false
         }
     }
+
+    suspend fun toggleCommentEmoji(
+        commentId: Long,
+        emojiName: String,
+        isAlreadyReacted: Boolean
+    ): Boolean {
+        return try {
+            val body = mapOf("emojiName" to emojiName)
+            val response = if (isAlreadyReacted) {
+                api.removeEmoji(commentId, body)
+            } else {
+                api.addEmoji(commentId, body)
+            }
+            response.isSuccess
+        } catch (e: Exception) {
+            Log.e("EmojiToggle", "이모지 토글 실패 → commentId=$commentId, emoji=$emojiName", e)
+            false
+        }
+    }
+
 
     suspend fun fetchSimilarNotes(noteId: String, size: Int = 5): List<SimilarNoteItem> {
         Log.d("NoteRepository", "fetchSimilarNotes() called - noteId: $noteId")

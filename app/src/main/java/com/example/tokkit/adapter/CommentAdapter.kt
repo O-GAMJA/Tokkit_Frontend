@@ -6,14 +6,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.R
 import com.example.tokkit.data.remote.model.Comment
 
 class CommentAdapter(
     private val comments: MutableList<Comment>,
-    private val onLongClickListener: OnCommentLongClickListener) :
-    RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
+    private val onLongClickListener: OnCommentLongClickListener,
+    private val onLikeClickListener: OnLikeClickListener
+) : RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
 
     init {
         Log.d("CommentAdapter", "Adapter initialized with ${comments.size} comments")
@@ -44,12 +46,24 @@ class CommentAdapter(
         holder.tvComment.text = comment.content
         holder.tvLikeCount.text = comment.likeCount.toString()
 
+        // 👍 좋아요 버튼 색상 변경
+        if (comment.isLiked) {
+            holder.btnLike.setColorFilter(
+                ContextCompat.getColor(holder.itemView.context, R.color.main),
+                android.graphics.PorterDuff.Mode.SRC_IN
+            )
+        } else {
+            holder.btnLike.setColorFilter(
+                ContextCompat.getColor(holder.itemView.context, R.color.gray),
+                android.graphics.PorterDuff.Mode.SRC_IN
+            )
+        }
+
         // 좋아요 버튼 클릭 이벤트
         holder.btnLike.setOnClickListener {
-            // 실제 구현에서는 좋아요 카운트를 서버에 업데이트하고 UI를 갱신예정
-            val currentLikes = comment.likeCount
-            holder.tvLikeCount.text = (currentLikes + 1).toString()
+            onLikeClickListener.onClick(comment)
         }
+
 
         // 답글 버튼 클릭 이벤트
         holder.btnReply.setOnClickListener {

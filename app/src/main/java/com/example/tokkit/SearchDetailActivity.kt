@@ -23,6 +23,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.OnCommentLongClickListener
+import com.example.tokkit.adapter.OnLikeClickListener
 import com.example.tokkit.adapter.SimilarNoteAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
 import com.example.tokkit.data.remote.model.Comment
@@ -34,6 +35,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -399,6 +404,11 @@ class SearchDetailActivity : AppCompatActivity() {
                 override fun onLongClick(view: View, comment: Comment) {
                     showCommentPopup(view, comment)
                 }
+            },
+            onLikeClickListener = object : OnLikeClickListener {
+                override fun onClick(comment: Comment) {
+                    toggleEmoji(comment.commentId, "LIKE", comment.isLiked)
+                }
             }
         )
         recyclerView.adapter = adapter
@@ -411,12 +421,14 @@ class SearchDetailActivity : AppCompatActivity() {
             val newComments = commentResponses.map {
                 val createdTime = parseTimeAgo(it.createdAt)
                 Comment(
-                    it.writer,
-                    createdTime,
-                    it.content,
-                    it.emojis["like"]?.count ?: 0,
-                    it.commentId,
-                    it.isMine)
+                    username = it.writer,
+                    time = createdTime,
+                    content = it.content,
+                    likeCount = it.emojis["LIKE"]?.count ?: 0,
+                    commentId = it.commentId,
+                    isMine = it.isMine,
+                    isLiked = it.emojis["LIKE"]?.reactedByCurrentUser ?: false
+                )
             }
 
             if (currentPage == 0) allComments.clear()
@@ -507,10 +519,14 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun parseTimeAgo(createdAt: String): String {
         return try {
-            val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
-            val parsedTime = java.time.LocalDateTime.parse(createdAt, formatter)
-            val now = java.time.LocalDateTime.now()
-            val duration = java.time.Duration.between(parsedTime, now)
+            val formatter = DateTimeFormatterBuilder()
+                .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+                .appendFraction(ChronoField.NANO_OF_SECOND, 0, 6, true)
+                .toFormatter()
+
+            val parsedTime = LocalDateTime.parse(createdAt, formatter)
+            val now = LocalDateTime.now()
+            val duration = Duration.between(parsedTime, now)
 
             when {
                 duration.toMinutes() < 1 -> "방금"
@@ -528,7 +544,7 @@ class SearchDetailActivity : AppCompatActivity() {
 
         val popup = PopupMenu(this, anchorView, Gravity.END)
 
-        popup.menu.add("이모지 달기")
+        popup.menu.add(if (comment.isLiked) "좋아요 취소" else "좋아요")
         popup.menu.add("답글 달기")
 
         if (comment.isMine) {
@@ -538,8 +554,12 @@ class SearchDetailActivity : AppCompatActivity() {
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title) {
-                "이모지 달기" -> {
-                    Toast.makeText(this, "이모지 달기 눌림", Toast.LENGTH_SHORT).show()
+                "좋아요" -> {
+                    toggleEmoji(comment.commentId, "LIKE", false)
+                    true
+                }
+                "좋아요 취소" -> {
+                    toggleEmoji(comment.commentId, "LIKE", true)
                     true
                 }
                 "답글 달기" -> {
@@ -609,6 +629,24 @@ class SearchDetailActivity : AppCompatActivity() {
             .setNegativeButton("취소", null)
             .show()
     }
+
+    private fun toggleEmoji(commentId: Long, emojiName: String, isAlreadyReacted: Boolean) {
+        noteViewModel.toggleCommentEmoji(
+            commentId = commentId,
+            emojiName = emojiName,
+            isAlreadyReacted = isAlreadyReacted
+        ) { success ->
+            if (success) {
+                currentPage = 0
+                allComments.clear()
+                noteViewModel.resetComments()
+                noteViewModel.loadComments(currentNoteId!!, 0)
+            } else {
+                Toast.makeText(this, "이모지 처리 실패", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
 
     override fun onBackPressed() {
         val result = Intent().apply {

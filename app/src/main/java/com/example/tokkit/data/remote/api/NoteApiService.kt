@@ -101,6 +101,20 @@ interface NoteApiService {
         @Path("commentId") commentId: Long
     ): ApiResponse<Unit>
 
+    // 댓글 이모지 추가 api
+    @POST("/comments/{commentId}/emoji")
+    suspend fun addEmoji(
+        @Path("commentId") commentId: Long,
+        @Body body: Map<String, String> // e.g., {"emojiName": "LIKE"}
+    ): ApiResponse<Unit>
+
+    // 댓글 이모지 삭제 api
+    @HTTP(method = "DELETE", path = "/comments/{commentId}/emoji", hasBody = true)
+    suspend fun removeEmoji(
+        @Path("commentId") commentId: Long,
+        @Body body: Map<String, String> // e.g., {"emojiName": "LIKE"}
+    ): ApiResponse<Unit>
+
     // 노트 저장 api
     @POST("/notes")
     suspend fun createNote(
