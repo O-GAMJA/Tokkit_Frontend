@@ -164,6 +164,20 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    fun updateComment(commentId: Long, newContent: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.updateComment(commentId, newContent)
+            onResult(success)
+        }
+    }
+
+    fun deleteComment(commentId: Long, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.deleteComment(commentId)
+            onResult(success)
+        }
+    }
+
     private val _similarNotes = MutableLiveData<List<SimilarNoteItem>>()
     val similarNotes: LiveData<List<SimilarNoteItem>> get() = _similarNotes
 

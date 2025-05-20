@@ -90,6 +90,24 @@ class NoteRepository {
         }
     }
 
+    suspend fun updateComment(commentId: Long, newContent: String): Boolean {
+        return try {
+            val response = api.updateComment(commentId, mapOf("content" to newContent))
+            response.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun deleteComment(commentId: Long): Boolean {
+        return try {
+            val response = api.deleteComment(commentId)
+            response.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun fetchSimilarNotes(noteId: String, size: Int = 5): List<SimilarNoteItem> {
         Log.d("NoteRepository", "fetchSimilarNotes() called - noteId: $noteId")
         return try {

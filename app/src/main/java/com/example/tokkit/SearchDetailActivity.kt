@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -13,6 +14,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -526,11 +528,20 @@ class SearchDetailActivity : AppCompatActivity() {
                     true
                 }
                 "수정" -> {
-                    Toast.makeText(this, "댓글 수정 눌림", Toast.LENGTH_SHORT).show()
+                    showEditCommentDialog(comment)
                     true
                 }
                 "삭제" -> {
-                    Toast.makeText(this, "댓글 삭제 눌림", Toast.LENGTH_SHORT).show()
+                    noteViewModel.deleteComment(comment.commentId) { success ->
+                        if (success) {
+                            Toast.makeText(this, "삭제 완료", Toast.LENGTH_SHORT).show()
+                            // 댓글 리스트 갱신
+                            noteViewModel.resetComments()
+                            noteViewModel.loadComments(currentNoteId!!, 0)
+                        } else {
+                            Toast.makeText(this, "삭제 실패", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     true
                 }
                 else -> false
@@ -540,6 +551,41 @@ class SearchDetailActivity : AppCompatActivity() {
         popup.show()
     }
 
+    private fun showEditCommentDialog(comment: Comment) {
+        val padding = (20 * resources.displayMetrics.density).toInt()
+
+        val editText = EditText(this).apply {
+            setText(comment.content)
+            setPadding(padding, padding, padding, padding)
+            background = null
+        }
+
+        val container = FrameLayout(this).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(editText)
+        }
+
+        // 핵심: 매번 새로 생성된 container만 사용!
+        AlertDialog.Builder(this)
+            .setTitle("댓글 수정")
+            .setView(container)
+            .setPositiveButton("저장") { _, _ ->
+                val newContent = editText.text.toString().trim()
+                if (newContent.isNotBlank()) {
+                    noteViewModel.updateComment(comment.commentId, newContent) { success ->
+                        if (success) {
+                            Toast.makeText(this, "수정 완료", Toast.LENGTH_SHORT).show()
+                            noteViewModel.resetComments()
+                            noteViewModel.loadComments(currentNoteId!!, 0)
+                        } else {
+                            Toast.makeText(this, "수정 실패", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("취소", null)
+            .show()
+    }
 
     override fun onBackPressed() {
         val result = Intent().apply {
