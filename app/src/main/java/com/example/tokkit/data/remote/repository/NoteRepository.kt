@@ -107,5 +107,15 @@ class NoteRepository {
         }
     }
 
+    suspend fun getNotesByTag(tagName: String, memberId: Long, page: Int, size: Int): NoteListResult {
+        val apiService = RetrofitClient.createService(NoteApiService::class.java)
+        val response = apiService.getNotesByTag(tagName, memberId, page, size)
+        if (response.isSuccess) {
+            return response.result
+        } else {
+            throw Exception(response.message)
+        }
+    }
+
 
 }

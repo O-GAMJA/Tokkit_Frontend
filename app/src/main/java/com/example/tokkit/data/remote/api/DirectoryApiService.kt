@@ -5,6 +5,7 @@ import com.example.tokkit.data.remote.model.Directory
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+import retrofit2.http.Body
 
 interface DirectoryApiService {
     @GET("/notes/directory/tree")
@@ -12,9 +13,9 @@ interface DirectoryApiService {
         @Query("memberId") memberId: Long
     ): ApiResponse<List<Directory>>
 
-    @POST("/notes/directory")
+    @POST("/directories")
     suspend fun createDirectory(
-        @Query("name") name: String,
-        @Query("parentDirectoryId") parentDirectoryId: Int?
-    ): ApiResponse<Directory>
+        @Query("member_id") memberId: Long,
+        @Body requestBody: Map<String, String>
+    ): ApiResponse<Any>
 }

@@ -138,10 +138,14 @@ class SearchDetailActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener {
             val result = Intent().apply {
                 putExtra("noteModified", true)
+                // 태그 검색 상태가 있었는지 확인 데이터
+                putExtra("wasTagSearch", intent.getBooleanExtra("isTagSearch", false))
+                putExtra("tagName", intent.getStringExtra("tagName"))
             }
             setResult(RESULT_OK, result)
             finish()
         }
+
 
         // 북마크 버튼 설정
         setupBookmarkButton()
@@ -499,6 +503,9 @@ class SearchDetailActivity : AppCompatActivity() {
     override fun onBackPressed() {
         val result = Intent().apply {
             putExtra("noteModified", true)
+            // 태그 검색 상태가 있었는지 확인 데이터
+            putExtra("wasTagSearch", intent.getBooleanExtra("isTagSearch", false))
+            putExtra("tagName", intent.getStringExtra("tagName"))
         }
         setResult(RESULT_OK, result)
         super.onBackPressed()
