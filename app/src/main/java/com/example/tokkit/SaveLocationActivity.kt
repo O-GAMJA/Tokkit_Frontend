@@ -1,6 +1,7 @@
 package com.example.tokkit
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -8,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -284,6 +286,13 @@ class SaveLocationActivity : AppCompatActivity() {
         dialogBinding.btnAdd.setOnClickListener {
             val folderName = dialogBinding.etFolderName.text.toString().trim()
             if (folderName.isNotEmpty()) {
+                // 키보드 숨기기
+                val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                inputMethodManager.hideSoftInputFromWindow(dialogBinding.etFolderName.windowToken, 0)
+
+                // 현재 포커스 제거
+                dialogBinding.etFolderName.clearFocus()
+
                 lifecycleScope.launch {
                     try {
 
@@ -302,6 +311,9 @@ class SaveLocationActivity : AppCompatActivity() {
 
                         // 다이얼로그 배경 투명하게 설정
                         loadingDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+                        // 폴더 추가 다이얼로그 닫기 (키보드를 완전히 닫기)
+                        dialog.dismiss()
 
                         // 애니메이션 시작 및 다이얼로그 표시
                         lottieView.setAnimation(R.raw.folder_add)
@@ -339,7 +351,6 @@ class SaveLocationActivity : AppCompatActivity() {
                         Log.e("SaveLocation", "폴더 추가 중 오류 발생", e)
                         Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
-                    dialog.dismiss()
                 }
             } else {
                 Toast.makeText(this@SaveLocationActivity, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
