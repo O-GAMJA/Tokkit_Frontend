@@ -14,12 +14,16 @@ import android.system.Os
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.ChatActivity
 import com.example.tokkit.databinding.ActivityGenieChatBinding
+import com.google.android.material.snackbar.Snackbar
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -68,6 +72,16 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         adapter = MessageRecyclerViewAdapter(this, messages)
         binding.chatRecyclerView.adapter = adapter
         binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        // 스와이프 삭제 기능 추가
+        setupSwipeToDelete()
+
+        // 삭제 리스너 설정
+        adapter.setOnMessageDeleteListener(object : MessageRecyclerViewAdapter.OnMessageDeleteListener {
+            override fun onMessageDelete(position: Int) {
+                deleteMessage(position)
+            }
+        })
 
         // ConversationManager에 리스너 등록
         ConversationManager.addListener(this)
@@ -423,6 +437,49 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         }
 
         return responseBuilder.toString()
+    }
+
+    private fun setupSwipeToDelete() {
+        val swipeCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                showDeleteConfirmDialog(position)
+            }
+        }
+
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.chatRecyclerView)
+    }
+
+    private fun showDeleteConfirmDialog(position: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("메시지 삭제")
+            .setMessage("이 메시지를 삭제하시겠습니까?")
+            .setPositiveButton("삭제") { _, _ ->
+                deleteMessage(position)
+            }
+            .setNegativeButton("취소") { _, _ ->
+                // 삭제 취소 시 스와이프 복구
+                adapter.notifyItemChanged(position)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun deleteMessage(position: Int) {
+        if (position >= 0 && position < messages.size) {
+            // ConversationManager에서 메시지 삭제
+            ConversationManager.removeMessageAt(position)
+
+            // UI 갱신은 ConversationChangeListener를 통해 자동으로 처리됨
+            // 사용자에게 알림
+            Snackbar.make(binding.root, "메시지가 삭제되었습니다", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
