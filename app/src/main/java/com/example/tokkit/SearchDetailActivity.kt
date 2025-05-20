@@ -281,31 +281,33 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
-        val bookmarkIcon = binding.btnBookmark
-        val countTextView = binding.bookmarkCount
+        //val bookmarkIcon = binding.btnBookmark
+        //val countTextView = binding.bookmarkCount
 
-        // 초기 카운트 표시
-        countTextView.text = bookmarkCount.toString()
-
-        // 북마크 컨테이너 클릭 이벤트
         bookmarkContainer.setOnClickListener {
-            // 북마크 상태 토글
-            isBookmarked = !isBookmarked
+            val noteId = currentNoteId ?: return@setOnClickListener
+            val currentNote = noteViewModel.selectedNote.value ?: return@setOnClickListener
+            val isCurrentlyBookmarked = currentNote.bookmarkStatus?.clicked ?: false
 
-            // 카운트 증가/감소 및 업데이트
-            if (isBookmarked) {
-                // 북마크 활성화 시 카운트 증가
-                bookmarkCount++
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark_filled)
-            } else {
-                // 북마크 비활성화 시 카운트 감소
-                bookmarkCount--
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark)
+            // 서버 요청
+            noteViewModel.toggleBookmark(noteId, isCurrentlyBookmarked)
+        }
+
+        // UI 반영
+        noteViewModel.selectedNote.observe(this) { note ->
+            note?.bookmarkStatus?.let { status ->
+                isBookmarked = status.clicked
+                bookmarkCount = status.count
+
+                binding.bookmarkCount.text = bookmarkCount.toString()
+                binding.btnBookmark.setImageResource(
+                    if (isBookmarked) R.drawable.ic_bookmark_filled
+                    else R.drawable.ic_bookmark
+                )
             }
-
-            countTextView.text = bookmarkCount.toString()
         }
     }
+
 
     private fun setupReactionButtons() {
 

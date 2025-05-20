@@ -2,6 +2,7 @@ package com.example.tokkit.data.remote.repository
 
 import android.util.Log
 import com.example.tokkit.data.remote.api.NoteApiService
+import com.example.tokkit.data.remote.model.BookmarkStatus
 import com.example.tokkit.data.remote.model.CommentPageResponse
 import com.example.tokkit.data.remote.model.CommentRequest
 import com.example.tokkit.data.remote.model.EmojiRequest
@@ -51,6 +52,20 @@ class NoteRepository {
             if (response.isSuccess) response.result else null
         } catch (e: Exception) {
             e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun toggleBookmark(noteId: String, isBookmarked: Boolean): BookmarkStatus? {
+        return try {
+            val response = if (isBookmarked) {
+                api.removeBookmark(noteId)
+            } else {
+                api.addBookmark(noteId)
+            }
+            if (response.isSuccess) response.result.bookmarkStatusDTO else null
+        } catch (e: Exception) {
+            Log.e("NoteRepository", "북마크 처리 중 오류", e)
             null
         }
     }

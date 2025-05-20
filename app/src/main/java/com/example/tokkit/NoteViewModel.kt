@@ -105,6 +105,16 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    fun toggleBookmark(noteId: String, isBookmarked: Boolean) {
+        viewModelScope.launch {
+            val status = repository.toggleBookmark(noteId, isBookmarked)
+            val current = _selectedNote.value
+            if (status != null && current != null) {
+                _selectedNote.value = current.copy(bookmarkStatus = status)
+            }
+        }
+    }
+
     val comments = MutableLiveData<List<CommentResponse>>()
     private val _isLastCommentPage = MutableLiveData<Boolean>()
     val isLastCommentPage: LiveData<Boolean> get() = _isLastCommentPage
