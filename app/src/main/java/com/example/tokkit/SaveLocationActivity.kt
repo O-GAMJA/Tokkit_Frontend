@@ -284,9 +284,30 @@ class SaveLocationActivity : AppCompatActivity() {
             if (folderName.isNotEmpty()) {
                 lifecycleScope.launch {
                     try {
-                        // API를 통해 폴더 추가
-                        val parentId = if (selectedDirectoryId != null && parentPath != null) selectedDirectoryId else null
-                        val response = directoryApi.createDirectory(folderName, parentId)
+                        // 로딩 표시
+                        val loadingDialog = AlertDialog.Builder(this@SaveLocationActivity)
+                            .setMessage("폴더를 추가하는 중...")
+                            .setCancelable(false)
+                            .create()
+                        loadingDialog.show()
+
+                        // API 요청 준비
+                        val directoryApi = RetrofitClient.createService(DirectoryApiService::class.java)
+
+                        // API에 맞게 요청 본문 구성
+                        val requestBody = HashMap<String, String>().apply {
+                            put("directoryName", folderName)
+                            put("parentId", selectedDirectoryId?.toString() ?: "")
+                        }
+
+                        // 사용자 ID (실제로는 로그인한 사용자 ID 사용)
+                        val memberId = 1L
+
+                        // API 호출
+                        val response = directoryApi.createDirectory(memberId, requestBody)
+
+                        // 로딩 다이얼로그 닫기
+                        loadingDialog.dismiss()
 
                         if (response.isSuccess) {
                             // 성공적으로 폴더가 추가됨
@@ -300,21 +321,12 @@ class SaveLocationActivity : AppCompatActivity() {
                         }
                     } catch (e: Exception) {
                         Log.e("SaveLocation", "폴더 추가 중 오류 발생", e)
-                        Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
-
-                        // 오프라인 모드에서는 임시로 UI에만 추가
-                        if (parentContainer != null && parentPath != null) {
-                            // 선택된 폴더 하위에 추가
-                            addSubFolderToSelected(folderName, parentContainer, parentPath)
-                        } else {
-                            // 최상위 레벨에 추가
-                            addMainFolder(folderName, emptyList())
-                        }
+                        Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
+                    dialog.dismiss()
                 }
-                dialog.dismiss()
             } else {
-                Toast.makeText(this, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SaveLocationActivity, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
             }
         }
     }
