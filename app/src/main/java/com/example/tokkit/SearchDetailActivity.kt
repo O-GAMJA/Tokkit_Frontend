@@ -370,6 +370,11 @@ class SearchDetailActivity : AppCompatActivity() {
     }
 
     private fun showCommentBottomSheet() {
+        val noteId = currentNoteId ?: return
+
+        // 댓글 초기화
+        noteViewModel.resetComments()
+
         // BottomSheetDialog 생성
         val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
@@ -383,65 +388,102 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // RecyclerView 설정
         val recyclerView = commentView.findViewById<RecyclerView>(R.id.rv_comments)
-        recyclerView.layoutManager = LinearLayoutManager(this)
 
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
 
-        // 어댑터 설정
-        val adapter = CommentAdapter(commentList)
+//        // 어댑터 설정
+//        val adapter = CommentAdapter(commentList)
+//        recyclerView.adapter = adapter
+//
+//        // 댓글 수 설정
+//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
+//        commentCountView.text = commentList.size.toString()
+//
+//        // 댓글 목록이 비어있는지 확인하고 적절한 View 표시
+//        if (commentList.isEmpty()) {
+//            recyclerView.visibility = View.GONE
+//            noCommentsView.visibility = View.VISIBLE
+//            Log.d("SearchDetailActivity", "Comments list is empty, showing noCommentsView")
+//        } else {
+//            recyclerView.visibility = View.VISIBLE
+//            noCommentsView.visibility = View.GONE
+//            Log.d("SearchDetailActivity", "Showing comments in RecyclerView")
+//        }
+
+        val adapter = CommentAdapter(mutableListOf())
         recyclerView.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // 댓글 수 설정
-        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-        commentCountView.text = commentList.size.toString()
+        noteViewModel.loadComments(noteId)
 
-        // 댓글 목록이 비어있는지 확인하고 적절한 View 표시
-        if (commentList.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            noCommentsView.visibility = View.VISIBLE
-            Log.d("SearchDetailActivity", "Comments list is empty, showing noCommentsView")
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            noCommentsView.visibility = View.GONE
-            Log.d("SearchDetailActivity", "Showing comments in RecyclerView")
+        noteViewModel.comments.observe(this) { commentResponses ->
+            val comments = commentResponses.map {
+                Comment(
+                    username = it.writer,
+                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
+                    content = it.content,
+                    likeCount = it.emojis["like"]?.count ?: 0
+                )
+            }
+            adapter.appendComments(comments)
         }
 
-        // 댓글 입력 버튼 이벤트
+        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
+
+        // 댓글 개수 표시
+        noteViewModel.totalCommentCount.observe(this) { count ->
+            commentCountView.text = count.toString()
+        }
+
+
+        // 페이징 처리
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val lastVisible = layoutManager.findLastVisibleItemPosition()
+                val total = layoutManager.itemCount
+                if (lastVisible + 2 >= total) {
+                    noteViewModel.loadNextCommentPage(noteId)
+                }
+            }
+        })
+
+//        // 댓글 입력 버튼 이벤트
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
         val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-
-        sendButton.setOnClickListener {
-            val commentText = etComment.text.toString().trim()
-            if (commentText.isNotEmpty()) {
-                // 새 댓글 추가
-                val newComment = Comment("나", "방금", commentText, 0)
-                commentList.add(0, newComment)
-
-                Log.d("SearchDetailActivity", "Added new comment: $commentText")
-                Log.d("SearchDetailActivity", "New comments count: ${commentList.size}")
-
-                // 어댑터 업데이트
-                adapter.notifyItemInserted(0)
-                recyclerView.scrollToPosition(0)
-
-                // 댓글 수 업데이트
-                commentCountView.text = commentList.size.toString()
-
-                // 입력창 비우기
-                etComment.text.clear()
-
-                // 댓글 목록이 이제 비어있지 않으므로 no comments 뷰 숨기기
-                if (noCommentsView.visibility == View.VISIBLE) {
-                    noCommentsView.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    Log.d("SearchDetailActivity", "Hiding noCommentsView, showing RecyclerView")
-                }
-
-//                // 토스트 메시지로 댓글 추가 알림
-//                Toast.makeText(this, "댓글이 추가되었습니다", Toast.LENGTH_SHORT).show()
-            }
-        }
+//
+//        sendButton.setOnClickListener {
+//            val commentText = etComment.text.toString().trim()
+//            if (commentText.isNotEmpty()) {
+//                // 새 댓글 추가
+//                val newComment = Comment("나", "방금", commentText, 0)
+//                commentList.add(0, newComment)
+//
+//                Log.d("SearchDetailActivity", "Added new comment: $commentText")
+//                Log.d("SearchDetailActivity", "New comments count: ${commentList.size}")
+//
+//                // 어댑터 업데이트
+//                adapter.notifyItemInserted(0)
+//                recyclerView.scrollToPosition(0)
+//
+//                // 댓글 수 업데이트
+//                commentCountView.text = commentList.size.toString()
+//
+//                // 입력창 비우기
+//                etComment.text.clear()
+//
+//                // 댓글 목록이 이제 비어있지 않으므로 no comments 뷰 숨기기
+//                if (noCommentsView.visibility == View.VISIBLE) {
+//                    noCommentsView.visibility = View.GONE
+//                    recyclerView.visibility = View.VISIBLE
+//                    Log.d("SearchDetailActivity", "Hiding noCommentsView, showing RecyclerView")
+//                }
+//
+////                // 토스트 메시지로 댓글 추가 알림
+////                Toast.makeText(this, "댓글이 추가되었습니다", Toast.LENGTH_SHORT).show()
+//            }
+//        }
 
         // 키보드에서 전송 버튼 클릭 시 댓글 전송
         etComment.setOnEditorActionListener { _, actionId, _ ->

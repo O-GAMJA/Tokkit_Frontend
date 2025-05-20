@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tokkit.data.remote.model.CommentResponse
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.data.remote.repository.NoteRepository
@@ -103,6 +104,38 @@ class NoteViewModel : ViewModel() {
             }
         }
     }
+
+    val comments = MutableLiveData<List<CommentResponse>>()
+    private val _isLastCommentPage = MutableLiveData<Boolean>()
+    val isLastCommentPage: LiveData<Boolean> get() = _isLastCommentPage
+    private val _totalCommentCount = MutableLiveData<Int>()
+    val totalCommentCount: LiveData<Int> get() = _totalCommentCount
+    private var currentCommentPage = 0
+
+    fun loadComments(noteId: String, page: Int = 0, size: Int = 10) {
+        viewModelScope.launch {
+            val result = repository.fetchComments(noteId, page, size)
+            result?.let {
+                val currentList = if (page == 0) emptyList() else comments.value ?: emptyList()
+                comments.value = currentList + it.comments
+                _totalCommentCount.value = it.totalElements
+                _isLastCommentPage.value = it.last
+                currentCommentPage = page
+            }
+        }
+    }
+
+    fun resetComments() {
+        comments.value = emptyList()
+        _isLastCommentPage.value = false
+        currentCommentPage = 0
+    }
+
+    fun loadNextCommentPage(noteId: String, size: Int = 10) {
+        if (_isLastCommentPage.value == true) return
+        loadComments(noteId, currentCommentPage + 1, size)
+    }
+
 
     private val _similarNotes = MutableLiveData<List<SimilarNoteItem>>()
     val similarNotes: LiveData<List<SimilarNoteItem>> get() = _similarNotes
