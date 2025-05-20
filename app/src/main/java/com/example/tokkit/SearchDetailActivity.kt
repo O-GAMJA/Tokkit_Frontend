@@ -49,11 +49,11 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_DELETE_ID = 3
 
     // 댓글 목록 데이터 (전역 변수로 변경)
-    private val commentList = mutableListOf(
-        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
-        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
-        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
-    )
+//    private val commentList = mutableListOf(
+//        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
+//        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
+//        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
+//    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -384,9 +384,6 @@ class SearchDetailActivity : AppCompatActivity() {
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
         bottomSheetDialog.setContentView(commentView)
 
-        // 로그 추가 - 디버깅용
-        Log.d("SearchDetailActivity", "Comments count: ${commentList.size}")
-
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
 
@@ -463,17 +460,22 @@ class SearchDetailActivity : AppCompatActivity() {
         // ✅ 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
             val newComments = commentResponses.map {
-                Comment(it.writer, "방금", it.content, it.emojis["like"]?.count ?: 0)
+                Comment(
+                    it.writer,
+                    "방금",
+                    it.content,
+                    it.emojis["like"]?.count ?: 0,
+                    it.commentId)
             }
 
             if (currentPage == 0) allComments.clear()
             allComments.addAll(newComments)
 
-            if (currentPage == 0) {
-                adapter.updateComments(allComments)
-            } else {
-                adapter.appendComments(newComments)
-            }
+            val sortedComments = allComments
+                .distinctBy { it.commentId }
+                .sortedBy { it.commentId } // ✅ 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+
+            adapter.updateComments(sortedComments)
         }
 
         // ✅ 댓글 수 observe
@@ -534,13 +536,17 @@ class SearchDetailActivity : AppCompatActivity() {
             false
         }
 
-        // 댓글이 있는 경우 BottomSheet의 높이 설정
-        if (commentList.size > 0) {
-            val params = recyclerView.layoutParams
-            params.height = resources.displayMetrics.heightPixels / 2
-            recyclerView.layoutParams = params
-            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
-        }
+        val params = recyclerView.layoutParams
+        params.height = resources.displayMetrics.heightPixels / 2
+        recyclerView.layoutParams = params
+
+//        // 댓글이 있는 경우 BottomSheet의 높이 설정
+//        if (commentList.size > 0) {
+//            val params = recyclerView.layoutParams
+//            params.height = resources.displayMetrics.heightPixels / 2
+//            recyclerView.layoutParams = params
+//            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
+//        }
 
         // BottomSheet 동작 설정
         val behavior = bottomSheetDialog.behavior
