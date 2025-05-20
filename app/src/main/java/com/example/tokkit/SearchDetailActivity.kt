@@ -3,6 +3,7 @@ package com.example.tokkit
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
+import com.example.tokkit.adapter.OnCommentLongClickListener
 import com.example.tokkit.adapter.SimilarNoteAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
 import com.example.tokkit.data.remote.model.Note
@@ -48,12 +50,7 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_SAVE_ID = 2
     private val MENU_DELETE_ID = 3
 
-    // 댓글 목록 데이터 (전역 변수로 변경)
-//    private val commentList = mutableListOf(
-//        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
-//        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
-//        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
-//    )
+    private lateinit var myUsername: String // SharedPreferences로 담길 username
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +59,9 @@ class SearchDetailActivity : AppCompatActivity() {
 
         val noteId = intent.getStringExtra("NOTE_ID") ?: return
         currentNoteId = noteId
+
+        myUsername = getSharedPreferences("user", MODE_PRIVATE)
+            .getString("username", null) ?: "nick"
 
         noteViewModel.loadNoteById(noteId)
 
@@ -281,8 +281,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
-        //val bookmarkIcon = binding.btnBookmark
-        //val countTextView = binding.bookmarkCount
 
         bookmarkContainer.setOnClickListener {
             val noteId = currentNoteId ?: return@setOnClickListener
@@ -393,71 +391,21 @@ class SearchDetailActivity : AppCompatActivity() {
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
 
-        val adapter = CommentAdapter(mutableListOf())
+        val adapter = CommentAdapter(
+            comments = mutableListOf(),
+            myUsername = myUsername,
+            onLongClickListener = object : OnCommentLongClickListener {
+                override fun onLongClick(view: View, comment: Comment) {
+                    showCommentPopup(view, comment)
+                }
+            }
+        )
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-//        noteViewModel.loadComments(noteId)
-//
-//        noteViewModel.comments.observe(this) { commentResponses ->
-//            val comments = commentResponses.map {
-//                Comment(
-//                    username = it.writer,
-//                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
-//                    content = it.content,
-//                    likeCount = it.emojis["like"]?.count ?: 0
-//                )
-//            }
-//            if (currentPage == 0) {
-//                adapter.updateComments(comments) // 덮어쓰기
-//            } else {
-//                adapter.appendComments(comments) // 이어붙이기
-//            }
-//        }
-//
-//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-//
-//        // 댓글 개수 표시
-//        noteViewModel.totalCommentCount.observe(this) { count ->
-//            commentCountView.text = count.toString()
-//        }
-//
-//        // 페이징 처리
-//        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-//                val lastVisible = layoutManager.findLastVisibleItemPosition()
-//                val total = layoutManager.itemCount
-//                if (lastVisible + 2 >= total) {
-//                    noteViewModel.loadNextCommentPage(noteId)
-//                }
-//            }
-//        })
-//
-//        // 댓글 입력 버튼 이벤트
-//        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-//        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-//
-//        sendButton.setOnClickListener {
-//            val commentText = etComment.text.toString().trim()
-//            if (commentText.isNotEmpty()) {
-//                noteViewModel.postComment(
-//                    noteId = currentNoteId ?: return@setOnClickListener,
-//                    content = commentText,
-//                    onSuccess = {
-//                        etComment.text.clear()
-//                        Toast.makeText(this, "댓글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
-//                    },
-//                    onFail = {
-//                        Toast.makeText(this, "댓글 등록에 실패했습니다.", Toast.LENGTH_SHORT).show()
-//                    }
-//                )
-//            }
-//        }
-
         val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
 
-        // ✅ 댓글 observe
+        // 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
             val newComments = commentResponses.map {
                 Comment(
@@ -473,20 +421,20 @@ class SearchDetailActivity : AppCompatActivity() {
 
             val sortedComments = allComments
                 .distinctBy { it.commentId }
-                .sortedBy { it.commentId } // ✅ 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
 
             adapter.updateComments(sortedComments)
         }
 
-        // ✅ 댓글 수 observe
+        // 댓글 수 observe
         noteViewModel.totalCommentCount.observe(this) { count ->
             commentCountView.text = count.toString()
         }
 
-        // ✅ 초기 댓글 로드
+        // 초기 댓글 로드
         noteViewModel.loadComments(noteId, page = 0)
 
-        // ✅ 페이징 스크롤
+        // 페이징 스크롤
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -500,7 +448,7 @@ class SearchDetailActivity : AppCompatActivity() {
             }
         })
 
-        // ✅ 댓글 작성
+        // 댓글 작성
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
         val etComment = commentView.findViewById<EditText>(R.id.et_comment)
 
@@ -514,7 +462,7 @@ class SearchDetailActivity : AppCompatActivity() {
                         etComment.text.clear()
                         Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
-                        // 💡 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        // 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
                         currentPage = 0
                         allComments.clear()
                         noteViewModel.resetComments()
@@ -540,14 +488,6 @@ class SearchDetailActivity : AppCompatActivity() {
         params.height = resources.displayMetrics.heightPixels / 2
         recyclerView.layoutParams = params
 
-//        // 댓글이 있는 경우 BottomSheet의 높이 설정
-//        if (commentList.size > 0) {
-//            val params = recyclerView.layoutParams
-//            params.height = resources.displayMetrics.heightPixels / 2
-//            recyclerView.layoutParams = params
-//            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
-//        }
-
         // BottomSheet 동작 설정
         val behavior = bottomSheetDialog.behavior
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -561,6 +501,45 @@ class SearchDetailActivity : AppCompatActivity() {
         // BottomSheet 표시
         bottomSheetDialog.show()
     }
+
+    private fun showCommentPopup(anchorView: View, comment: Comment) {
+
+        val popup = PopupMenu(this, anchorView, Gravity.END)
+        Log.d("PopupMenu", "내 username: $myUsername, 댓글 작성자: ${comment.username}")
+
+        popup.menu.add("이모지 달기")
+        popup.menu.add("답글 달기")
+
+        if (comment.username == myUsername) {
+            popup.menu.add("수정")
+            popup.menu.add("삭제")
+        }
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title) {
+                "이모지 달기" -> {
+                    Toast.makeText(this, "이모지 달기 눌림", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                "답글 달기" -> {
+                    Toast.makeText(this, "답글 달기 눌림", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                "수정" -> {
+                    Toast.makeText(this, "댓글 수정 눌림", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                "삭제" -> {
+                    Toast.makeText(this, "댓글 삭제 눌림", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popup.show()
+    }
+
 
     override fun onBackPressed() {
         val result = Intent().apply {

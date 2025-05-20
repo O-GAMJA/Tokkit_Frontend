@@ -10,7 +10,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.R
 import com.example.tokkit.model.Comment
 
-class CommentAdapter(private val comments: MutableList<Comment>) :
+class CommentAdapter(
+    private val comments: MutableList<Comment>,
+    private val myUsername: String,
+    private val onLongClickListener: OnCommentLongClickListener) :
     RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
 
     init {
@@ -52,6 +55,12 @@ class CommentAdapter(private val comments: MutableList<Comment>) :
         // 답글 버튼 클릭 이벤트
         holder.btnReply.setOnClickListener {
             // 답글 기능 구현
+        }
+
+        // 롱클릭 시 팝업 전달
+        holder.itemView.setOnLongClickListener {
+            onLongClickListener.onLongClick(it, comment)
+            true
         }
     }
 
