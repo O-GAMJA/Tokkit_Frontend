@@ -73,7 +73,7 @@ interface NoteApiService {
     ): ApiResponse<BookmarkResponse>
 
 
-    // 뎃글 목록 조회 api
+    // 댓글 목록 조회 api
     @GET("/comments/{noteId}")
     suspend fun getComments(
         @Path("noteId") noteId: String,
