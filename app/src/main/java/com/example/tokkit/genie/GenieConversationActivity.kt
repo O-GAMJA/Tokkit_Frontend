@@ -35,6 +35,8 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var tts: TextToSpeech
     private var fullResponse = StringBuilder()
+    private var tempOcrText: String? = null  // OCR 텍스트를 임시 저장할 변수
+
     // 1초 동안 새 토큰이 없으면 응답 종료로 간주
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
@@ -56,6 +58,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         super.onCreate(savedInstanceState)
         binding = ActivityGenieChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Intent에서 OCR 텍스트 가져와서 임시 변수에 저장 (아직 설정하지 않음)
+        tempOcrText = intent.getStringExtra("OCR_TEXT")
 
         // 저장된 대화 내용 로드
         ConversationManager.loadConversation(this)
@@ -106,8 +111,18 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             val externalCacheDir = this.externalCacheDir?.absolutePath
             val modelDir = Paths.get(externalCacheDir, "models", modelName).toString()
 
+            // GenieWrapper 초기화 - 이 시점 이후에만 genieWrapper 사용 가능
             genieWrapper = GenieWrapper(modelDir, htpConfigPath)
             Log.i("GenieChat", "$modelName 모델 로드 완료")
+
+            // 모델 초기화 후에 OCR 텍스트 설정
+            if (!tempOcrText.isNullOrEmpty()) {
+                genieWrapper.setOcrText(tempOcrText!!)
+
+                // OCR 텍스트를 참고한다는 메시지 표시 (선택적)
+                val ocrMessage = ChatMessage("다음 학습 노트 내용을 참고하여 답변드리겠습니다:\n\n$tempOcrText", MessageSender.BOT)
+                ConversationManager.addMessage(ocrMessage)
+            }
 
             // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
             val existingMessages = ConversationManager.getAllMessages()
@@ -375,6 +390,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
         }
     }
+
     // 응답을 완전히 받을 때까지 기다리는 블로킹 메서드
     private fun getCompleteResponse(prompt: String): String {
         val responseBuilder = StringBuilder()

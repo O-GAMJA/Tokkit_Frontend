@@ -74,3 +74,21 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_tokkit_genie_GenieWrapper_fre
         env->ThrowNew(exception_cls, e.what());
     }
 }
+
+extern "C" JNIEXPORT void JNICALL Java_com_example_tokkit_genie_GenieWrapper_setOcrText(
+        JNIEnv* env, jobject /* this */, jlong genie_wrapper_handle, jstring ocr_text) {
+
+    try {
+        // Get OCR text from Java string
+        const char* text = env->GetStringUTFChars(ocr_text, 0);
+        std::string ocr_string(text);
+        env->ReleaseStringUTFChars(ocr_text, text);
+
+        // Set OCR text to GenieWrapper
+        App::GenieWrapper* wrapper = reinterpret_cast<App::GenieWrapper*>(genie_wrapper_handle);
+        wrapper->SetOcrText(ocr_string);
+    } catch (std::exception& e) {
+        jclass exception_cls = env->FindClass("java/lang/RuntimeException");
+        env->ThrowNew(exception_cls, e.what());
+    }
+}

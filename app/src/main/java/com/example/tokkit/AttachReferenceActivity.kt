@@ -31,6 +31,8 @@ class AttachReferenceActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAttachReferenceBinding
     private val TAG = "OCR_API"
+    private var ocrResultText = ""
+
 
     // 저장소 접근 요청 코드
     private val STORAGE_PERMISSION_REQUEST_CODE = 100
@@ -172,7 +174,9 @@ class AttachReferenceActivity : AppCompatActivity() {
 
                         if (response.isSuccess) {
                             // API 응답 로그 출력
-                            Log.d(TAG, "OCR 처리 결과: ${response.result.translatedText}")
+                            ocrResultText = response.result.translatedText
+
+                            Log.d(TAG, "OCR 처리 결과: $ocrResultText")
 
                             // 채팅 화면으로 이동
                             navigateToChatScreen()
@@ -215,8 +219,13 @@ class AttachReferenceActivity : AppCompatActivity() {
     }
 
     private fun navigateToChatScreen() {
-
         val intent = Intent(this, ChatActivity::class.java)
+
+        // OCR 결과가 있는 경우에만 전달
+        if (ocrResultText.isNotEmpty()) {
+            intent.putExtra("OCR_TEXT", ocrResultText)
+        }
+
         startActivity(intent)
         finish()
     }

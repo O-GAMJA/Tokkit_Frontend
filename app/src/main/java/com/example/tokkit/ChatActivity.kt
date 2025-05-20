@@ -65,6 +65,21 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Intent에서 OCR 텍스트 가져오기
+        val ocrText = intent.getStringExtra("OCR_TEXT")
+
+        // Genie 초기화
+        initializeGenie()
+
+        // OCR 텍스트가 있는 경우 Genie에 설정
+        if (!ocrText.isNullOrEmpty()) {
+            genieWrapper.setOcrText(ocrText)
+
+            // 사용자에게 OCR 텍스트를 참고한다는 메시지 표시
+            val message = ChatMessage("다음 학습 노트 내용을 참고하여 답변드리겠습니다:\n\n$ocrText", MessageSender.BOT)
+            ConversationManager.addMessage(message)
+        }
+
         // 저장된 대화 내용 로드
         ConversationManager.loadConversation(this)
 
@@ -430,7 +445,14 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             val intent = Intent(this, GenieConversationActivity::class.java).apply {
                 putExtra(GenieConversationActivity.KEY_HTP_CONFIG, htpConfigPath)
                 putExtra(GenieConversationActivity.KEY_MODEL_NAME, "llama3_2_3b")
+
+                // OCR 텍스트를 현재 액티비티의 인텐트에서 가져와 새 인텐트에 추가
+                val ocrText = this@ChatActivity.intent.getStringExtra("OCR_TEXT")
+                if (!ocrText.isNullOrEmpty()) {
+                    putExtra("OCR_TEXT", ocrText)
+                }
             }
+
             startActivity(intent)
 
         } catch (e: Exception) {
@@ -438,7 +460,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             Toast.makeText(this, "Genie 대화 시작 중 오류 발생: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
-
     // 애셋 복사 함수
     private fun copyAssetsIfNeeded() {
         val externalDir = externalCacheDir?.absolutePath ?: ""

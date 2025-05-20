@@ -14,7 +14,7 @@
 namespace App
 {
 constexpr const char* c_exit_prompt = "exit";
-constexpr const char* c_bot_name = "Qbot";
+constexpr const char* c_bot_name = "Tokkit";
 
 class GenieWrapper
 {
@@ -38,6 +38,9 @@ class GenieWrapper
      * @thows on failure to create handle for Genie config, dialog
      *
      */
+    void SetOcrText(const std::string& ocr_text) {
+        prompt_handler.SetOcrText(ocr_text);
+    }
     GenieWrapper(const std::string& model_config_path,
                  const std::string& models_path,
                  const std::string& htp_config_path,
