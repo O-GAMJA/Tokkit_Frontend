@@ -25,9 +25,9 @@ import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.OnCommentLongClickListener
 import com.example.tokkit.adapter.SimilarNoteAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
+import com.example.tokkit.data.remote.model.Comment
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
-import com.example.tokkit.model.Comment
 import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -52,7 +52,8 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_SAVE_ID = 2
     private val MENU_DELETE_ID = 3
 
-    private lateinit var myUsername: String // SharedPreferences로 담길 username
+    private var currentPage = 0
+    private val allComments = mutableListOf<Comment>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,9 +62,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
         val noteId = intent.getStringExtra("NOTE_ID") ?: return
         currentNoteId = noteId
-
-        myUsername = getSharedPreferences("user", MODE_PRIVATE)
-            .getString("username", null) ?: "nick"
 
         noteViewModel.loadNoteById(noteId)
 
@@ -377,8 +375,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun showCommentBottomSheet() {
         val noteId = currentNoteId ?: return
-        var currentPage = 0
-        val allComments = mutableListOf<Comment>()
 
         // 댓글 초기화
         noteViewModel.resetComments()
@@ -399,7 +395,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
         val adapter = CommentAdapter(
             comments = mutableListOf(),
-            myUsername = myUsername,
             onLongClickListener = object : OnCommentLongClickListener {
                 override fun onLongClick(view: View, comment: Comment) {
                     showCommentPopup(view, comment)
@@ -414,12 +409,14 @@ class SearchDetailActivity : AppCompatActivity() {
         // 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
             val newComments = commentResponses.map {
+                val createdTime = parseTimeAgo(it.createdAt)
                 Comment(
                     it.writer,
-                    "방금",
+                    createdTime,
                     it.content,
                     it.emojis["like"]?.count ?: 0,
-                    it.commentId)
+                    it.commentId,
+                    it.isMine)
             }
 
             if (currentPage == 0) allComments.clear()
@@ -508,15 +505,33 @@ class SearchDetailActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
+    private fun parseTimeAgo(createdAt: String): String {
+        return try {
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
+            val parsedTime = java.time.LocalDateTime.parse(createdAt, formatter)
+            val now = java.time.LocalDateTime.now()
+            val duration = java.time.Duration.between(parsedTime, now)
+
+            when {
+                duration.toMinutes() < 1 -> "방금"
+                duration.toHours() < 1 -> "${duration.toMinutes()}분 전"
+                duration.toHours() < 24 -> "${duration.toHours()}시간 전"
+                else -> "${duration.toDays()}일 전"
+            }
+        } catch (e: Exception) {
+            Log.e("TimeParser", "createdAt 파싱 실패: $createdAt", e)
+            "방금"
+        }
+    }
+
     private fun showCommentPopup(anchorView: View, comment: Comment) {
 
         val popup = PopupMenu(this, anchorView, Gravity.END)
-        Log.d("PopupMenu", "내 username: $myUsername, 댓글 작성자: ${comment.username}")
 
         popup.menu.add("이모지 달기")
         popup.menu.add("답글 달기")
 
-        if (comment.username == myUsername) {
+        if (comment.isMine) {
             popup.menu.add("수정")
             popup.menu.add("삭제")
         }
@@ -538,8 +553,10 @@ class SearchDetailActivity : AppCompatActivity() {
                 "삭제" -> {
                     noteViewModel.deleteComment(comment.commentId) { success ->
                         if (success) {
-                            Toast.makeText(this, "삭제 완료", Toast.LENGTH_SHORT).show()
+                            //Toast.makeText(this, "삭제 완료", Toast.LENGTH_SHORT).show()
                             // 댓글 리스트 갱신
+                            currentPage = 0
+                            allComments.clear()
                             noteViewModel.resetComments()
                             noteViewModel.loadComments(currentNoteId!!, 0)
                         } else {
@@ -578,7 +595,9 @@ class SearchDetailActivity : AppCompatActivity() {
                 if (newContent.isNotBlank()) {
                     noteViewModel.updateComment(comment.commentId, newContent) { success ->
                         if (success) {
-                            Toast.makeText(this, "수정 완료", Toast.LENGTH_SHORT).show()
+                            //Toast.makeText(this, "수정 완료", Toast.LENGTH_SHORT).show()
+                            currentPage = 0
+                            allComments.clear()
                             noteViewModel.resetComments()
                             noteViewModel.loadComments(currentNoteId!!, 0)
                         } else {

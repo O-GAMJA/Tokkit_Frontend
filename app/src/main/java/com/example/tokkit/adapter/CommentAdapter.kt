@@ -8,11 +8,10 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.R
-import com.example.tokkit.model.Comment
+import com.example.tokkit.data.remote.model.Comment
 
 class CommentAdapter(
     private val comments: MutableList<Comment>,
-    private val myUsername: String,
     private val onLongClickListener: OnCommentLongClickListener) :
     RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
 
