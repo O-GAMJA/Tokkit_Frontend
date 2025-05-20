@@ -125,3 +125,17 @@ data class S3UrlResponse(
     val preSignedUrl: String,
     val imageKey: String
 )
+
+//검색 응답
+data class SearchResponse(
+    val noteSearchResults: List<SimilarNoteItem>,
+    val paginationInfo: SearchPaginationInfo
+)
+
+//검색 페이지네이션 정보
+data class SearchPaginationInfo(
+    val page: Int,
+    val page_size: Int,
+    val result_count: Int,
+    val has_more: Boolean
+)
