@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.tokkit.HomeFragment
 import com.example.tokkit.NoteViewModel
 import com.example.tokkit.databinding.FragmentListViewBinding
 import com.example.tokkit.SearchDetailActivity
@@ -31,9 +32,18 @@ class ListViewFragment : Fragment() {
         if (result.resultCode == Activity.RESULT_OK) {
             val deleted = result.data?.getBooleanExtra("noteDeleted", false) ?: false
             val modified = result.data?.getBooleanExtra("noteModified", false) ?: false
+            val wasTagSearch = result.data?.getBooleanExtra("wasTagSearch", false) ?: false
+            val tagName = result.data?.getStringExtra("tagName")
 
             if (deleted || modified) {
-                noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
+                if (wasTagSearch && tagName != null) {
+                    // 태그 검색 상태였으면 태그 검색 결과 다시 로드
+                    val homeFragment = parentFragment as? HomeFragment
+                    homeFragment?.searchNotesByTag(tagName)
+                } else {
+                    // 일반 상태였으면 전체 노트 로드
+                    noteViewModel.loadNotes(memberId = 1L, page = currentPage, size = 10)
+                }
             }
         }
     }
@@ -63,9 +73,16 @@ class ListViewFragment : Fragment() {
             onItemClick = { note ->
                 val intent = Intent(requireContext(), SearchDetailActivity::class.java)
                 intent.putExtra("NOTE_ID", note.id)
+
+                // 태그 검색 상태 전달 추가
+                val homeFragment = parentFragment as? HomeFragment
+                val (isTagSearch, tagName) = homeFragment?.getCurrentTagSearchState() ?: Pair(false, null)
+                intent.putExtra("isTagSearch", isTagSearch)
+                intent.putExtra("tagName", tagName)
+
                 detailLauncher.launch(intent)
             },
-            useCardLayout = false,
+            useCardLayout = true,
             markwon = markwon
         )
 

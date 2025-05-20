@@ -139,22 +139,22 @@ class HomeFragment : Fragment() {
     }
 
     private fun resetNoteSearch() {
-        // 태그 검색 모드 명시적으로 종료
-        noteViewModel.exitTagSearchMode()
-
         // 전체 노트 목록으로 복원
-        noteViewModel.resetNotes()
+        noteViewModel.resetNotes() // resetNotes() 내부에서 exitTagSearchMode()가 호출됨
         noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
 
         // 로딩 상태 확인을 위해 로그 추가
         Log.d("HomeFragment", "노트 목록 리셋 실행(태그)")
 
+        // HomeFragment의 상태 변수도 초기화
+        isSearchByTag = false
+        selectedTag = null
+
         // 선택된 태그 칩 초기화
         binding.horizontalTagContainer.removeAllViews()
         addedTags.clear()
     }
-
-    private fun searchNotesByTag(tagName: String) {
+    fun searchNotesByTag(tagName: String) {
         // 기존 직접 API 호출하는 코드 대신 ViewModel 함수 활용
         noteViewModel.searchNotesByTag(tagName, 1L, 0, 10)
 
@@ -245,5 +245,9 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    fun getCurrentTagSearchState(): Pair<Boolean, String?> {
+        return Pair(isSearchByTag, selectedTag)
     }
 }
