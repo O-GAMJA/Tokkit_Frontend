@@ -49,11 +49,11 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_DELETE_ID = 3
 
     // 댓글 목록 데이터 (전역 변수로 변경)
-    private val commentList = mutableListOf(
-        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
-        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
-        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
-    )
+//    private val commentList = mutableListOf(
+//        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
+//        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
+//        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
+//    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -281,31 +281,33 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
-        val bookmarkIcon = binding.btnBookmark
-        val countTextView = binding.bookmarkCount
+        //val bookmarkIcon = binding.btnBookmark
+        //val countTextView = binding.bookmarkCount
 
-        // 초기 카운트 표시
-        countTextView.text = bookmarkCount.toString()
-
-        // 북마크 컨테이너 클릭 이벤트
         bookmarkContainer.setOnClickListener {
-            // 북마크 상태 토글
-            isBookmarked = !isBookmarked
+            val noteId = currentNoteId ?: return@setOnClickListener
+            val currentNote = noteViewModel.selectedNote.value ?: return@setOnClickListener
+            val isCurrentlyBookmarked = currentNote.bookmarkStatus?.clicked ?: false
 
-            // 카운트 증가/감소 및 업데이트
-            if (isBookmarked) {
-                // 북마크 활성화 시 카운트 증가
-                bookmarkCount++
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark_filled)
-            } else {
-                // 북마크 비활성화 시 카운트 감소
-                bookmarkCount--
-                bookmarkIcon.setImageResource(R.drawable.ic_bookmark)
+            // 서버 요청
+            noteViewModel.toggleBookmark(noteId, isCurrentlyBookmarked)
+        }
+
+        // UI 반영
+        noteViewModel.selectedNote.observe(this) { note ->
+            note?.bookmarkStatus?.let { status ->
+                isBookmarked = status.clicked
+                bookmarkCount = status.count
+
+                binding.bookmarkCount.text = bookmarkCount.toString()
+                binding.btnBookmark.setImageResource(
+                    if (isBookmarked) R.drawable.ic_bookmark_filled
+                    else R.drawable.ic_bookmark
+                )
             }
-
-            countTextView.text = bookmarkCount.toString()
         }
     }
+
 
     private fun setupReactionButtons() {
 
@@ -371,6 +373,8 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun showCommentBottomSheet() {
         val noteId = currentNoteId ?: return
+        var currentPage = 0
+        val allComments = mutableListOf<Comment>()
 
         // 댓글 초기화
         noteViewModel.resetComments()
@@ -379,9 +383,6 @@ class SearchDetailActivity : AppCompatActivity() {
         val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
         bottomSheetDialog.setContentView(commentView)
-
-        // 로그 추가 - 디버깅용
-        Log.d("SearchDetailActivity", "Comments count: ${commentList.size}")
 
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
@@ -392,98 +393,81 @@ class SearchDetailActivity : AppCompatActivity() {
         // 확인용 로그
         Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
 
-//        // 어댑터 설정
-//        val adapter = CommentAdapter(commentList)
-//        recyclerView.adapter = adapter
-//
-//        // 댓글 수 설정
-//        val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
-//        commentCountView.text = commentList.size.toString()
-//
-//        // 댓글 목록이 비어있는지 확인하고 적절한 View 표시
-//        if (commentList.isEmpty()) {
-//            recyclerView.visibility = View.GONE
-//            noCommentsView.visibility = View.VISIBLE
-//            Log.d("SearchDetailActivity", "Comments list is empty, showing noCommentsView")
-//        } else {
-//            recyclerView.visibility = View.VISIBLE
-//            noCommentsView.visibility = View.GONE
-//            Log.d("SearchDetailActivity", "Showing comments in RecyclerView")
-//        }
-
         val adapter = CommentAdapter(mutableListOf())
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        noteViewModel.loadComments(noteId)
-
-        noteViewModel.comments.observe(this) { commentResponses ->
-            val comments = commentResponses.map {
-                Comment(
-                    username = it.writer,
-                    time = "방금", // 서버 응답이 시간 정보를 포함하지 않으면 임시값
-                    content = it.content,
-                    likeCount = it.emojis["like"]?.count ?: 0
-                )
-            }
-            adapter.appendComments(comments)
-        }
-
         val commentCountView = commentView.findViewById<TextView>(R.id.tv_comment_count)
 
-        // 댓글 개수 표시
+        // 댓글 observe
+        noteViewModel.comments.observe(this) { commentResponses ->
+            val newComments = commentResponses.map {
+                Comment(
+                    it.writer,
+                    "방금",
+                    it.content,
+                    it.emojis["like"]?.count ?: 0,
+                    it.commentId)
+            }
+
+            if (currentPage == 0) allComments.clear()
+            allComments.addAll(newComments)
+
+            val sortedComments = allComments
+                .distinctBy { it.commentId }
+                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+
+            adapter.updateComments(sortedComments)
+        }
+
+        // 댓글 수 observe
         noteViewModel.totalCommentCount.observe(this) { count ->
             commentCountView.text = count.toString()
         }
 
+        // 초기 댓글 로드
+        noteViewModel.loadComments(noteId, page = 0)
 
-        // 페이징 처리
+        // 페이징 스크롤
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val layoutManager = recyclerView.layoutManager as LinearLayoutManager
                 val lastVisible = layoutManager.findLastVisibleItemPosition()
-                val total = layoutManager.itemCount
-                if (lastVisible + 2 >= total) {
-                    noteViewModel.loadNextCommentPage(noteId)
+                val totalItemCount = layoutManager.itemCount
+
+                if (lastVisible + 2 >= totalItemCount && noteViewModel.isLastCommentPage.value != true) {
+                    currentPage++
+                    noteViewModel.loadComments(noteId, page = currentPage)
                 }
             }
         })
 
-//        // 댓글 입력 버튼 이벤트
+        // 댓글 작성
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
         val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-//
-//        sendButton.setOnClickListener {
-//            val commentText = etComment.text.toString().trim()
-//            if (commentText.isNotEmpty()) {
-//                // 새 댓글 추가
-//                val newComment = Comment("나", "방금", commentText, 0)
-//                commentList.add(0, newComment)
-//
-//                Log.d("SearchDetailActivity", "Added new comment: $commentText")
-//                Log.d("SearchDetailActivity", "New comments count: ${commentList.size}")
-//
-//                // 어댑터 업데이트
-//                adapter.notifyItemInserted(0)
-//                recyclerView.scrollToPosition(0)
-//
-//                // 댓글 수 업데이트
-//                commentCountView.text = commentList.size.toString()
-//
-//                // 입력창 비우기
-//                etComment.text.clear()
-//
-//                // 댓글 목록이 이제 비어있지 않으므로 no comments 뷰 숨기기
-//                if (noCommentsView.visibility == View.VISIBLE) {
-//                    noCommentsView.visibility = View.GONE
-//                    recyclerView.visibility = View.VISIBLE
-//                    Log.d("SearchDetailActivity", "Hiding noCommentsView, showing RecyclerView")
-//                }
-//
-////                // 토스트 메시지로 댓글 추가 알림
-////                Toast.makeText(this, "댓글이 추가되었습니다", Toast.LENGTH_SHORT).show()
-//            }
-//        }
+
+        sendButton.setOnClickListener {
+            val text = etComment.text.toString().trim()
+            if (text.isNotEmpty()) {
+                noteViewModel.postComment(
+                    noteId = noteId,
+                    content = text,
+                    onSuccess = {
+                        etComment.text.clear()
+                        Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
+
+                        // 💡 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        currentPage = 0
+                        allComments.clear()
+                        noteViewModel.resetComments()
+                        noteViewModel.loadComments(noteId, 0)
+                    },
+                    onFail = {
+                        Toast.makeText(this, "댓글 등록 실패", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
 
         // 키보드에서 전송 버튼 클릭 시 댓글 전송
         etComment.setOnEditorActionListener { _, actionId, _ ->
@@ -494,13 +478,9 @@ class SearchDetailActivity : AppCompatActivity() {
             false
         }
 
-        // 댓글이 있는 경우 BottomSheet의 높이 설정
-        if (commentList.size > 0) {
-            val params = recyclerView.layoutParams
-            params.height = resources.displayMetrics.heightPixels / 2
-            recyclerView.layoutParams = params
-            Log.d("SearchDetailActivity", "Set RecyclerView height to half screen")
-        }
+        val params = recyclerView.layoutParams
+        params.height = resources.displayMetrics.heightPixels / 2
+        recyclerView.layoutParams = params
 
         // BottomSheet 동작 설정
         val behavior = bottomSheetDialog.behavior
