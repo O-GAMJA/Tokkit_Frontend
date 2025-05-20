@@ -2,6 +2,7 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
@@ -14,6 +15,7 @@ import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import com.example.tokkit.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -54,6 +56,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // FAB 이벤트 설정
         setupSearchFab()
+
+        // 🔥 FCM 토큰 가져와서 로그로 출력
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "🔥 FCM 토큰 가져오기 실패", task.exception)
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            Log.d("FCM", "🔥 현재 FCM 토큰: $token")
+        }
     }
 
     private fun setupCustomNavigationDrawer() {

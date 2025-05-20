@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "966346149131",
+    "project_id": "tokkit-firebase",
+    "storage_bucket": "tokkit-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966346149131:android:7e4b5af641c20d4302e60e",
+        "android_client_info": {
+          "package_name": "com.example.tokkit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKDNN83_EUMCGrNvNXBtvb2NEyQeyTT2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
