@@ -1,0 +1,15 @@
+<!-- res/drawable/btn_purple_rounded.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#C38CF0" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#D7B4F3" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+</selector>

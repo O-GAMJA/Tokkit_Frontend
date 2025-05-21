@@ -90,6 +90,44 @@ class NoteRepository {
         }
     }
 
+    suspend fun updateComment(commentId: Long, newContent: String): Boolean {
+        return try {
+            val response = api.updateComment(commentId, mapOf("content" to newContent))
+            response.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun deleteComment(commentId: Long): Boolean {
+        return try {
+            val response = api.deleteComment(commentId)
+            response.isSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun toggleCommentEmoji(
+        commentId: Long,
+        emojiName: String,
+        isAlreadyReacted: Boolean
+    ): Boolean {
+        return try {
+            val body = mapOf("emojiName" to emojiName)
+            val response = if (isAlreadyReacted) {
+                api.removeEmoji(commentId, body)
+            } else {
+                api.addEmoji(commentId, body)
+            }
+            response.isSuccess
+        } catch (e: Exception) {
+            Log.e("EmojiToggle", "이모지 토글 실패 → commentId=$commentId, emoji=$emojiName", e)
+            false
+        }
+    }
+
+
     suspend fun fetchSimilarNotes(noteId: String, size: Int = 5): List<SimilarNoteItem> {
         Log.d("NoteRepository", "fetchSimilarNotes() called - noteId: $noteId")
         return try {
