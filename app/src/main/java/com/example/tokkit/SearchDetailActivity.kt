@@ -6,13 +6,11 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
-import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
 import android.view.Window
 import android.widget.Button
 import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -20,7 +18,6 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,6 +27,7 @@ import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
 import com.example.tokkit.adapter.OnCommentLongClickListener
 import com.example.tokkit.adapter.OnLikeClickListener
+import com.example.tokkit.adapter.OnReplyClickListener
 import com.example.tokkit.adapter.SimilarNoteAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
 import com.example.tokkit.data.remote.model.Comment
@@ -65,6 +63,7 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private var currentPage = 0
     private val allComments = mutableListOf<Comment>()
+    private var replyingToCommentId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -395,6 +394,9 @@ class SearchDetailActivity : AppCompatActivity() {
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
         bottomSheetDialog.setContentView(commentView)
 
+        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
+        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
+
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
 
@@ -414,6 +416,13 @@ class SearchDetailActivity : AppCompatActivity() {
             onLikeClickListener = object : OnLikeClickListener {
                 override fun onClick(comment: Comment) {
                     toggleEmoji(comment.commentId, "LIKE", comment.isLiked)
+                }
+            },
+            onReplyClickListener = object : OnReplyClickListener {
+                override fun onClick(parentComment: Comment) {
+                    replyingToCommentId = parentComment.commentId
+                    etComment.requestFocus()
+                    etComment.hint = "답글 작성 중..." // EditText 힌트 변경
                 }
             }
         )
@@ -470,17 +479,16 @@ class SearchDetailActivity : AppCompatActivity() {
         })
 
         // 댓글 작성
-        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-
         sendButton.setOnClickListener {
             val text = etComment.text.toString().trim()
             if (text.isNotEmpty()) {
                 noteViewModel.postComment(
                     noteId = noteId,
                     content = text,
+                    parentId = replyingToCommentId,
                     onSuccess = {
                         etComment.text.clear()
+                        replyingToCommentId = null
                         Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
                         // 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()

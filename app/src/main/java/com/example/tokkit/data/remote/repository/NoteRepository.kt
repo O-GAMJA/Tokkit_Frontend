@@ -11,7 +11,6 @@ import com.example.tokkit.data.remote.model.NoteListResult
 import com.example.tokkit.data.remote.model.PaginationInfo
 import com.example.tokkit.data.remote.model.SimilarNoteItem
 import com.example.tokkit.util.RetrofitClient
-import retrofit2.HttpException
 
 class NoteRepository {
     private val api: NoteApiService = RetrofitClient.noteApi

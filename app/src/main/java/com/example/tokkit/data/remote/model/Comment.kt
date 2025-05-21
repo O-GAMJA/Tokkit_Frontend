@@ -7,7 +7,8 @@ data class Comment(
     val likeCount: Int = 0,
     val commentId: Long,
     val isMine: Boolean,
-    val isLiked: Boolean
+    val isLiked: Boolean,
+    val parentId: Long? = null
 )
 
 data class CommentPageResponse(

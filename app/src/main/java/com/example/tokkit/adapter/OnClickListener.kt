@@ -10,3 +10,7 @@ interface OnCommentLongClickListener {
 interface OnLikeClickListener {
     fun onClick(comment: Comment)
 }
+
+interface OnReplyClickListener {
+    fun onClick(parentComment: Comment)
+}

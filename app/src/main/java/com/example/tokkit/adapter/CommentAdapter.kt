@@ -14,7 +14,8 @@ import com.example.tokkit.data.remote.model.Comment
 class CommentAdapter(
     private val comments: MutableList<Comment>,
     private val onLongClickListener: OnCommentLongClickListener,
-    private val onLikeClickListener: OnLikeClickListener
+    private val onLikeClickListener: OnLikeClickListener,
+    private val onReplyClickListener: OnReplyClickListener
 ) : RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
 
     init {
@@ -46,7 +47,7 @@ class CommentAdapter(
         holder.tvComment.text = comment.content
         holder.tvLikeCount.text = comment.likeCount.toString()
 
-        // 👍 좋아요 버튼 색상 변경
+        // 좋아요 버튼 색상 변경
         if (comment.isLiked) {
             holder.btnLike.setColorFilter(
                 ContextCompat.getColor(holder.itemView.context, R.color.main),
@@ -67,7 +68,7 @@ class CommentAdapter(
 
         // 답글 버튼 클릭 이벤트
         holder.btnReply.setOnClickListener {
-            // 답글 기능 구현
+            onReplyClickListener.onClick(comment)
         }
 
         // 롱클릭 시 팝업 전달
