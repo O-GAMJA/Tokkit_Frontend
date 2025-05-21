@@ -139,3 +139,8 @@ data class SearchPaginationInfo(
     val result_count: Int,
     val has_more: Boolean
 )
+
+// OCR 응답
+data class OcrResponse(
+    val translatedText: String
+)

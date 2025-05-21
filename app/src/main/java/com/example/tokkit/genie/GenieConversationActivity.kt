@@ -14,12 +14,16 @@ import android.system.Os
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.ChatActivity
 import com.example.tokkit.databinding.ActivityGenieChatBinding
+import com.google.android.material.snackbar.Snackbar
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -35,6 +39,8 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var tts: TextToSpeech
     private var fullResponse = StringBuilder()
+    private var tempOcrText: String? = null  // OCR 텍스트를 임시 저장할 변수
+
     // 1초 동안 새 토큰이 없으면 응답 종료로 간주
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
@@ -57,12 +63,25 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         binding = ActivityGenieChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Intent에서 OCR 텍스트 가져와서 임시 변수에 저장 (아직 설정하지 않음)
+        tempOcrText = intent.getStringExtra("OCR_TEXT")
+
         // 저장된 대화 내용 로드
         ConversationManager.loadConversation(this)
 
         adapter = MessageRecyclerViewAdapter(this, messages)
         binding.chatRecyclerView.adapter = adapter
         binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        // 스와이프 삭제 기능 추가
+        setupSwipeToDelete()
+
+        // 삭제 리스너 설정
+        adapter.setOnMessageDeleteListener(object : MessageRecyclerViewAdapter.OnMessageDeleteListener {
+            override fun onMessageDelete(position: Int) {
+                deleteMessage(position)
+            }
+        })
 
         // ConversationManager에 리스너 등록
         ConversationManager.addListener(this)
@@ -106,8 +125,18 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             val externalCacheDir = this.externalCacheDir?.absolutePath
             val modelDir = Paths.get(externalCacheDir, "models", modelName).toString()
 
+            // GenieWrapper 초기화 - 이 시점 이후에만 genieWrapper 사용 가능
             genieWrapper = GenieWrapper(modelDir, htpConfigPath)
             Log.i("GenieChat", "$modelName 모델 로드 완료")
+
+            // 모델 초기화 후에 OCR 텍스트 설정
+            if (!tempOcrText.isNullOrEmpty()) {
+                genieWrapper.setOcrText(tempOcrText!!)
+
+                // OCR 텍스트를 참고한다는 메시지 표시 (내용 포함 x)
+                val ocrMessage = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다", MessageSender.BOT)
+                ConversationManager.addMessage(ocrMessage)
+            }
 
             // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
             val existingMessages = ConversationManager.getAllMessages()
@@ -375,6 +404,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
         }
     }
+
     // 응답을 완전히 받을 때까지 기다리는 블로킹 메서드
     private fun getCompleteResponse(prompt: String): String {
         val responseBuilder = StringBuilder()
@@ -407,6 +437,49 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         }
 
         return responseBuilder.toString()
+    }
+
+    private fun setupSwipeToDelete() {
+        val swipeCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                showDeleteConfirmDialog(position)
+            }
+        }
+
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.chatRecyclerView)
+    }
+
+    private fun showDeleteConfirmDialog(position: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("메시지 삭제")
+            .setMessage("이 메시지를 삭제하시겠습니까?")
+            .setPositiveButton("삭제") { _, _ ->
+                deleteMessage(position)
+            }
+            .setNegativeButton("취소") { _, _ ->
+                // 삭제 취소 시 스와이프 복구
+                adapter.notifyItemChanged(position)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun deleteMessage(position: Int) {
+        if (position >= 0 && position < messages.size) {
+            // ConversationManager에서 메시지 삭제
+            ConversationManager.removeMessageAt(position)
+
+            // UI 갱신은 ConversationChangeListener를 통해 자동으로 처리됨
+            // 사용자에게 알림
+            Snackbar.make(binding.root, "메시지가 삭제되었습니다", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

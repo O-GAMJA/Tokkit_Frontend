@@ -17,10 +17,12 @@ class PromptHandler
 {
   private:
     bool m_is_first_prompt;
+    std::string m_ocr_text; // OCR 텍스트를 저장하는 필드
 
-  public:
+public:
     PromptHandler();
     std::string GetPromptWithTag(const std::string& user_prompt);
+    void SetOcrText(const std::string& ocr_text); // OCR 텍스트 설정
 };
 
 } // namespace AppUtils

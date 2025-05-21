@@ -16,6 +16,17 @@ class MessageRecyclerViewAdapter(
     private val messages: ArrayList<ChatMessage>
 ) : RecyclerView.Adapter<MessageRecyclerViewAdapter.MyViewHolder>() {
 
+    // 삭제 콜백 인터페이스 정의
+    interface OnMessageDeleteListener {
+        fun onMessageDelete(position: Int)
+    }
+
+    private var messageDeleteListener: OnMessageDeleteListener? = null
+
+    fun setOnMessageDeleteListener(listener: OnMessageDeleteListener) {
+        this.messageDeleteListener = listener
+    }
+
     class MyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val userMessage: TextView = view.findViewById(R.id.user_message)
         val botMessage: TextView = view.findViewById(R.id.bot_message)
@@ -70,5 +81,13 @@ class MessageRecyclerViewAdapter(
         }
 
         return messages[messages.size - 1].mMessage
+    }
+
+    // 메시지 삭제 함수 추가
+    fun removeMessage(position: Int) {
+        if (position >= 0 && position < messages.size) {
+            messages.removeAt(position)
+            notifyItemRemoved(position)
+        }
     }
 }
