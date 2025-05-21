@@ -21,19 +21,62 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
+    <!-- 텍스트 입력 레이아웃  -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
+        android:contentDescription="ai와의 채팅 메시지 목록입니다"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/text_input_layout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_back"
+        app:layout_constraintVertical_bias="0.0"
+        tools:listitem="@layout/item_chat_ai" />
+
+    <LinearLayout
+        android:id="@+id/text_input_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_edittext_bg"
+        android:orientation="horizontal"
+        android:padding="8dp"
         app:layout_constraintBottom_toTopOf="@id/btn_mic"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_chat_ai"
-        android:contentDescription="ai와의 채팅 메시지 목록입니다"/>
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <EditText
+            android:id="@+id/et_message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="메시지를 입력하세요"
+            android:inputType="textMultiLine"
+            android:maxLines="4"
+            android:padding="8dp"
+            android:textSize="16sp"
+            android:imeOptions="actionSend" />
+
+        <ImageButton
+            android:id="@+id/btn_send"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="메시지 전송"
+            android:src="@drawable/ic_send"
+            android:scaleType="centerInside"
+            android:padding="4dp" />
+
+    </LinearLayout>
 
     <!-- 마이크 버튼 (중앙 하단) -->
     <ImageButton
