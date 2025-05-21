@@ -1,6 +1,5 @@
 package com.example.tokkit
 
-import android.app.Activity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,7 +9,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -139,17 +137,6 @@ class HomeFragment : Fragment() {
         tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
         }
     }
-
-    private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val isBookmarkChanged = result.data?.getBooleanExtra("isBookmarkChanged", false) ?: false
-            if (isBookmarkChanged) {
-                // MainActivity의 디렉토리 트리 새로고침 요청
-                (activity as? MainActivity)?.reloadDirectoryTree()
-            }
-        }
-    }
-
 
     private fun resetNoteSearch() {
         // 전체 노트 목록으로 복원
