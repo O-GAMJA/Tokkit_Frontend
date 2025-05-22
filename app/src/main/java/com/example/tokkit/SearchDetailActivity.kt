@@ -383,6 +383,7 @@ class SearchDetailActivity : AppCompatActivity() {
         }
     }
 
+
     private fun showCommentBottomSheet() {
         val noteId = currentNoteId ?: return
 
@@ -403,11 +404,8 @@ class SearchDetailActivity : AppCompatActivity() {
         // RecyclerView 설정
         val recyclerView = commentView.findViewById<RecyclerView>(R.id.rv_comments)
 
-        // 확인용 로그
-        Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
-
         val adapter = CommentAdapter(
-            comments = mutableListOf(),
+            rootComments = mutableListOf(),
             onLongClickListener = object : OnCommentLongClickListener {
                 override fun onLongClick(view: View, comment: Comment) {
                     showCommentPopup(view, comment)
@@ -433,27 +431,44 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
-            val newComments = commentResponses.map {
-                val createdTime = parseTimeAgo(it.createdAt)
+            Log.d("CommentDebug", "원본 댓글 응답: $commentResponses")
+
+            val comments = commentResponses.map { response ->
+                val createdTime = parseTimeAgo(response.createdAt)
                 Comment(
-                    username = it.writer,
+                    username = response.writer,
                     time = createdTime,
-                    content = it.content,
-                    likeCount = it.emojis["LIKE"]?.count ?: 0,
-                    commentId = it.commentId,
-                    isMine = it.isMine,
-                    isLiked = it.emojis["LIKE"]?.reactedByCurrentUser ?: false
+                    content = response.content,
+                    likeCount = response.emojis["LIKE"]?.count ?: 0,
+                    commentId = response.commentId,
+                    isMine = response.isMine,
+                    isLiked = response.emojis["LIKE"]?.reactedByCurrentUser ?: false,
+                    parentId = response.parentId
                 )
             }
 
             if (currentPage == 0) allComments.clear()
-            allComments.addAll(newComments)
+            allComments.addAll(comments)
 
-            val sortedComments = allComments
-                .distinctBy { it.commentId }
-                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+            Log.d("CommentDebug", "댓글 목록: ${comments.map { "${it.commentId}(부모: ${it.parentId})" }}")
 
-            adapter.updateComments(sortedComments)
+            // 중복 제거 후 시간순 정렬
+            val distinctComments = allComments.distinctBy { it.commentId }
+                .sortedBy { it.commentId }
+
+            // 계층 구조로 변환
+            val rootComments = organizeCommentsHierarchy(distinctComments)
+            Log.d("CommentDebug", "계층 구조 변환 후 루트 댓글: ${rootComments.size}")
+
+            // 비어있는지 확인
+            if (rootComments.isEmpty()) {
+                noCommentsView.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
+            } else {
+                noCommentsView.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+                adapter.updateComments(rootComments)
+            }
         }
 
         // 댓글 수 observe
@@ -489,9 +504,10 @@ class SearchDetailActivity : AppCompatActivity() {
                     onSuccess = {
                         etComment.text.clear()
                         replyingToCommentId = null
+                        etComment.hint = "댓글을 입력하세요"
                         Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
-                        // 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        // 댓글 등록 후 초기화 + 0페이지 로드
                         currentPage = 0
                         allComments.clear()
                         noteViewModel.resetComments()
@@ -529,6 +545,63 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // BottomSheet 표시
         bottomSheetDialog.show()
+    }
+
+    // 수정된 organizeCommentsHierarchy 함수 - 다중 레벨 대댓글 완전 지원
+    private fun organizeCommentsHierarchy(flatComments: List<Comment>): List<Comment> {
+        val rootComments = mutableListOf<Comment>()
+        val commentMap = mutableMapOf<Long, Comment>()
+
+        Log.d("CommentDebug", "계층 구조 변환 시작 - 입력 댓글 수: ${flatComments.size}")
+
+        // 1단계: 모든 댓글을 ID로 맵핑하고 replies 초기화
+        flatComments.forEach { comment ->
+            val commentWithReplies = comment.copy(replies = mutableListOf())
+            commentMap[comment.commentId] = commentWithReplies
+            Log.d("CommentDebug", "댓글 맵핑: ID=${comment.commentId}, parentId=${comment.parentId}")
+        }
+
+        // 2단계: 부모-자식 관계 설정
+        flatComments.forEach { comment ->
+            val parentId = comment.parentId
+            if (parentId == null) {
+                // parentId가 null이면 루트 댓글
+                commentMap[comment.commentId]?.let { rootComments.add(it) }
+                Log.d("CommentDebug", "루트 댓글 추가: ID=${comment.commentId}")
+            } else {
+                // parentId가 있으면 해당 부모의 대댓글
+                val parentComment = commentMap[parentId]
+                val childComment = commentMap[comment.commentId]
+                if (parentComment != null && childComment != null) {
+                    parentComment.replies.add(childComment)
+                    Log.d("CommentDebug", "대댓글 추가: ID=${comment.commentId} -> 부모=${parentId}")
+                } else {
+                    Log.e("CommentDebug", "부모 댓글을 찾을 수 없음: parentId=$parentId")
+                    // 부모를 찾을 수 없으면 루트 댓글로 처리
+                    commentMap[comment.commentId]?.let { rootComments.add(it) }
+                    Log.d("CommentDebug", "부모를 찾을 수 없어 루트 댓글로 처리: ID=${comment.commentId}")
+                }
+            }
+        }
+
+        Log.d("CommentDebug", "계층 구조 변환 완료 - 루트 댓글 수: ${rootComments.size}")
+        rootComments.forEach { root ->
+            Log.d("CommentDebug", "루트 댓글: ID=${root.commentId}")
+            logRepliesRecursively(root.replies, 1)
+        }
+
+        return rootComments
+    }
+
+    // 대댓글을 재귀적으로 로깅하는 함수
+    private fun logRepliesRecursively(replies: List<Comment>, depth: Int) {
+        replies.forEach { reply ->
+            val indent = "  ".repeat(depth)
+            Log.d("CommentDebug", "$indent- 대댓글: ID=${reply.commentId}, 하위 댓글 수=${reply.replies.size}")
+            if (reply.replies.isNotEmpty()) {
+                logRepliesRecursively(reply.replies, depth + 1)
+            }
+        }
     }
 
     private fun parseTimeAgo(createdAt: String): String {
@@ -660,7 +733,6 @@ class SearchDetailActivity : AppCompatActivity() {
             }
         }
     }
-
 
     override fun onBackPressed() {
         val result = Intent().apply {

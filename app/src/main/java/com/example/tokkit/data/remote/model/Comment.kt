@@ -8,7 +8,8 @@ data class Comment(
     val commentId: Long,
     val isMine: Boolean,
     val isLiked: Boolean,
-    val parentId: Long? = null
+    val parentId: Long? = null,
+    val replies: MutableList<Comment> = mutableListOf()
 )
 
 data class CommentPageResponse(
@@ -22,7 +23,7 @@ data class CommentPageResponse(
 
 data class CommentResponse(
     val commentId: Long,
-    val parentId: Long,
+    val parentId: Long? = null,
     val writer: String,
     val content: String,
     val createdAt: String,
