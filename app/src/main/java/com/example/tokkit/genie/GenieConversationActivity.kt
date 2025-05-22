@@ -153,6 +153,24 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                 startSTT()
             }
 
+            // 텍스트 전송 버튼 클릭 리스너 추가
+            binding.btnSend.setOnClickListener {
+                val message = binding.etMessage.text.toString().trim()
+                if (message.isNotEmpty()) {
+                    sendMessage(message)
+                    binding.etMessage.text.clear()
+                }
+            }
+
+            // 키보드 엔터키(완료) 눌렀을 때도 전송
+            binding.etMessage.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                    binding.btnSend.performClick()
+                    return@setOnEditorActionListener true
+                }
+                false
+            }
+
             // 채팅 모드 전환 버튼 - ChatActivity로 전환
             binding.btnChatMode.setOnClickListener {
                 val intent = Intent(this, ChatActivity::class.java)

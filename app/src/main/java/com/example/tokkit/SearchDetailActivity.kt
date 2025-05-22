@@ -303,6 +303,12 @@ class SearchDetailActivity : AppCompatActivity() {
 
             // 서버 요청
             noteViewModel.toggleBookmark(noteId, isCurrentlyBookmarked)
+
+            // 북마크 상태 변경 시 결과 설정 (isBookmarkChanged를 추가)
+            val result = Intent().apply {
+                putExtra("isBookmarkChanged", true)
+            }
+            setResult(RESULT_OK, result)
         }
 
         // UI 반영
@@ -319,7 +325,6 @@ class SearchDetailActivity : AppCompatActivity() {
             }
         }
     }
-
 
     private fun setupReactionButtons() {
 
