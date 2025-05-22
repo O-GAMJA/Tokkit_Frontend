@@ -44,6 +44,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // 햄버거 메뉴 버튼 클릭 이벤트 설정
         binding.btnMenu.setOnClickListener {
+            // 디렉토리 트리를 다시 로드
+            loadDirectoryTreeFromApi()
             binding.drawerLayout.openDrawer(GravityCompat.START)
         }
 
@@ -443,6 +445,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
+    }
+    fun reloadDirectoryTree() {
+        loadDirectoryTreeFromApi()
     }
 }
 

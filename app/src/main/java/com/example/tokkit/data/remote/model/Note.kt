@@ -5,6 +5,7 @@ data class Note(
     val note_id: String?,
     val title: String,
     val content: String?,
+    val previewContent: String?,
     val imageUrl: String?,
     val createdAt: String?,
     val updatedAt: String?,
