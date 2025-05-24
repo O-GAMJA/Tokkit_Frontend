@@ -50,6 +50,7 @@ class ReviewFragment : Fragment() {
         noteAdapter = NoteAdapter(
             onItemClick = { note ->
                 val intent = Intent(requireContext(), ForgettingCurveActivity::class.java)
+                intent.putExtra("NOTE_ID", note.id)
                 intent.putExtra("ARTICLE_TITLE", note.title)
                 intent.putExtra("ARTICLE_STAGE", note.tags?.find { it.startsWith("단계") }?.removePrefix("단계")?.toIntOrNull() ?: 0)
                 startActivity(intent)

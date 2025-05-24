@@ -2,6 +2,7 @@ package com.example.tokkit.data.remote.repository
 
 import android.util.Log
 import com.example.tokkit.data.remote.api.ReviewApiService
+import com.example.tokkit.data.remote.model.ReviewDetailResponse
 import com.example.tokkit.data.remote.model.ReviewStageItem
 import com.example.tokkit.util.RetrofitClient
 
@@ -22,4 +23,15 @@ class ReviewRepository {
             emptyMap()
         }
     }
+
+    suspend fun getReviewDetail(noteId: String): ReviewDetailResponse? {
+        return try {
+            val response = RetrofitClient.createService(ReviewApiService::class.java).getReviewDetail(noteId)
+            if (response.isSuccess) response.result else null
+        } catch (e: Exception) {
+            Log.e("ReviewRepository", "복습 상세 조회 실패", e)
+            null
+        }
+    }
+
 }
