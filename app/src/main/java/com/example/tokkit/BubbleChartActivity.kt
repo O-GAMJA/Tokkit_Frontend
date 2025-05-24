@@ -5,6 +5,12 @@ import android.os.Bundle
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityBubbleChartBinding
+import androidx.lifecycle.lifecycleScope
+import com.example.tokkit.util.RetrofitClient
+import com.google.gson.Gson
+import android.util.Log
+import kotlinx.coroutines.launch
+
 
 class BubbleChartActivity : AppCompatActivity() {
 
@@ -14,6 +20,8 @@ class BubbleChartActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityBubbleChartBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        fetchTagsAndInjectToWebView(1L)
 
         binding.btnBack.setOnClickListener{
             finish()
@@ -26,5 +34,20 @@ class BubbleChartActivity : AppCompatActivity() {
 
         // 로컬 html 로드
         binding.webView.loadUrl("file:///android_asset/bubble_chart.html")
+    }
+
+    private fun fetchTagsAndInjectToWebView(memberId: Long) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.noteApi.getTagsByMemberId(memberId)
+                if (response.isSuccess) {
+                    val json = Gson().toJson(response.result)
+                    val jsCode = "updateChart($json);"
+                    binding.webView.evaluateJavascript(jsCode, null)
+                }
+            } catch (e: Exception) {
+                Log.e("BubbleChart", "태그 데이터 불러오기 실패", e)
+            }
+        }
     }
 }
