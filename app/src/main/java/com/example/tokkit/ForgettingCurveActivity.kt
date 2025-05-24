@@ -96,6 +96,15 @@ class ForgettingCurveActivity : AppCompatActivity() {
 
         // 노트 보기 버튼
         binding.btnNote.setOnClickListener {
+            val intent = Intent(this, SearchDetailActivity::class.java)
+
+            intent.putExtra("NOTE_ID", noteId)
+
+            // 기본값: 태그 검색 아님
+            intent.putExtra("isTagSearch", false)
+            intent.putExtra("tagName", "")
+
+            startActivity(intent)
         }
     }
 }
