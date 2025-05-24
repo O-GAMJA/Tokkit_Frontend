@@ -122,7 +122,7 @@ class ReviewFragment : Fragment() {
             allNotes
         } else {
             allNotes.filter { note ->
-                note.tags?.any { it == "단계$selectedStage" } ?: false
+                note.tags?.any { it == "단계${selectedStage - 1}" } ?: false
             }
         }
 

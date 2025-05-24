@@ -88,9 +88,10 @@
 
                 <!-- 그래프 이미지나 실제 그래프 뷰 -->
                 <ImageView
+                    android:id="@+id/ivEbbing"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/ic_ebbing"
+                    android:src="@drawable/ic_ebbing1"
                     android:padding="20dp"
                     android:scaleType="fitCenter"
                     android:contentDescription="에빙하우스 망각곡선 그래프" />

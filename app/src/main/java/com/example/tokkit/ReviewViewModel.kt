@@ -33,7 +33,7 @@ class ReviewViewModel : ViewModel() {
                     val stageTag = stageStr
                         ?.filter { it.isDigit() }
                         ?.toIntOrNull()
-                        ?.plus(1)
+//                        ?.plus(1)
                         ?.let { "단계$it" }
 
                     if (note.previewContent.isNullOrBlank()) {

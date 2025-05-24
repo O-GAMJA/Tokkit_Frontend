@@ -3,6 +3,7 @@ package com.example.tokkit
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.data.remote.model.ReviewStat
@@ -45,7 +46,7 @@ class ForgettingCurveActivity : AppCompatActivity() {
             val result = ReviewRepository().getReviewDetail(noteId)
             if (result != null) {
                 updateReviewTable(result.reviewStats)
-                //updateGraph(result.reviewCurvePoints)
+                updateGraph(articleStage)
             } else {
                 Toast.makeText(this@ForgettingCurveActivity, "복습 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
             }
@@ -59,6 +60,20 @@ class ForgettingCurveActivity : AppCompatActivity() {
         // 회색 선 View의 visibility 조정
         binding.viewDivider.visibility = if (stats.isNotEmpty()) View.VISIBLE else View.GONE
     }
+
+    private fun updateGraph(stage: Int) {
+        val imageResId = when (stage) {
+            0 -> R.drawable.ic_ebbing0
+            1 -> R.drawable.ic_ebbing1
+            2 -> R.drawable.ic_ebbing2
+            3 -> R.drawable.ic_ebbing3
+            4 -> R.drawable.ic_ebbing4
+            else -> R.drawable.ic_ebbing0 // 기본 그래프
+        }
+
+        binding.cardGraph.findViewById<ImageView>(R.id.ivEbbing).setImageResource(imageResId)
+    }
+
 
 
     private fun setupListeners() {
