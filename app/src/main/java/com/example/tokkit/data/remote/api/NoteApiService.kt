@@ -122,6 +122,12 @@ interface NoteApiService {
         @Body notes: List<NoteCreateRequest>
     ): ApiResponse<NoteCreateResponse>
 
+    @GET("/notes/tags")
+    suspend fun getTagsByMemberId(
+        @Query("memberId") memberId: Long
+    ): ApiResponse<List<TagCount>>
+
+    // 특정 태그로 노트 목록 조회(검색)
     @GET("/notes/tags/{tagName}")
     suspend fun getNotesByTag(
         @Path("tagName") tagName: String,
