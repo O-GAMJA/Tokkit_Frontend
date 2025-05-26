@@ -136,4 +136,12 @@ class ReviewFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    override fun onResume() {
+        super.onResume()
+        // 복습 완료 후 Fragment로 돌아왔을 때도 데이터 새로고침
+        if (::viewModel.isInitialized) {
+            viewModel.loadNotesWithStages(memberId = 1L)
+        }
+    }
 }

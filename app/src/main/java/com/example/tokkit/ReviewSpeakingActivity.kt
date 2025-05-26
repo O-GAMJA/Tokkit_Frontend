@@ -22,10 +22,15 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.ChatActivity
+import com.example.tokkit.data.remote.repository.ReviewRepository
 import com.example.tokkit.databinding.ActivityGenieChatBinding
 import com.example.tokkit.databinding.ActivityReviewSpeakingBinding
 import com.example.tokkit.genie.*
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -57,6 +62,7 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
 
         companion object {
             private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
+            const val EXTRA_NOTE_ID = "NOTE_ID"
             const val EXTRA_NOTE_CONTENT = "NOTE_CONTENT"
             const val KEY_HTP_CONFIG = "htp_config_path"
             const val KEY_MODEL_NAME = "model_dir_name"
@@ -198,12 +204,47 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                     finish()
                 }
 
-                // 노트 생성 버튼
+                // 대화 복습 종료 버튼
                 binding.btnCreateNote.setOnClickListener {
-                    // 로딩 오버레이 표시 및 노트 생성 시작
+                    val noteId = intent.getStringExtra("NOTE_ID") ?: return@setOnClickListener
+                    val content = ConversationManager.getConversationText()
+
                     showNoteLoadingOverlay()
-                    createMarkdownNoteInBackground()
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val result = ReviewRepository().submitConversationReview(noteId, content)
+
+                        withContext(Dispatchers.Main) {
+                            hideNoteLoadingOverlay()
+                            if (result != null) {
+                                ConversationManager.clearMessages()
+                                ConversationManager.clearSavedConversation(this@ReviewSpeakingActivity)
+
+                                // 결과를 Intent로 설정
+                                val resultIntent = Intent().apply {
+                                    putExtra("NEW_STAGE", result.newStage)
+                                    // 숫자만 추출하여 int로 변환
+                                    val stageInt = result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0
+                                    putExtra("NEW_STAGE_INT", stageInt)
+                                    putExtra("NEXT_REVIEW_AT", result.nextReviewAt)
+                                }
+
+                                setResult(RESULT_OK, resultIntent)
+
+                                Toast.makeText(
+                                    this@ReviewSpeakingActivity,
+                                    "복습 완료!\n새 단계: ${result.newStage}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+
+                                finish()
+                            } else {
+                                Toast.makeText(this@ReviewSpeakingActivity, "복습 제출 실패", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
+
 
             } catch (e: Exception) {
                 Log.e("GenieChat", "에러: ${e}")
@@ -368,7 +409,7 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
             }
         }
 
-        // 노트 생성 로딩 오버레이 표시
+        // 대화 복습 종료 로딩 오버레이 표시
         private fun showNoteLoadingOverlay() {
             // 로딩 오버레이 표시
             binding.noteLoadingOverlay.visibility = View.VISIBLE
@@ -377,104 +418,13 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
             binding.lottieDocAnimation.playAnimation()
         }
 
-        // 노트 생성 로딩 오버레이 숨기기
+        // 대화 복습 종료 로딩 오버레이 숨기기
         private fun hideNoteLoadingOverlay() {
             // 로딩 오버레이 숨기기
             binding.noteLoadingOverlay.visibility = View.GONE
 
             // 문서 애니메이션 중지
             binding.lottieDocAnimation.cancelAnimation()
-        }
-
-        // 백그라운드에서 노트 생성
-        private fun createMarkdownNoteInBackground() {
-            // ConversationManager에서 대화 내용 가져오기
-            val conversation = ConversationManager.getConversationText()
-
-            // 로그 추가
-            Log.d("GenieChat", "대화 내용: $conversation")
-
-            // 마크다운 노트 생성을 위한 프롬프트
-            val notePrompt = markdownPromptHandler.getPromptForNoteGeneration(conversation)
-
-            // 백그라운드에서 노트 생성
-            val service = Executors.newSingleThreadExecutor()
-            service.execute {
-                try {
-                    // 응답을 완전히 받을 때까지 기다리기 위한 블로킹 방식
-                    val markdownContent = getCompleteResponse(notePrompt)
-
-                    // 내용이 비어있는지 확인
-                    val finalContent = if (markdownContent.isBlank()) {
-                        Log.e("GenieChat", "마크다운 내용이 비어있음")
-                        "# 대화 요약\n\n대화 내용을 요약하는데 실패했습니다. 다시 시도해주세요."
-                    } else {
-                        Log.d("GenieChat", "마크다운 내용: $markdownContent")
-                        markdownContent
-                    }
-
-                    // 마크다운 내용에서 제목 추출
-                    val noteTitle = com.example.tokkit.util.MarkdownUtil.extractTitleFromMarkdown(finalContent)
-                    Log.d("GenieChat", "추출된 제목: $noteTitle")
-
-                    // 노트 생성 완료 후 노트 표시 화면으로 이동
-                    runOnUiThread {
-                        // 로딩 오버레이 숨기기
-                        hideNoteLoadingOverlay()
-
-                        // 노트 화면으로 이동
-                        val intent = Intent(this@ReviewSpeakingActivity, MarkdownNoteActivity::class.java)
-                        intent.putExtra(MarkdownNoteActivity.EXTRA_MARKDOWN_CONTENT, finalContent)
-                        intent.putExtra(MarkdownNoteActivity.EXTRA_TITLE, noteTitle)
-                        startActivity(intent)
-                    }
-                } catch (e: Exception) {
-                    Log.e("GenieChat", "노트 생성 오류: ${e.message}", e)
-
-                    runOnUiThread {
-                        // 로딩 오버레이 숨기기
-                        hideNoteLoadingOverlay()
-
-//                        Toast.makeText(this@GenieConversationActivity,
-//                            "노트 생성 중 오류가 발생했습니다: ${e.message}",
-//                            Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-
-        // 응답을 완전히 받을 때까지 기다리는 블로킹 메서드
-        private fun getCompleteResponse(prompt: String): String {
-            val responseBuilder = StringBuilder()
-            val responseLock = CountDownLatch(1)
-            var isComplete = false
-
-            genieWrapper.getResponseForPrompt(prompt, object : StringCallback {
-                override fun onNewString(response: String) {
-                    responseBuilder.append(response)
-                    Log.d("GenieChat", "응답 토큰 받음: $response")
-
-                    // 응답이 완료되었는지 확인하는 로직
-                    // 예: 응답의 마지막에 특정 패턴이 있는지 또는 시간 초과 등
-                    if (response.contains("</response>") || response.contains("END_OF_RESPONSE") || response.endsWith(".")) {
-                        isComplete = true
-                        responseLock.countDown()
-                    }
-                }
-            })
-
-            // 응답 완료를 기다리거나 15초 후 시간 초과
-            try {
-                // 최대 15초 대기
-                if (!responseLock.await(15, TimeUnit.SECONDS) && !isComplete) {
-                    // 시간 초과 시 현재까지 받은 내용 사용
-                    Log.w("GenieChat", "응답 대기 시간 초과, 현재까지 받은 내용 사용")
-                }
-            } catch (e: InterruptedException) {
-                Log.e("GenieChat", "응답 대기 중 인터럽트", e)
-            }
-
-            return responseBuilder.toString()
         }
 
         private fun setupSwipeToDelete() {

@@ -2,6 +2,8 @@ package com.example.tokkit.data.remote.repository
 
 import android.util.Log
 import com.example.tokkit.data.remote.api.ReviewApiService
+import com.example.tokkit.data.remote.model.ConversationReviewResponse
+import com.example.tokkit.data.remote.model.ConversationReviewRequest
 import com.example.tokkit.data.remote.model.ReviewDetailResponse
 import com.example.tokkit.data.remote.model.ReviewStageItem
 import com.example.tokkit.util.RetrofitClient
@@ -30,6 +32,21 @@ class ReviewRepository {
             if (response.isSuccess) response.result else null
         } catch (e: Exception) {
             Log.e("ReviewRepository", "복습 상세 조회 실패", e)
+            null
+        }
+    }
+
+    suspend fun submitConversationReview(noteId: String, content: String): ConversationReviewResponse? {
+        return try {
+            val response = api.submitConversationReview(noteId, ConversationReviewRequest(content))
+            if (response.isSuccess) {
+                response.result
+            } else {
+                Log.e("ReviewRepository", "복습 제출 실패: ${response.message}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("ReviewRepository", "복습 제출 예외", e)
             null
         }
     }

@@ -25,3 +25,13 @@ data class ReviewStat(
     val totalCount: Int,
     val reviewedAt: String
 )
+
+data class ConversationReviewRequest(
+    val content: String
+)
+
+data class ConversationReviewResponse(
+    val reviewResult: String,
+    val newStage: String,
+    val nextReviewAt: String
+)
