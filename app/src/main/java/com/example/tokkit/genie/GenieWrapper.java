@@ -76,4 +76,6 @@ public class GenieWrapper {
 
     private native void setOcrText(long nativeHandle, String ocrText);
 
+    public native void setQuizMode(boolean isQuiz);
+
 }

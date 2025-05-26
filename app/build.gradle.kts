@@ -198,4 +198,7 @@ dependencies {
     // ViewModel & LiveData (MVVM 구조 사용 시)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+
+    // lifecycleScope
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 }
