@@ -13,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.tokkit.adapter.ReviewStatAdapter
 import kotlinx.coroutines.launch
+import android.util.Log
+import java.nio.file.Paths
 
 class ForgettingCurveActivity : AppCompatActivity() {
 
@@ -75,7 +77,6 @@ class ForgettingCurveActivity : AppCompatActivity() {
     }
 
 
-
     private fun setupListeners() {
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener {
@@ -92,7 +93,33 @@ class ForgettingCurveActivity : AppCompatActivity() {
 
         // 말하기 버튼
         binding.btnSpeak.setOnClickListener {
+            val noteContent = intent.getStringExtra("NOTE_CONTENT") ?: return@setOnClickListener
+            Log.d("DEBUG", "NOTE_CONTENT = $noteContent")
+
+            val socModel = android.os.Build.SOC_MODEL
+            val htpConfig = when (socModel) {
+                "SM8750" -> "qualcomm-snapdragon-8-elite.json"
+                "SM8650" -> "qualcomm-snapdragon-8-gen3.json"
+                "QCS8550" -> "qualcomm-snapdragon-8-gen2.json"
+                else -> {
+                    Toast.makeText(this, "지원되지 않는 디바이스입니다", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+            }
+
+            val htpConfigPath = Paths.get(externalCacheDir!!.absolutePath, "htp_config", htpConfig).toString()
+            val modelName = "llama3_2_3b"
+
+            val intent = Intent(this, ReviewSpeakingActivity::class.java).apply {
+                putExtra(ReviewSpeakingActivity.EXTRA_NOTE_CONTENT, noteContent)
+                putExtra(ReviewSpeakingActivity.KEY_HTP_CONFIG, htpConfigPath)
+                putExtra(ReviewSpeakingActivity.KEY_MODEL_NAME, modelName)
+            }
+
+            startActivity(intent)
         }
+
+
 
         // 노트 보기 버튼
         binding.btnNote.setOnClickListener {

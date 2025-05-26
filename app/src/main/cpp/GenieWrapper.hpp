@@ -65,5 +65,6 @@ class GenieWrapper
      */
     std::string
     GetResponseForPrompt(const std::string& user_prompt, JNIEnv* env, jobject callback, jmethodID onNewStringMethod);
+    void SetQuizMode(bool is_quiz);
 };
 } // namespace App
