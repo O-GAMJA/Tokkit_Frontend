@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>동적 버블 차트</title>
+    <title>태그별 노트 분포도</title>
     <script src="d3.v7.min.js"></script>
     <style>
         body {
-            margin: 0;
-            background-color: transparent;
-            font-family: sans-serif;
-          }
+          margin: 0;
+          background-color: transparent;
+          font-family: sans-serif;
+        }
+
         .top-bar {
           display: flex;
-          justify-content: center;  /* 가운데 정렬 */
-          margin-top: 60px;          /* 상단 여백 */
+          justify-content: center;
+          margin-top: 60px;
         }
 
         .title {
@@ -25,10 +26,12 @@
           color: #C89AFF;
           text-align: center;
         }
+
         svg {
           width: 100%;
           height: calc(100vh - 60px);
         }
+
         text {
           fill: white;
           font-size: 12px;
@@ -45,79 +48,95 @@
 <svg></svg>
 
 <script>
-    const data = [
-      { name: "데이터 통신", size: 180, color: "#e67e7e" },
-      { name: "운영체제", size: 160, color: "#e67e7e" },
-      { name: "컴퓨터 구조", size: 140, color: "#9dddcf" },
-      { name: "안드로이드", size: 130, color: "#9dddcf" },
-      { name: "java", size: 120, color: "#e58cc2" },
-      { name: "kotlin", size: 110, color: "#475c9c" },
-      { name: "spring Boot", size: 90, color: "#3a5082" },
-      { name: "ios", size: 60, color: "#c6a7f2" },
-      { name: "C++", size: 60, color: "#c6a7f2" },
-    ];
-
-
-    const svg = d3.select("svg");
-    const width = window.innerWidth;
-    const height = window.innerHeight - 60;
-
-    const nodes = data.map(d => Object.assign({}, d, {
-      r: d.size / 2,
-      x: Math.random() * width,
-      y: Math.random() * height
-    }));
-
-    const simulation = d3.forceSimulation(nodes)
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("x", d3.forceX(width / 2).strength(0.05))
-      .force("y", d3.forceY(height / 2).strength(0.05))
-      .force("charge", d3.forceManyBody().strength(1))
-      .force("collision", d3.forceCollide().radius(d => d.r + 4))
-      .on("tick", ticked);
-
-    const g = svg.selectAll("g")
-      .data(nodes)
-      .enter()
-      .append("g")
-      .call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended)
-      );
-
-    g.append("circle")
-      .attr("r", d => d.r)
-      .attr("fill", d => d.color);
-
-    g.append("text")
-      .text(d => d.name)
-      .style("font-size", d => Math.min(14, d.r / 3) + "px");
-
-    function ticked() {
-      g.attr("transform", d => {
-        // 화면 밖으로 나가지 않도록 위치 제한
-        d.x = Math.max(d.r, Math.min(width - d.r, d.x));
-        d.y = Math.max(d.r, Math.min(height - d.r, d.y));
-        return `translate(${d.x},${d.y})`;
-      });
+    // 고르게 분포된 HSL 색상 생성 함수
+    function generateDistinctColor(index, total) {
+      const hue = (index * (360 / total)) % 360;
+      return `hsl(${hue}, 70%, 60%)`;
     }
 
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
+    // WebView에서 호출되는 함수
+    function updateChart(tagData) {
+      const svg = d3.select("svg");
+      const width = window.innerWidth;
+      const height = window.innerHeight - 60;
 
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
+      // 초기화
+      svg.selectAll("*").remove();
 
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+      // 상위 20개 태그만 추출
+      const sortedData = tagData
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20);
+
+      const data = sortedData.map((d, i) => ({
+        name: d.name,
+        size: d.count * 10 + 40,
+        color: generateDistinctColor(i, sortedData.length)
+      }));
+
+      // 데이터 가공 - 모든 태그 보여주는 버전
+<!--      const data = tagData.map((d, i) => ({-->
+<!--        name: d.name,-->
+<!--        size: d.count * 10 + 40,-->
+<!--        color: generateDistinctColor(i, tagData.length)-->
+<!--      }));-->
+
+      const nodes = data.map(d => Object.assign({}, d, {
+        r: d.size / 2,
+        x: Math.random() * width,
+        y: Math.random() * height
+      }));
+
+      const simulation = d3.forceSimulation(nodes)
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("x", d3.forceX(width / 2).strength(0.05))
+        .force("y", d3.forceY(height / 2).strength(0.05))
+        .force("charge", d3.forceManyBody().strength(1))
+        .force("collision", d3.forceCollide().radius(d => d.r + 4))
+        .on("tick", ticked);
+
+      const g = svg.selectAll("g")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended)
+        );
+
+      g.append("circle")
+        .attr("r", d => d.r)
+        .attr("fill", d => d.color);
+
+      g.append("text")
+        .text(d => d.name)
+        .style("font-size", d => Math.min(14, d.r / 3) + "px");
+
+      function ticked() {
+        g.attr("transform", d => {
+          d.x = Math.max(d.r, Math.min(width - d.r, d.x));
+          d.y = Math.max(d.r, Math.min(height - d.r, d.y));
+          return `translate(${d.x},${d.y})`;
+        });
+      }
+
+      function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
     }
 </script>
 </body>

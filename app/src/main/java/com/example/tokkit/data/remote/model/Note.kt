@@ -66,6 +66,11 @@ data class BookmarkResponse(
     val bookmarkStatusDTO: BookmarkStatus
 )
 
+data class TagCount(
+    val name: String,
+    val count: Int
+)
+
 data class ApiResponse<T>(
     val isSuccess: Boolean,
     val code: String,
