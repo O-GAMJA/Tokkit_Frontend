@@ -21,7 +21,7 @@ class ReviewFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val stageButtons = mutableListOf<TextView>()
-    private var selectedStage: Int = 0 // 0은 전체, 1-5는 각 단계
+    private var selectedStage: Int = 0 // 0은 전체, 1-5는 각 단계, 6은 완료
 
     private lateinit var viewModel: ReviewViewModel
     private lateinit var noteAdapter: NoteAdapter
@@ -53,7 +53,17 @@ class ReviewFragment : Fragment() {
                 intent.putExtra("NOTE_ID", note.id)
                 intent.putExtra("NOTE_CONTENT", note.content)
                 intent.putExtra("ARTICLE_TITLE", note.title)
-                intent.putExtra("ARTICLE_STAGE", note.tags?.find { it.startsWith("단계") }?.removePrefix("단계")?.toIntOrNull() ?: 0)
+
+                // 완료 상태 확인
+                val isComplete = note.tags?.contains("COMPLETE") == true
+                if (isComplete) {
+                    intent.putExtra("IS_COMPLETE", true)
+                    intent.putExtra("ARTICLE_STAGE", 5) // 완료 상태에서는 최대 단계로 설정
+                } else {
+                    intent.putExtra("IS_COMPLETE", false)
+                    intent.putExtra("ARTICLE_STAGE", note.tags?.find { it.startsWith("단계") }?.removePrefix("단계")?.toIntOrNull() ?: 0)
+                }
+
                 startActivity(intent)
             },
             useCardLayout = true,  // 카드 레이아웃 사용
@@ -79,13 +89,14 @@ class ReviewFragment : Fragment() {
     }
 
     private fun initStageButtons() {
-        // 각 버튼을 리스트에 저장
+        // 각 버튼을 리스트에 저장 (btnStep6 추가)
         stageButtons.add(binding.btnAll)
         stageButtons.add(binding.btnStep1)
         stageButtons.add(binding.btnStep2)
         stageButtons.add(binding.btnStep3)
         stageButtons.add(binding.btnStep4)
         stageButtons.add(binding.btnStep5)
+        stageButtons.add(binding.btnStep6) // 완료 단계 버튼 추가
 
         // 버튼 클릭 이벤트 설정
         for (i in stageButtons.indices) {
@@ -119,11 +130,19 @@ class ReviewFragment : Fragment() {
     }
 
     private fun updateNoteList() {
-        val filtered = if (selectedStage == 0) {
-            allNotes
-        } else {
-            allNotes.filter { note ->
-                note.tags?.any { it == "단계${selectedStage - 1}" } ?: false
+        val filtered = when (selectedStage) {
+            0 -> allNotes // 전체 표시
+            6 -> {
+                // 완료 단계: COMPLETE 태그가 있는 노트들만 필터링
+                allNotes.filter { note ->
+                    note.tags?.contains("COMPLETE") == true
+                }
+            }
+            else -> {
+                // 1-5단계: 해당 단계 번호로 필터링 (selectedStage - 1)
+                allNotes.filter { note ->
+                    note.tags?.any { it == "단계${selectedStage - 1}" } ?: false
+                }
             }
         }
 
@@ -135,13 +154,5 @@ class ReviewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // 복습 완료 후 Fragment로 돌아왔을 때도 데이터 새로고침
-        if (::viewModel.isInitialized) {
-            viewModel.loadNotesWithStages(memberId = 1L)
-        }
     }
 }

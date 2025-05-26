@@ -112,18 +112,18 @@
         android:scaleType="fitXY"/>
 
     <!-- 채팅모드 전환 버튼 (좌하단) -->
-    <ImageButton
-        android:id="@+id/btn_chat_mode"
-        android:layout_width="65dp"
-        android:layout_height="65dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="채팅 모드 전환"
-        android:src="@drawable/rabbit1"
-        android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
-        app:layout_constraintEnd_toStartOf="@+id/btn_mic"
-        app:layout_constraintTop_toTopOf="@+id/btn_mic"
-        android:layout_marginEnd="25dp"/>
+<!--    <ImageButton-->
+<!--        android:id="@+id/btn_chat_mode"-->
+<!--        android:layout_width="65dp"-->
+<!--        android:layout_height="65dp"-->
+<!--        android:background="?attr/selectableItemBackgroundBorderless"-->
+<!--        android:contentDescription="채팅 모드 전환"-->
+<!--        android:src="@drawable/rabbit1"-->
+<!--        android:scaleType="fitCenter"-->
+<!--        app:layout_constraintBottom_toBottomOf="@+id/btn_mic"-->
+<!--        app:layout_constraintEnd_toStartOf="@+id/btn_mic"-->
+<!--        app:layout_constraintTop_toTopOf="@+id/btn_mic"-->
+<!--        android:layout_marginEnd="25dp"/>-->
 
     <!-- 노트 생성 버튼 (우하단) -->
     <Button

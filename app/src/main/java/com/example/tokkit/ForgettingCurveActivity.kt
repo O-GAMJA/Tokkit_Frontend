@@ -16,13 +16,13 @@ import kotlinx.coroutines.launch
 import android.util.Log
 import java.nio.file.Paths
 
-
 class ForgettingCurveActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityForgettingCurveBinding
     private var articleTitle: String? = null
     private var articleStage: Int = 0
     private var noteId: String? = null
+    private var isComplete: Boolean = false // 완료 상태 플래그
 
     companion object {
         private const val REQUEST_REVIEW_SPEAKING = 1001
@@ -37,12 +37,21 @@ class ForgettingCurveActivity : AppCompatActivity() {
         articleTitle = intent.getStringExtra("ARTICLE_TITLE")
         articleStage = intent.getIntExtra("ARTICLE_STAGE", 0)
         noteId = intent.getStringExtra("NOTE_ID")
+        isComplete = intent.getBooleanExtra("IS_COMPLETE", false) // 완료 상태 받기
 
         // 제목 설정
-        binding.tvTitle.text = "복습 ${articleStage}단계"
+        updateTitle()
 
         setupListeners()
         noteId?.let { loadReviewDetail(it) }
+    }
+
+    private fun updateTitle() {
+        binding.tvTitle.text = if (isComplete) {
+            "복습 완료"
+        } else {
+            "복습 ${articleStage}단계"
+        }
     }
 
     private fun setupListeners() {
@@ -53,6 +62,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
 
         // 퀴즈 버튼
         binding.btnQuiz.setOnClickListener {
+            if (isComplete) {
+                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val intent = Intent(this, QuizActivity::class.java)
             intent.putExtra("ARTICLE_TITLE", articleTitle)
             intent.putExtra("ARTICLE_STAGE", articleStage)
@@ -61,6 +75,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
 
         // 말하기 버튼 - startActivityForResult 사용
         binding.btnSpeak.setOnClickListener {
+            if (isComplete) {
+                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val noteContent = intent.getStringExtra("NOTE_CONTENT") ?: return@setOnClickListener
             Log.d("DEBUG", "NOTE_CONTENT = $noteContent")
 
@@ -106,19 +125,32 @@ class ForgettingCurveActivity : AppCompatActivity() {
         if (requestCode == REQUEST_REVIEW_SPEAKING && resultCode == RESULT_OK) {
             // 복습이 성공적으로 완료되었을 때
             val newStage = data?.getStringExtra("NEW_STAGE")
-            val newStageInt = data?.getIntExtra("NEW_STAGE_INT", articleStage) ?: articleStage
 
-            // stage 정보 업데이트
-            articleStage = newStageInt
-            binding.tvTitle.text = "복습 ${articleStage}단계"
+            // 새 단계가 COMPLETE인지 확인
+            if (newStage == "COMPLETE") {
+                isComplete = true
+                articleStage = 5 // 완료 상태의 경우 최대 단계로 설정
+            } else {
+                val newStageInt = data?.getIntExtra("NEW_STAGE_INT", articleStage) ?: articleStage
+                articleStage = newStageInt
+                isComplete = false
+            }
+
+            // 제목 업데이트
+            updateTitle()
 
             // 데이터 다시 로드
             noteId?.let { loadReviewDetail(it) }
 
             // 그래프 업데이트
-            updateGraph(articleStage)
+            updateGraph(articleStage, isComplete)
 
-            Toast.makeText(this, "복습이 완료되었습니다! 새 단계: $newStage", Toast.LENGTH_SHORT).show()
+            val message = if (isComplete) {
+                "축하합니다! 모든 복습이 완료되었습니다!"
+            } else {
+                "복습이 완료되었습니다! 새 단계: $newStage"
+            }
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -128,14 +160,23 @@ class ForgettingCurveActivity : AppCompatActivity() {
             if (result != null) {
                 updateReviewTable(result.reviewStats)
 
-                // currentStage를 숫자로 변환하여 articleStage 업데이트
-                val currentStageInt = result.currentStage.filter { it.isDigit() }.toIntOrNull() ?: 0
-                if (currentStageInt != articleStage) {
-                    articleStage = currentStageInt
-                    binding.tvTitle.text = "복습 ${articleStage}단계"
+                // currentStage 처리
+                when (result.currentStage) {
+                    "COMPLETE" -> {
+                        isComplete = true
+                        articleStage = 5 // 완료 상태에서는 최대 단계로 표시
+                    }
+                    else -> {
+                        isComplete = false
+                        val currentStageInt = result.currentStage.filter { it.isDigit() }.toIntOrNull() ?: 0
+                        articleStage = currentStageInt
+                    }
                 }
 
-                updateGraph(articleStage)
+                // 제목 업데이트
+                updateTitle()
+                updateGraph(articleStage, isComplete)
+
             } else {
                 Toast.makeText(this@ForgettingCurveActivity, "복습 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
             }
@@ -148,14 +189,19 @@ class ForgettingCurveActivity : AppCompatActivity() {
         binding.viewDivider.visibility = if (stats.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun updateGraph(stage: Int) {
-        val imageResId = when (stage) {
-            0 -> R.drawable.ic_ebbing0
-            1 -> R.drawable.ic_ebbing1
-            2 -> R.drawable.ic_ebbing2
-            3 -> R.drawable.ic_ebbing3
-            4 -> R.drawable.ic_ebbing4
-            else -> R.drawable.ic_ebbing0
+    private fun updateGraph(stage: Int, isComplete: Boolean = false) {
+        val imageResId = if (isComplete) {
+            // 완료 상태일 때는 특별한 완료 그래프 또는 최종 단계 그래프
+            R.drawable.ic_ebbing4
+        } else {
+            when (stage) {
+                0 -> R.drawable.ic_ebbing0
+                1 -> R.drawable.ic_ebbing1
+                2 -> R.drawable.ic_ebbing2
+                3 -> R.drawable.ic_ebbing3
+                4 -> R.drawable.ic_ebbing4
+                else -> R.drawable.ic_ebbing0
+            }
         }
         binding.cardGraph.findViewById<ImageView>(R.id.ivEbbing).setImageResource(imageResId)
     }
