@@ -61,17 +61,45 @@ class ForgettingCurveActivity : AppCompatActivity() {
         }
 
         // 퀴즈 버튼
+//        binding.btnQuiz.setOnClickListener {
+//            if (isComplete) {
+//                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+//                return@setOnClickListener
+//            }
+//
+//            val intent = Intent(this, QuizActivity::class.java)
+//            intent.putExtra("ARTICLE_TITLE", articleTitle)
+//            intent.putExtra("ARTICLE_STAGE", articleStage)
+//            startActivity(intent)
+//        }
+
         binding.btnQuiz.setOnClickListener {
             if (isComplete) {
                 Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val intent = Intent(this, QuizActivity::class.java)
-            intent.putExtra("ARTICLE_TITLE", articleTitle)
-            intent.putExtra("ARTICLE_STAGE", articleStage)
-            startActivity(intent)
+//            val memberId = getSharedPreferences("auth", MODE_PRIVATE).getLong("MEMBER_ID", -1)
+//            if (memberId == -1L || noteId == null) return@setOnClickListener
+            val memberId = 1L
+            if (noteId == null) return@setOnClickListener
+
+            lifecycleScope.launch {
+                val quizList = ReviewRepository().getQuizzes(memberId, noteId!!)
+                if (quizList.isNotEmpty()) {
+                    val intent = Intent(this@ForgettingCurveActivity, QuizActivity::class.java).apply {
+                        putExtra("ARTICLE_TITLE", articleTitle)
+                        putExtra("ARTICLE_STAGE", articleStage)
+                        putExtra("NOTE_ID", noteId)
+                        putParcelableArrayListExtra("QUIZ_LIST", ArrayList(quizList))
+                    }
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this@ForgettingCurveActivity, "퀴즈가 존재하지 않습니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
+
 
         // 말하기 버튼 - startActivityForResult 사용
         binding.btnSpeak.setOnClickListener {

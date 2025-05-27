@@ -1,5 +1,8 @@
 package com.example.tokkit.data.remote.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
 data class ReviewStageItem(
     val uuid: String,
     val stage: String
@@ -30,8 +33,29 @@ data class ConversationReviewRequest(
     val content: String
 )
 
-data class ConversationReviewResponse(
+data class ReviewResponse(
     val reviewResult: String,
     val newStage: String,
     val nextReviewAt: String
+)
+
+@Parcelize
+data class QuizItem(
+    val noteId: String,
+    val quizId: Long,
+    val difficulty: String,
+    val question: String,
+    val answer: Int,
+    val choices: List<String>,
+    val explanation: String
+) : Parcelable
+
+data class QuizListResponse(
+    val quizzes: List<QuizItem>,
+    val paginationInfo: PaginationInfo
+)
+
+data class QuizReviewRequest(
+    val score: Int,
+    val correctCount: Int
 )

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.ksp)
+    id("kotlin-parcelize")
 }
 
 val qnnSDKLocalPath = "C:\\Qualcomm\\AIStack\\QAIRT\\2.32.6.250402" // 실제 경로로 수정 필요
