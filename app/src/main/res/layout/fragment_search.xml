@@ -37,7 +37,7 @@
                 android:layout_height="match_parent"
                 android:layout_toEndOf="@id/ivSearchIcon"
                 android:layout_toStartOf="@+id/ivClearSearch"
-                android:hint="태그를 입력하세요"
+                android:hint="검색어를 입력하세요"
                 android:paddingStart="8dp"
                 android:background="@null"
                 android:textColor="#000000"
