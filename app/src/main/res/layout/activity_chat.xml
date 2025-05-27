@@ -21,12 +21,42 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <!-- 캐릭터 이미지 (중앙) -->
     <ImageView
-        android:id="@+id/iv_character"
+        android:id="@+id/iv_background"
         android:layout_width="500dp"
         android:layout_height="500dp"
+        android:src="@drawable/rabbit_background"
+        android:contentDescription="정적 캐릭터"
+        android:scaleType="fitCenter"
+        app:layout_constraintTop_toBottomOf="@id/btn_back"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="60dp"
+        android:layout_marginBottom="60dp" />
+
+    <!-- 정적 이미지 -->
+    <ImageView
+        android:id="@+id/iv_character"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:src="@drawable/rabbit"
+        android:contentDescription="정적 캐릭터"
+        android:scaleType="fitCenter"
+        app:layout_constraintTop_toBottomOf="@id/btn_back"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="60dp"
+        android:layout_marginBottom="60dp" />
+
+    <!-- 애니메이션 GIF (초기에는 숨김) -->
+    <ImageView
+        android:id="@+id/iv_character_gif"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:contentDescription="애니메이션 캐릭터"
+        android:scaleType="fitCenter"
         app:layout_constraintTop_toBottomOf="@id/btn_back"
         app:layout_constraintBottom_toTopOf="@+id/btn_mic"
         app:layout_constraintStart_toStartOf="parent"
@@ -48,6 +78,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="40dp" />
+
+
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lottie_mic"
@@ -89,7 +121,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
         app:layout_constraintStart_toEndOf="@+id/btn_mic"
         app:layout_constraintTop_toTopOf="@+id/btn_mic"
-        android:layout_marginStart="25dp"/>
+        android:layout_marginStart="10dp"/>
 
     <!-- 노트 생성 로딩 오버레이 -->
     <FrameLayout
