@@ -22,6 +22,7 @@ import com.example.tokkit.data.remote.model.Directory
 import com.example.tokkit.databinding.ActivityMainBinding
 import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -65,6 +66,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // FAB 이벤트 설정
         setupSearchFab()
+
+        // 🔥 FCM 토큰 가져와서 로그로 출력
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "🔥 FCM 토큰 가져오기 실패", task.exception)
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            Log.d("FCM", "🔥 현재 FCM 토큰: $token")
+        }
     }
 
     private fun setupCustomNavigationDrawer() {
@@ -258,6 +270,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         container.addView(pageView)
     }
+
+
     private fun addMainFolder(folderName: String, subItems: List<Any>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, navigationContainer, false)
         val folderNameTv = folderView.findViewById<TextView>(R.id.tvFolderName)
@@ -371,6 +385,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             // 여기에 페이지 이동 로직 추가 예정
         }
+
         container.addView(pageView)
     }
 
@@ -443,6 +458,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     // NavigationView 아이템 클릭 이벤트 처리
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_home -> {
+                replaceFragment(HomeFragment())
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_home
+            }
+            R.id.nav_search -> {
+                replaceFragment(SearchFragment())
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_search
+            }
+            R.id.nav_review -> {
+                replaceFragment(ReviewFragment())
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_review
+            }
+            R.id.nav_mypage -> {
+                replaceFragment(MypageFragment())
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_settings
+            }
+            R.id.nav_settings -> {
+                // 설정 화면으로 이동하는 코드 (필요시 추가)
+            }
+            R.id.nav_logout -> {
+                // 로그아웃 기능 구현 (필요시 추가)
+            }
+        }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }

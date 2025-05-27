@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
     id("kotlin-parcelize")
 }
 
@@ -88,7 +89,7 @@ android {
     }
 }
 
-//// QNN SDK 검증 및 라이브러리 복사 로직
+// QNN SDK 검증 및 라이브러리 복사 로직
 tasks.register("validateQnnSdk") {
     doLast {
         if (!file(qnnSDKLocalPath).exists()) {
@@ -178,8 +179,6 @@ dependencies {
     // markdown
     implementation ("io.noties.markwon:core:4.6.2")
     implementation ("io.noties.markwon:editor:4.6.2")
-    implementation ("io.noties.markwon:ext-tables:4.6.2")
-
 
     // flexbox (자동 줄바꿈)
     implementation ("com.google.android.flexbox:flexbox:3.0.0")
@@ -199,6 +198,13 @@ dependencies {
     // ViewModel & LiveData (MVVM 구조 사용 시)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+
+    // Firebase BoM 설정
+    implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
+
+    // Firebase 라이브러리 의존성 추가 (버전 명시 생략)
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 
     // lifecycleScope
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
