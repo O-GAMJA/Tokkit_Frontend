@@ -43,6 +43,14 @@ import retrofit2.HttpException
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 
 class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
@@ -932,6 +940,27 @@ class NoteDetailsActivity : AppCompatActivity() {
                     Log.d("NoteDetails", "LocalDream 생성 이미지를 S3에 업로드 시도")
                     Toast.makeText(this@NoteDetailsActivity, "이미지를 업로드 중입니다...", Toast.LENGTH_SHORT).show()
 
+        // 노트 ID 생성 (UUID)
+        val noteId = UUID.randomUUID().toString()
+
+        val formatter = DateTimeFormatter.ISO_DATE_TIME
+        val nextReviewTime = LocalDateTime.now().plusDays(1).format(formatter)
+
+        // 요청 객체 생성
+        val noteRequest = NoteCreateRequest(
+            id = noteId,
+            title = noteTitle,
+            content = markdownContent,
+            isPublic = isPublic,
+            directoryId = directoryId,
+            bannerImageKey = imageKey,
+            conversationLog = conversationText,
+            stage = "STAGE0",
+            tags = currentTagList,
+            nextReviewAt = nextReviewTime
+        )
+
+
                     finalImageKey = uploadImageToS3(generatedImageBitmap!!)
 
                     if (finalImageKey == null) {
@@ -943,6 +972,8 @@ class NoteDetailsActivity : AppCompatActivity() {
 
                 // 이미지 키 설정
                 val imageKey = finalImageKey ?: intent.getStringExtra("IMAGE_URL") ?: "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+        val memberId = 1L
+        val batch = false // 단일 노트 생성이므로 false
 
                 // 노트 ID 생성 (UUID)
                 val noteId = UUID.randomUUID().toString()
@@ -973,10 +1004,12 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // API 호출
                 Log.d("NoteDetails", "API 호출 직전")
                 val api = RetrofitClient.noteApi
+
+                Log.d("NoteDetails", "API 호출 직전 - memberId: $memberId, batch: $batch")
                 val response = withContext(Dispatchers.IO) {
                     Log.d("NoteDetails", "API 호출 실행")
-                    // 리스트로 전달
-                    api.createNote(memberId, noteRequestList)
+                    // batch 파라미터 추가
+                    api.createNote(memberId = memberId, batch = batch, notes = noteRequestList)
                 }
                 Log.d("NoteDetails", "API 호출 완료: ${response.code}, ${response.message}")
 

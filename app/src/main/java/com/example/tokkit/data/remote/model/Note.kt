@@ -88,6 +88,7 @@ data class NoteCreateRequest(
     val conversationLog: String,
     val stage: String = "STAGE0",
     val tags: List<String>? = null,
+    val nextReviewAt: String? = null
 )
 
 data class NoteCreateResponse(

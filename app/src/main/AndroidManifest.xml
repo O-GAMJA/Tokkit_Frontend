@@ -182,6 +182,11 @@
         </activity>
 
         <activity
+            android:name=".ReviewTypeActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
             android:name=".genie.GenieConversationActivity"
             android:windowSoftInputMode="adjustPan"
             android:exported="true"/>

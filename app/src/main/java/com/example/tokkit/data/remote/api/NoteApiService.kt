@@ -60,7 +60,6 @@ interface NoteApiService {
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
 
-
     // 북마크 달기 api
     @POST("/notes/{noteId}/bookmark")
     suspend fun addBookmark(
@@ -117,11 +116,14 @@ interface NoteApiService {
 
     // 노트 저장 api
     @POST("/notes")
+    @Headers("Content-Type: application/json")
     suspend fun createNote(
         @Query("memberId") memberId: Long,
+        @Query("batch") batch: Boolean,
         @Body notes: List<NoteCreateRequest>
     ): ApiResponse<NoteCreateResponse>
 
+    // 유저가 가진 태그 개수 조회(버블 차트)
     @GET("/notes/tags")
     suspend fun getTagsByMemberId(
         @Query("memberId") memberId: Long
