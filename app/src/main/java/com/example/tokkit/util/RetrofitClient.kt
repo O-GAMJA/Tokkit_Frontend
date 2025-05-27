@@ -1,5 +1,6 @@
 package com.example.tokkit.util
 
+import com.example.tokkit.data.remote.api.AuthApi
 import com.example.tokkit.data.remote.api.ImageApiService
 import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.data.remote.api.S3ApiService
@@ -10,7 +11,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://52.79.86.14:8080"
+     private const val BASE_URL = "http://52.79.86.14:8080"
+    // private const val BASE_URL = "http://10.0.2.2:8080" // -> 로컬테스트용
 
     // OkHttpClient 인스턴스 생성 - 타임아웃 설정 추가
     private val okHttpClient = OkHttpClient.Builder()
@@ -42,5 +44,10 @@ object RetrofitClient {
 
     val s3Api: S3ApiService by lazy {
         retrofit.create(S3ApiService::class.java)
+    }
+
+    // ✅ 로그인 관련 API 추가
+    val authApi: AuthApi by lazy {
+        retrofit.create(AuthApi::class.java)
     }
 }

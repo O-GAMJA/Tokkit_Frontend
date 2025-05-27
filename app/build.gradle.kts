@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.ksp)
-    id("kotlin-parcelize")
+    id("com.google.gms.google-services") // Firebase
+    id("kotlin-parcelize")               // @Parcelize
 }
 
 val qnnSDKLocalPath = "C:\\Qualcomm\\AIStack\\QAIRT\\2.32.6.250402" // 실제 경로로 수정 필요
@@ -88,7 +89,7 @@ android {
     }
 }
 
-//// QNN SDK 검증 및 라이브러리 복사 로직
+// QNN SDK 검증 및 라이브러리 복사 로직
 tasks.register("validateQnnSdk") {
     doLast {
         if (!file(qnnSDKLocalPath).exists()) {
@@ -199,6 +200,13 @@ dependencies {
     // ViewModel & LiveData (MVVM 구조 사용 시)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+
+    // Firebase BoM 설정
+    implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
+
+    // Firebase 라이브러리 의존성 추가 (버전 명시 생략)
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 
     // lifecycleScope
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
