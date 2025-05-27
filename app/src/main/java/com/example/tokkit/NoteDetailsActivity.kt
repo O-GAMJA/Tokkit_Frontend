@@ -1,8 +1,10 @@
 package com.example.tokkit
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,28 +17,32 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-
-import com.example.tokkit.databinding.ActivityNoteDetailsBinding
-import com.example.tokkit.genie.ConversationManager
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.example.tokkit.data.remote.api.NoteApiService
+import com.example.tokkit.data.remote.api.S3ApiService
 import com.example.tokkit.data.remote.model.ApiResponse
 import com.example.tokkit.data.remote.model.NoteCreateRequest
+import com.example.tokkit.databinding.ActivityNoteDetailsBinding
+import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.util.RetrofitClient
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
-import android.graphics.drawable.Drawable
-import com.bumptech.glide.request.target.Target
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-
 
 class NoteDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNoteDetailsBinding
@@ -47,6 +53,9 @@ class NoteDetailsActivity : AppCompatActivity() {
     private var isPublic = true
     private var selectedDirectoryId: Int? = null
 
+    // LocalDream에서 생성된 이미지 관련 변수
+    private var generatedImageBitmap: Bitmap? = null
+    private var generatedImagePath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,6 +178,10 @@ class NoteDetailsActivity : AppCompatActivity() {
         val imageFile = File(imagePath)
         if (imageFile.exists()) {
             Log.d("NoteDetails", "onCreate에서 생성된 이미지 로드: $imagePath")
+
+            // 이미지 파일을 비트맵으로 로드하여 저장
+            generatedImageBitmap = BitmapFactory.decodeFile(imagePath)
+            generatedImagePath = imagePath
 
             Glide.with(this)
                 .load(imageFile)
@@ -321,6 +334,10 @@ class NoteDetailsActivity : AppCompatActivity() {
             val imageFile = File(imageFilePath)
             if (imageFile.exists()) {
                 Log.d("NoteDetails", "로컬 이미지 파일 표시 시도: $imageFilePath")
+
+                // 이미지 파일을 비트맵으로 로드하여 저장
+                generatedImageBitmap = BitmapFactory.decodeFile(imageFilePath)
+                generatedImagePath = imageFilePath
 
                 Glide.with(this)
                     .load(imageFile)
@@ -544,9 +561,38 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // 데이터 전달
                 intent.putExtra("AUTO_GENERATE", true)
                 intent.putExtra("PROMPT", prompt)
+
+                // 원본 데이터들을 모두 전달하여 LocalDream에서 이미지 생성 후 다시 돌아올 때 유지
                 intent.putExtra("NOTE_CONTENT", noteContent)
+                intent.putExtra("MARKDOWN_CONTENT", noteContent)  // NOTE_CONTENT와 동일한 값
+                intent.putExtra("CONVERSATION_TEXT", conversationText)
                 intent.putExtra("NOTE_TITLE", noteTitle)
                 intent.putExtra("SOURCE_APP", "tokkit")
+
+                // 현재 NoteDetailsActivity의 추가 상태 정보도 전달
+                intent.putStringArrayListExtra("SELECTED_TAGS", ArrayList(currentTagList))
+                intent.putExtra("SELECTED_PATH", selectedPath)
+                intent.putExtra("SELECTED_DIRECTORY_ID", selectedDirectoryId)
+                intent.putExtra("IS_PUBLIC", isPublic)
+
+                // 기존 이미지 정보도 전달 (필요한 경우)
+                val existingImageUrl = getIntent().getStringExtra("IMAGE_URL")
+                val existingS3ImageKey = getIntent().getStringExtra("S3_IMAGE_KEY")
+                if (!existingImageUrl.isNullOrEmpty()) {
+                    intent.putExtra("EXISTING_IMAGE_URL", existingImageUrl)
+                }
+                if (!existingS3ImageKey.isNullOrEmpty()) {
+                    intent.putExtra("EXISTING_S3_IMAGE_KEY", existingS3ImageKey)
+                }
+
+                Log.d("NoteDetails", "LocalDream으로 전달하는 데이터:")
+                Log.d("NoteDetails", "- 프롬프트: $prompt")
+                Log.d("NoteDetails", "- 노트 내용: ${noteContent.take(50)}...")
+                Log.d("NoteDetails", "- 마크다운 내용: ${noteContent.take(50)}...")
+                Log.d("NoteDetails", "- 대화 내용: ${conversationText.take(50)}...")
+                Log.d("NoteDetails", "- 노트 제목: $noteTitle")
+                Log.d("NoteDetails", "- 태그: $currentTagList")
+                Log.d("NoteDetails", "- 저장 경로: $selectedPath")
 
                 startActivity(intent)
                 popupWindow.dismiss()
@@ -555,6 +601,7 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // finish()
             } catch (e: Exception) {
                 Toast.makeText(this@NoteDetailsActivity, "오프라인 AI 앱을 찾을 수 없습니다", Toast.LENGTH_SHORT).show()
+                Log.e("NoteDetails", "LocalDream 앱 실행 실패", e)
             }
         }
 
@@ -605,16 +652,58 @@ class NoteDetailsActivity : AppCompatActivity() {
             val noteTitle = intent.getStringExtra("NOTE_TITLE")
             val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
 
-            Log.d("NoteDetails", "추가 데이터 수신:")
-            Log.d("NoteDetails", "- 노트 내용: $noteContent")
-            Log.d("NoteDetails", "- 마크다운: $markdownContent")
-            Log.d("NoteDetails", "- 제목: $noteTitle")
-            Log.d("NoteDetails", "- 대화: $conversationText")
+            // NoteDetailsActivity 상태 정보들도 복원
+            val selectedTags = intent.getStringArrayListExtra("SELECTED_TAGS")
+            val selectedPath = intent.getStringExtra("SELECTED_PATH")
+            val selectedDirectoryId = intent.getIntExtra("SELECTED_DIRECTORY_ID", -1)
+            val isPublic = intent.getBooleanExtra("IS_PUBLIC", true)
 
+            Log.d("NoteDetails", "추가 데이터 수신:")
+            Log.d("NoteDetails", "- 노트 내용: ${noteContent?.take(50)}...")
+            Log.d("NoteDetails", "- 마크다운: ${markdownContent?.take(50)}...")
+            Log.d("NoteDetails", "- 제목: $noteTitle")
+            Log.d("NoteDetails", "- 대화: ${conversationText?.take(50)}...")
+            Log.d("NoteDetails", "- 선택된 태그: $selectedTags")
+            Log.d("NoteDetails", "- 선택된 경로: $selectedPath")
+            Log.d("NoteDetails", "- 디렉토리 ID: $selectedDirectoryId")
+            Log.d("NoteDetails", "- 공개 설정: $isPublic")
+
+            // 상태 복원
+            selectedTags?.let {
+                currentTagList = it.toMutableList()
+                if (it.isNotEmpty()) {
+                    binding.tagContent.visibility = View.INVISIBLE
+                    binding.tagContainerInNote.visibility = View.VISIBLE
+                    renderSelectedTags(it)
+                }
+            }
+
+            selectedPath?.let {
+                this.selectedPath = it
+                binding.storageDetail.text = it
+            }
+
+            if (selectedDirectoryId != -1) {
+                this.selectedDirectoryId = selectedDirectoryId
+            }
+
+            // 공개 설정 복원
+            this.isPublic = isPublic
+            if (isPublic) {
+                binding.visibilityRadioGroup.check(R.id.publicOption)
+            } else {
+                binding.visibilityRadioGroup.check(R.id.privateOption)
+            }
+
+            // 이미지 처리
             if (!imagePath.isNullOrEmpty()) {
                 val imageFile = File(imagePath)
                 if (imageFile.exists()) {
                     Log.d("NoteDetails", "외부 앱에서 생성된 이미지 수신: $imagePath")
+
+                    // 이미지 파일을 비트맵으로 로드하여 저장
+                    generatedImageBitmap = BitmapFactory.decodeFile(imagePath)
+                    generatedImagePath = imagePath
 
                     // 이미지를 ImageView에 표시
                     Glide.with(this)
@@ -747,6 +836,62 @@ class NoteDetailsActivity : AppCompatActivity() {
         }
     }
 
+    // S3에 이미지 업로드하는 함수
+    private suspend fun uploadImageToS3(bitmap: Bitmap): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d("NoteDetails", "S3 이미지 업로드 시작")
+
+                // 1. 프리사인드 URL 발급 받기
+                val s3ApiService = RetrofitClient.createService(S3ApiService::class.java)
+                val fileName = "generated_image_${System.currentTimeMillis()}.jpg"
+
+                val response = s3ApiService.getPreSignedUrl("banner", fileName)
+
+                if (!response.isSuccess) {
+                    Log.e("NoteDetails", "프리사인드 URL 발급 실패: ${response.message}")
+                    return@withContext null
+                }
+
+                val preSignedUrl = response.result.preSignedUrl
+                val imageKey = response.result.imageKey
+
+                Log.d("NoteDetails", "프리사인드 URL 발급 성공: $imageKey")
+
+                // 2. 비트맵을 JPEG 바이트 배열로 변환
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                val imageBytes = outputStream.toByteArray()
+
+                // 3. S3에 업로드
+                val client = OkHttpClient.Builder().build()
+                val requestBody = imageBytes.toRequestBody("image/jpeg".toMediaType())
+
+                val request = Request.Builder()
+                    .url(preSignedUrl)
+                    .put(requestBody)
+                    .build()
+
+                val uploadResponse = client.newCall(request).execute()
+
+                if (uploadResponse.isSuccessful) {
+                    Log.d("NoteDetails", "S3 업로드 성공: $imageKey")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@NoteDetailsActivity, "이미지가 서버에 업로드되었습니다", Toast.LENGTH_SHORT).show()
+                    }
+                    return@withContext imageKey
+                } else {
+                    Log.e("NoteDetails", "S3 업로드 실패: ${uploadResponse.code} - ${uploadResponse.message}")
+                    return@withContext null
+                }
+
+            } catch (e: Exception) {
+                Log.e("NoteDetails", "S3 업로드 중 예외 발생", e)
+                return@withContext null
+            }
+        }
+    }
+
     private fun saveNoteToServer(
         noteTitle: String,
         markdownContent: String,
@@ -773,49 +918,61 @@ class NoteDetailsActivity : AppCompatActivity() {
         Log.d("NoteDetails", "저장할 데이터 - 마크다운 내용 길이: ${markdownContent.length}")
         Log.d("NoteDetails", "저장할 데이터 - 대화 내용 길이: ${conversationText.length}")
         Log.d("NoteDetails", "저장할 데이터 - S3 이미지 키: $s3ImageKey")
+        Log.d("NoteDetails", "저장할 데이터 - LocalDream 생성 이미지: ${generatedImageBitmap != null}")
         Log.d("NoteDetails", "저장할 데이터 - 태그 목록: $currentTagList")
         Log.d("NoteDetails", "저장할 데이터 - 디렉토리 ID: $directoryId")
 
-        // 이미지 키 설정
-        val imageKey = if (!s3ImageKey.isNullOrEmpty()) {
-            s3ImageKey
-        } else {
-            intent.getStringExtra("IMAGE_URL") ?: "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
-        }
-
-        // 노트 ID 생성 (UUID)
-        val noteId = UUID.randomUUID().toString()
-
-        // 요청 객체 생성
-        val noteRequest = NoteCreateRequest(
-            id = noteId,
-            title = noteTitle,
-            content = markdownContent,
-            isPublic = isPublic,
-            directoryId = directoryId,
-            bannerImageKey = imageKey,
-            conversationLog = conversationText,
-            stage = "STAGE0",
-            tags = currentTagList
-        )
-
-        // 리스트로 만들어서 보내야 함
-        val noteRequestList = listOf(noteRequest)
-
-        // 요청 바디를 JSON 문자열로 변환하여 로그 출력 (디버깅용)
-        val gson = Gson()
-        val requestJson = gson.toJson(noteRequestList)
-        Log.d("NoteDetails", "API 요청 JSON: $requestJson")
-
-        val memberId = 1L
-
-        // API 호출
         val scope = CoroutineScope(Dispatchers.Main)
         scope.launch {
             try {
-                val api = RetrofitClient.noteApi
+                var finalImageKey = s3ImageKey
 
+                // LocalDream에서 생성된 이미지가 있는 경우 S3에 업로드
+                if (generatedImageBitmap != null && finalImageKey.isNullOrEmpty()) {
+                    Log.d("NoteDetails", "LocalDream 생성 이미지를 S3에 업로드 시도")
+                    Toast.makeText(this@NoteDetailsActivity, "이미지를 업로드 중입니다...", Toast.LENGTH_SHORT).show()
+
+                    finalImageKey = uploadImageToS3(generatedImageBitmap!!)
+
+                    if (finalImageKey == null) {
+                        Log.e("NoteDetails", "이미지 업로드 실패, 기본 이미지 키 사용")
+                        Toast.makeText(this@NoteDetailsActivity, "이미지 업로드에 실패했습니다. 기본 이미지로 저장됩니다.", Toast.LENGTH_SHORT).show()
+                        finalImageKey = "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+                    }
+                }
+
+                // 이미지 키 설정
+                val imageKey = finalImageKey ?: intent.getStringExtra("IMAGE_URL") ?: "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
+
+                // 노트 ID 생성 (UUID)
+                val noteId = UUID.randomUUID().toString()
+
+                // 요청 객체 생성
+                val noteRequest = NoteCreateRequest(
+                    id = noteId,
+                    title = noteTitle,
+                    content = markdownContent,
+                    isPublic = isPublic,
+                    directoryId = directoryId,
+                    bannerImageKey = imageKey,
+                    conversationLog = conversationText,
+                    stage = "STAGE0",
+                    tags = currentTagList
+                )
+
+                // 리스트로 만들어서 보내야 함
+                val noteRequestList = listOf(noteRequest)
+
+                // 요청 바디를 JSON 문자열로 변환하여 로그 출력 (디버깅용)
+                val gson = Gson()
+                val requestJson = gson.toJson(noteRequestList)
+                Log.d("NoteDetails", "API 요청 JSON: $requestJson")
+
+                val memberId = 1L
+
+                // API 호출
                 Log.d("NoteDetails", "API 호출 직전")
+                val api = RetrofitClient.noteApi
                 val response = withContext(Dispatchers.IO) {
                     Log.d("NoteDetails", "API 호출 실행")
                     // 리스트로 전달
