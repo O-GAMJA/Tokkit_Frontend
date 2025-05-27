@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.tokkit.data.remote.model.QuizItem
 import com.example.tokkit.databinding.ActivityQuizXmlBinding
 
 class QuizActivity : AppCompatActivity() {
@@ -16,6 +17,7 @@ class QuizActivity : AppCompatActivity() {
     private lateinit var binding: ActivityQuizXmlBinding
     private var articleTitle: String? = null
     private var articleStage: Int = 0
+    private var noteId: String? = null
     private var currentQuestionIndex = 0
     private var userSelectedOption = -1 // 사용자가 선택한 옵션 인덱스,, -1 = 미선택
     private val userAnswers = mutableMapOf<Int, Int>() // 사용자 답변 저장
@@ -30,9 +32,13 @@ class QuizActivity : AppCompatActivity() {
         // 인텐트에서 데이터 받기
         articleTitle = intent.getStringExtra("ARTICLE_TITLE")
         articleStage = intent.getIntExtra("ARTICLE_STAGE", 0)
+        noteId = intent.getStringExtra("NOTE_ID")
 
         setupUI()
-        setupQuestions()
+        val quizItems = intent.getParcelableArrayListExtra<QuizItem>("QUIZ_LIST") ?: return
+        questions = quizItems.map {
+            Question(it.question, it.choices, it.answer - 1)
+        }
         showQuestion(currentQuestionIndex)
 
         // 피드백 오버레이 초기 설정
@@ -77,40 +83,6 @@ class QuizActivity : AppCompatActivity() {
         binding.option4.setOnClickListener {
             if (!isShowingFeedback) selectOption(3)
         }
-    }
-
-    private fun setupQuestions() {
-        // 예시 문제 데이터
-        questions = listOf(
-            Question(
-                "우리나라 최초의 한글 소설은?",
-                listOf("홍길동전", "춘향전", "별주부전", "심청전"),
-                0
-            ),
-            Question(
-                "TCP/IP에서 IP는 무엇의 약자인가?",
-                listOf("Internet Protocol", "Internal Protocol", "Interface Program", "Information Process"),
-                0
-            ),
-            Question(
-                "OSI 7계층에서 물리 계층은 몇 번째 계층인가?",
-                listOf("1계층", "2계층", "3계층", "7계층"),
-                0
-            ),
-            Question(
-                "라우터가 동작하는 OSI 계층은?",
-                listOf("물리 계층", "데이터 링크 계층", "네트워크 계층", "응용 계층"),
-                2
-            ),
-            Question(
-                "IPv4 주소의 비트 수는?",
-                listOf("8비트", "16비트", "32비트", "64비트"),
-                2
-            )
-        )
-
-        // 프로그레스바 초기 설정
-        updateProgressBar()
     }
 
     private fun showQuestion(index: Int) {
@@ -254,11 +226,13 @@ class QuizActivity : AppCompatActivity() {
             }
         }
 
-        // 점수 계산 (각 문제당 8점)
-        val score = correctAnswers * 8
+        // 점수 계산 (각 문제당 20점)
+        val score = correctAnswers * 20
 
         // 결과 화면으로 이동
         val intent = Intent(this, QuizResultActivity::class.java)
+        intent.putExtra("NOTE_ID", noteId)
+        intent.putExtra("CORRECT_COUNT", correctAnswers)
         intent.putExtra("SCORE", score)
         intent.putExtra("TOTAL_QUESTIONS", questions.size)
         intent.putExtra("USER_NAME", "Chamin") // *로그인 정보에서 가져올 예정

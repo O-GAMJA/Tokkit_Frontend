@@ -30,14 +30,20 @@ class ReviewViewModel : ViewModel() {
 
                 val withStage = notesResult.notes.map { note ->
                     val stageStr = stageMap[note.id]
-                    val stageTag = stageStr
-                        ?.filter { it.isDigit() }
-                        ?.toIntOrNull()
-//                        ?.plus(1)
-                        ?.let { "단계$it" }
 
                     if (note.previewContent.isNullOrBlank()) {
                         Log.w("ReviewViewModel", "previewContent 비어있음: ${note.title} (id=${note.id})")
+                    }
+
+                    // stage 값에 따른 태그 생성
+                    val stageTag = when (stageStr) {
+                        "COMPLETE" -> "COMPLETE"
+                        else -> {
+                            // 숫자로 된 단계인 경우
+                            stageStr?.filter { it.isDigit() }
+                                ?.toIntOrNull()
+                                ?.let { "단계$it" }
+                        }
                     }
 
                     val updatedTags = (note.tags ?: emptyList()) +

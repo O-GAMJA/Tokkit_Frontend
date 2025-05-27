@@ -65,6 +65,9 @@ class SearchDetailActivity : AppCompatActivity() {
     private val allComments = mutableListOf<Comment>()
     private var replyingToCommentId: Long? = null
 
+    private var etComment: EditText? = null
+    private var bottomSheetDialog: BottomSheetDialog? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySearchDetailBinding.inflate(layoutInflater)
@@ -396,12 +399,12 @@ class SearchDetailActivity : AppCompatActivity() {
         noteViewModel.resetComments()
 
         // BottomSheetDialog 생성
-        val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
-        bottomSheetDialog.setContentView(commentView)
+        bottomSheetDialog?.setContentView(commentView)
 
         val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
+        etComment = commentView.findViewById(R.id.et_comment)
 
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
@@ -424,8 +427,8 @@ class SearchDetailActivity : AppCompatActivity() {
             onReplyClickListener = object : OnReplyClickListener {
                 override fun onClick(parentComment: Comment) {
                     replyingToCommentId = parentComment.commentId
-                    etComment.requestFocus()
-                    etComment.hint = "답글 작성 중..." // EditText 힌트 변경
+                    etComment?.requestFocus()
+                    etComment?.hint = "답글 작성 중..." // EditText 힌트 변경
                 }
             }
         )
@@ -500,16 +503,16 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // 댓글 작성
         sendButton.setOnClickListener {
-            val text = etComment.text.toString().trim()
+            val text = etComment?.text.toString().trim()
             if (text.isNotEmpty()) {
                 noteViewModel.postComment(
                     noteId = noteId,
                     content = text,
                     parentId = replyingToCommentId,
                     onSuccess = {
-                        etComment.text.clear()
+                        etComment?.text?.clear()
                         replyingToCommentId = null
-                        etComment.hint = "댓글을 입력하세요"
+                        etComment?.hint = "댓글을 입력하세요"
                         Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
                         // 댓글 등록 후 초기화 + 0페이지 로드
@@ -526,7 +529,7 @@ class SearchDetailActivity : AppCompatActivity() {
         }
 
         // 키보드에서 전송 버튼 클릭 시 댓글 전송
-        etComment.setOnEditorActionListener { _, actionId, _ ->
+        etComment?.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                 sendButton.performClick()
                 return@setOnEditorActionListener true
@@ -539,17 +542,17 @@ class SearchDetailActivity : AppCompatActivity() {
         recyclerView.layoutParams = params
 
         // BottomSheet 동작 설정
-        val behavior = bottomSheetDialog.behavior
-        behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        behavior.skipCollapsed = true // 중간 상태 스킵
+        val behavior = bottomSheetDialog?.behavior
+        behavior?.state = BottomSheetBehavior.STATE_EXPANDED
+        behavior?.skipCollapsed = true // 중간 상태 스킵
 
         // BottomSheet 닫기 설정
         // 배경 클릭 시 닫기
-        bottomSheetDialog.setCancelable(true)
-        bottomSheetDialog.setCanceledOnTouchOutside(true)
+        bottomSheetDialog?.setCancelable(true)
+        bottomSheetDialog?.setCanceledOnTouchOutside(true)
 
         // BottomSheet 표시
-        bottomSheetDialog.show()
+        bottomSheetDialog?.show()
     }
 
     // 수정된 organizeCommentsHierarchy 함수 - 다중 레벨 대댓글 완전 지원
@@ -655,7 +658,15 @@ class SearchDetailActivity : AppCompatActivity() {
                     true
                 }
                 "답글 달기" -> {
-                    Toast.makeText(this, "답글 달기 눌림", Toast.LENGTH_SHORT).show()
+                    replyingToCommentId = comment.commentId
+                    etComment?.requestFocus()
+                    etComment?.hint = "답글 작성 중..."
+                    // 키보드 자동 열기 (선택적)
+                    etComment?.post {
+                        val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                        imm.showSoftInput(etComment, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    }
+                    bottomSheetDialog?.show()
                     true
                 }
                 "수정" -> {

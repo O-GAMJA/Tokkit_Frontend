@@ -155,15 +155,6 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                     sendMessage("Please start the quiz")
                 }
 
-//                // 모델 초기화 후에 OCR 텍스트 설정
-//                if (!tempOcrText.isNullOrEmpty()) {
-//                    genieWrapper.setOcrText(tempOcrText!!)
-//
-//                    // OCR 텍스트를 참고한다는 메시지 표시 (내용 포함 x)
-//                    val ocrMessage = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다", MessageSender.BOT)
-//                    ConversationManager.addMessage(ocrMessage)
-//                }
-
                 // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
                 val existingMessages = ConversationManager.getAllMessages()
                 if (existingMessages.isEmpty()) {
@@ -197,12 +188,12 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                     false
                 }
 
-                // 채팅 모드 전환 버튼 - ChatActivity로 전환
-                binding.btnChatMode.setOnClickListener {
-                    val intent = Intent(this, ChatActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }
+//                // 채팅 모드 전환 버튼 - ChatActivity로 전환
+//                binding.btnChatMode.setOnClickListener {
+//                    val intent = Intent(this, ChatActivity::class.java)
+//                    startActivity(intent)
+//                    finish()
+//                }
 
                 // 대화 복습 종료 버튼
                 binding.btnCreateNote.setOnClickListener {
@@ -220,20 +211,25 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                                 ConversationManager.clearMessages()
                                 ConversationManager.clearSavedConversation(this@ReviewSpeakingActivity)
 
-                                // 결과를 Intent로 설정
+                                // 결과를 Intent에 담아서 전달
                                 val resultIntent = Intent().apply {
                                     putExtra("NEW_STAGE", result.newStage)
-                                    // 숫자만 추출하여 int로 변환
-                                    val stageInt = result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0
-                                    putExtra("NEW_STAGE_INT", stageInt)
-                                    putExtra("NEXT_REVIEW_AT", result.nextReviewAt)
+
+                                    // newStage가 COMPLETE인지 확인하여 정수값도 함께 전달
+                                    if (result.newStage == "COMPLETE") {
+                                        putExtra("NEW_STAGE_INT", 5) // 완료 상태
+                                    } else {
+                                        // 숫자 단계 추출
+                                        val stageInt = result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0
+                                        putExtra("NEW_STAGE_INT", stageInt)
+                                    }
                                 }
 
                                 setResult(RESULT_OK, resultIntent)
 
                                 Toast.makeText(
                                     this@ReviewSpeakingActivity,
-                                    "복습 완료!\n새 단계: ${result.newStage}",
+                                    if (result.newStage == "COMPLETE") "모든 복습이 완료되었습니다!" else "복습 완료!\n새 단계: ${result.newStage}",
                                     Toast.LENGTH_LONG
                                 ).show()
 
@@ -244,7 +240,6 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                         }
                     }
                 }
-
 
             } catch (e: Exception) {
                 Log.e("GenieChat", "에러: ${e}")
