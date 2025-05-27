@@ -1,5 +1,17 @@
 package com.example.tokkit.data.remote.model
 
+data class Comment(
+    val username: String,
+    val time: String,
+    val content: String,
+    val likeCount: Int = 0,
+    val commentId: Long,
+    val isMine: Boolean,
+    val isLiked: Boolean,
+    val parentId: Long? = null,
+    val replies: MutableList<Comment> = mutableListOf()
+)
+
 data class CommentPageResponse(
     val comments: List<CommentResponse>,
     val page: Int,
@@ -11,9 +23,11 @@ data class CommentPageResponse(
 
 data class CommentResponse(
     val commentId: Long,
-    val parentId: Long,
+    val parentId: Long? = null,
     val writer: String,
     val content: String,
+    val createdAt: String,
+    val isMine: Boolean,
     val emojis: Map<String, EmojiReaction>
 )
 

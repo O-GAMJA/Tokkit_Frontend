@@ -1,9 +1,15 @@
 package com.example.tokkit
 
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
+import android.view.Window
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -19,17 +25,24 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.tokkit.adapter.CommentAdapter
+import com.example.tokkit.adapter.OnCommentLongClickListener
+import com.example.tokkit.adapter.OnLikeClickListener
+import com.example.tokkit.adapter.OnReplyClickListener
 import com.example.tokkit.adapter.SimilarNoteAdapter
 import com.example.tokkit.data.remote.model.BookmarkStatus
+import com.example.tokkit.data.remote.model.Comment
 import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.ActivitySearchDetailBinding
-import com.example.tokkit.model.Comment
 import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.tables.TablePlugin
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -48,12 +61,12 @@ class SearchDetailActivity : AppCompatActivity() {
     private val MENU_SAVE_ID = 2
     private val MENU_DELETE_ID = 3
 
-    // 댓글 목록 데이터 (전역 변수로 변경)
-//    private val commentList = mutableListOf(
-//        Comment("홍길동", "1시간 전", "이 글이 매우 도움이 되었습니다. 특히 OSI 7계층 설명이 이해하기 쉬웠어요!", 5),
-//        Comment("김철수", "3시간 전", "TCP와 UDP의 차이점을 잘 설명해주셨네요. 감사합니다.", 3),
-//        Comment("이영희", "어제", "네트워크 공부하는데 좋은 참고자료가 될 것 같습니다. 잘 봤습니다!", 7)
-//    )
+    private var currentPage = 0
+    private val allComments = mutableListOf<Comment>()
+    private var replyingToCommentId: Long? = null
+
+    private var etComment: EditText? = null
+    private var bottomSheetDialog: BottomSheetDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -285,8 +298,6 @@ class SearchDetailActivity : AppCompatActivity() {
 
     private fun setupBookmarkButton() {
         val bookmarkContainer = binding.bookmarkContainer
-        //val bookmarkIcon = binding.btnBookmark
-        //val countTextView = binding.bookmarkCount
 
         bookmarkContainer.setOnClickListener {
             val noteId = currentNoteId ?: return@setOnClickListener
@@ -295,6 +306,12 @@ class SearchDetailActivity : AppCompatActivity() {
 
             // 서버 요청
             noteViewModel.toggleBookmark(noteId, isCurrentlyBookmarked)
+
+            // 북마크 상태 변경 시 결과 설정 (isBookmarkChanged를 추가)
+            val result = Intent().apply {
+                putExtra("isBookmarkChanged", true)
+            }
+            setResult(RESULT_OK, result)
         }
 
         // UI 반영
@@ -311,7 +328,6 @@ class SearchDetailActivity : AppCompatActivity() {
             }
         }
     }
-
 
     private fun setupReactionButtons() {
 
@@ -375,18 +391,20 @@ class SearchDetailActivity : AppCompatActivity() {
         }
     }
 
+
     private fun showCommentBottomSheet() {
         val noteId = currentNoteId ?: return
-        var currentPage = 0
-        val allComments = mutableListOf<Comment>()
 
         // 댓글 초기화
         noteViewModel.resetComments()
 
         // BottomSheetDialog 생성
-        val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val commentView = layoutInflater.inflate(R.layout.layout_comment_bottom_sheet, null)
-        bottomSheetDialog.setContentView(commentView)
+        bottomSheetDialog?.setContentView(commentView)
+
+        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
+        etComment = commentView.findViewById(R.id.et_comment)
 
         // 댓글 목록이 비어있을 때 표시할 View
         val noCommentsView = commentView.findViewById<TextView>(R.id.tv_no_comments)
@@ -394,10 +412,26 @@ class SearchDetailActivity : AppCompatActivity() {
         // RecyclerView 설정
         val recyclerView = commentView.findViewById<RecyclerView>(R.id.rv_comments)
 
-        // 확인용 로그
-        Log.d("SearchDetailActivity", "RecyclerView visibility: ${recyclerView.visibility}")
-
-        val adapter = CommentAdapter(mutableListOf())
+        val adapter = CommentAdapter(
+            rootComments = mutableListOf(),
+            onLongClickListener = object : OnCommentLongClickListener {
+                override fun onLongClick(view: View, comment: Comment) {
+                    showCommentPopup(view, comment)
+                }
+            },
+            onLikeClickListener = object : OnLikeClickListener {
+                override fun onClick(comment: Comment) {
+                    toggleEmoji(comment.commentId, "LIKE", comment.isLiked)
+                }
+            },
+            onReplyClickListener = object : OnReplyClickListener {
+                override fun onClick(parentComment: Comment) {
+                    replyingToCommentId = parentComment.commentId
+                    etComment?.requestFocus()
+                    etComment?.hint = "답글 작성 중..." // EditText 힌트 변경
+                }
+            }
+        )
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -405,23 +439,44 @@ class SearchDetailActivity : AppCompatActivity() {
 
         // 댓글 observe
         noteViewModel.comments.observe(this) { commentResponses ->
-            val newComments = commentResponses.map {
+            Log.d("CommentDebug", "원본 댓글 응답: $commentResponses")
+
+            val comments = commentResponses.map { response ->
+                val createdTime = parseTimeAgo(response.createdAt)
                 Comment(
-                    it.writer,
-                    "방금",
-                    it.content,
-                    it.emojis["like"]?.count ?: 0,
-                    it.commentId)
+                    username = response.writer,
+                    time = createdTime,
+                    content = response.content,
+                    likeCount = response.emojis["LIKE"]?.count ?: 0,
+                    commentId = response.commentId,
+                    isMine = response.isMine,
+                    isLiked = response.emojis["LIKE"]?.reactedByCurrentUser ?: false,
+                    parentId = response.parentId
+                )
             }
 
             if (currentPage == 0) allComments.clear()
-            allComments.addAll(newComments)
+            allComments.addAll(comments)
 
-            val sortedComments = allComments
-                .distinctBy { it.commentId }
-                .sortedBy { it.commentId } // 오래된 댓글이 위 (or sortedByDescending { it.commentId })
+            Log.d("CommentDebug", "댓글 목록: ${comments.map { "${it.commentId}(부모: ${it.parentId})" }}")
 
-            adapter.updateComments(sortedComments)
+            // 중복 제거 후 시간순 정렬
+            val distinctComments = allComments.distinctBy { it.commentId }
+                .sortedBy { it.commentId }
+
+            // 계층 구조로 변환
+            val rootComments = organizeCommentsHierarchy(distinctComments)
+            Log.d("CommentDebug", "계층 구조 변환 후 루트 댓글: ${rootComments.size}")
+
+            // 비어있는지 확인
+            if (rootComments.isEmpty()) {
+                noCommentsView.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
+            } else {
+                noCommentsView.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+                adapter.updateComments(rootComments)
+            }
         }
 
         // 댓글 수 observe
@@ -447,20 +502,20 @@ class SearchDetailActivity : AppCompatActivity() {
         })
 
         // 댓글 작성
-        val sendButton = commentView.findViewById<ImageButton>(R.id.btn_send_comment)
-        val etComment = commentView.findViewById<EditText>(R.id.et_comment)
-
         sendButton.setOnClickListener {
-            val text = etComment.text.toString().trim()
+            val text = etComment?.text.toString().trim()
             if (text.isNotEmpty()) {
                 noteViewModel.postComment(
                     noteId = noteId,
                     content = text,
+                    parentId = replyingToCommentId,
                     onSuccess = {
-                        etComment.text.clear()
+                        etComment?.text?.clear()
+                        replyingToCommentId = null
+                        etComment?.hint = "댓글을 입력하세요"
                         Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
-                        // 💡 댓글 등록 후 초기화 + 0페이지 로드 + allComments.clear()
+                        // 댓글 등록 후 초기화 + 0페이지 로드
                         currentPage = 0
                         allComments.clear()
                         noteViewModel.resetComments()
@@ -474,7 +529,7 @@ class SearchDetailActivity : AppCompatActivity() {
         }
 
         // 키보드에서 전송 버튼 클릭 시 댓글 전송
-        etComment.setOnEditorActionListener { _, actionId, _ ->
+        etComment?.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                 sendButton.performClick()
                 return@setOnEditorActionListener true
@@ -487,17 +542,212 @@ class SearchDetailActivity : AppCompatActivity() {
         recyclerView.layoutParams = params
 
         // BottomSheet 동작 설정
-        val behavior = bottomSheetDialog.behavior
-        behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        behavior.skipCollapsed = true // 중간 상태 스킵
+        val behavior = bottomSheetDialog?.behavior
+        behavior?.state = BottomSheetBehavior.STATE_EXPANDED
+        behavior?.skipCollapsed = true // 중간 상태 스킵
 
         // BottomSheet 닫기 설정
         // 배경 클릭 시 닫기
-        bottomSheetDialog.setCancelable(true)
-        bottomSheetDialog.setCanceledOnTouchOutside(true)
+        bottomSheetDialog?.setCancelable(true)
+        bottomSheetDialog?.setCanceledOnTouchOutside(true)
 
         // BottomSheet 표시
-        bottomSheetDialog.show()
+        bottomSheetDialog?.show()
+    }
+
+    // 수정된 organizeCommentsHierarchy 함수 - 다중 레벨 대댓글 완전 지원
+    private fun organizeCommentsHierarchy(flatComments: List<Comment>): List<Comment> {
+        val rootComments = mutableListOf<Comment>()
+        val commentMap = mutableMapOf<Long, Comment>()
+
+        Log.d("CommentDebug", "계층 구조 변환 시작 - 입력 댓글 수: ${flatComments.size}")
+
+        // 1단계: 모든 댓글을 ID로 맵핑하고 replies 초기화
+        flatComments.forEach { comment ->
+            val commentWithReplies = comment.copy(replies = mutableListOf())
+            commentMap[comment.commentId] = commentWithReplies
+            Log.d("CommentDebug", "댓글 맵핑: ID=${comment.commentId}, parentId=${comment.parentId}")
+        }
+
+        // 2단계: 부모-자식 관계 설정
+        flatComments.forEach { comment ->
+            val parentId = comment.parentId
+            if (parentId == null) {
+                // parentId가 null이면 루트 댓글
+                commentMap[comment.commentId]?.let { rootComments.add(it) }
+                Log.d("CommentDebug", "루트 댓글 추가: ID=${comment.commentId}")
+            } else {
+                // parentId가 있으면 해당 부모의 대댓글
+                val parentComment = commentMap[parentId]
+                val childComment = commentMap[comment.commentId]
+                if (parentComment != null && childComment != null) {
+                    parentComment.replies.add(childComment)
+                    Log.d("CommentDebug", "대댓글 추가: ID=${comment.commentId} -> 부모=${parentId}")
+                } else {
+                    Log.e("CommentDebug", "부모 댓글을 찾을 수 없음: parentId=$parentId")
+                    // 부모를 찾을 수 없으면 루트 댓글로 처리
+                    commentMap[comment.commentId]?.let { rootComments.add(it) }
+                    Log.d("CommentDebug", "부모를 찾을 수 없어 루트 댓글로 처리: ID=${comment.commentId}")
+                }
+            }
+        }
+
+        Log.d("CommentDebug", "계층 구조 변환 완료 - 루트 댓글 수: ${rootComments.size}")
+        rootComments.forEach { root ->
+            Log.d("CommentDebug", "루트 댓글: ID=${root.commentId}")
+            logRepliesRecursively(root.replies, 1)
+        }
+
+        return rootComments
+    }
+
+    // 대댓글을 재귀적으로 로깅하는 함수
+    private fun logRepliesRecursively(replies: List<Comment>, depth: Int) {
+        replies.forEach { reply ->
+            val indent = "  ".repeat(depth)
+            Log.d("CommentDebug", "$indent- 대댓글: ID=${reply.commentId}, 하위 댓글 수=${reply.replies.size}")
+            if (reply.replies.isNotEmpty()) {
+                logRepliesRecursively(reply.replies, depth + 1)
+            }
+        }
+    }
+
+    private fun parseTimeAgo(createdAt: String): String {
+        return try {
+            val formatter = DateTimeFormatterBuilder()
+                .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+                .appendFraction(ChronoField.NANO_OF_SECOND, 0, 6, true)
+                .toFormatter()
+
+            val parsedTime = LocalDateTime.parse(createdAt, formatter)
+            val now = LocalDateTime.now()
+            val duration = Duration.between(parsedTime, now)
+
+            when {
+                duration.toMinutes() < 1 -> "방금"
+                duration.toHours() < 1 -> "${duration.toMinutes()}분 전"
+                duration.toHours() < 24 -> "${duration.toHours()}시간 전"
+                else -> "${duration.toDays()}일 전"
+            }
+        } catch (e: Exception) {
+            Log.e("TimeParser", "createdAt 파싱 실패: $createdAt", e)
+            "방금"
+        }
+    }
+
+    private fun showCommentPopup(anchorView: View, comment: Comment) {
+
+        val popup = PopupMenu(this, anchorView, Gravity.END)
+
+        popup.menu.add(if (comment.isLiked) "좋아요 취소" else "좋아요")
+        popup.menu.add("답글 달기")
+
+        if (comment.isMine) {
+            popup.menu.add("수정")
+            popup.menu.add("삭제")
+        }
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title) {
+                "좋아요" -> {
+                    toggleEmoji(comment.commentId, "LIKE", false)
+                    true
+                }
+                "좋아요 취소" -> {
+                    toggleEmoji(comment.commentId, "LIKE", true)
+                    true
+                }
+                "답글 달기" -> {
+                    replyingToCommentId = comment.commentId
+                    etComment?.requestFocus()
+                    etComment?.hint = "답글 작성 중..."
+                    // 키보드 자동 열기 (선택적)
+                    etComment?.post {
+                        val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                        imm.showSoftInput(etComment, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    }
+                    bottomSheetDialog?.show()
+                    true
+                }
+                "수정" -> {
+                    showEditCommentDialog(comment)
+                    true
+                }
+                "삭제" -> {
+                    noteViewModel.deleteComment(comment.commentId) { success ->
+                        if (success) {
+                            // 댓글 리스트 갱신
+                            currentPage = 0
+                            allComments.clear()
+                            noteViewModel.resetComments()
+                            noteViewModel.loadComments(currentNoteId!!, 0)
+                        } else {
+                            Toast.makeText(this, "삭제 실패", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popup.show()
+    }
+
+    private fun showEditCommentDialog(comment: Comment) {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_edit_comment)
+
+        // 배경 투명하게 지정 (중요)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        // 내부 View 처리
+        val editText = dialog.findViewById<EditText>(R.id.edit_comment)
+        val btnCancel = dialog.findViewById<Button>(R.id.btn_cancel)
+        val btnSave = dialog.findViewById<Button>(R.id.btn_save)
+
+        editText.setText(comment.content)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnSave.setOnClickListener {
+            val newContent = editText.text.toString().trim()
+            if (newContent.isNotBlank()) {
+                noteViewModel.updateComment(comment.commentId, newContent) { success ->
+                    if (success) {
+                        currentPage = 0
+                        allComments.clear()
+                        noteViewModel.resetComments()
+                        noteViewModel.loadComments(currentNoteId!!, 0)
+                    } else {
+                        Toast.makeText(this, "수정 실패", Toast.LENGTH_SHORT).show()
+                    }
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun toggleEmoji(commentId: Long, emojiName: String, isAlreadyReacted: Boolean) {
+        noteViewModel.toggleCommentEmoji(
+            commentId = commentId,
+            emojiName = emojiName,
+            isAlreadyReacted = isAlreadyReacted
+        ) { success ->
+            if (success) {
+                currentPage = 0
+                allComments.clear()
+                noteViewModel.resetComments()
+                noteViewModel.loadComments(currentNoteId!!, 0)
+            } else {
+                Toast.makeText(this, "이모지 처리 실패", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onBackPressed() {

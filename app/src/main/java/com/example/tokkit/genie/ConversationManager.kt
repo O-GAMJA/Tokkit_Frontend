@@ -182,6 +182,14 @@ object ConversationManager {
         sharedPrefs.edit().remove("conversation_history").remove("conversation_session_id").apply()
     }
 
+    //특정 위치의 메세지 삭제
+    fun removeMessageAt(position: Int) {
+        if (position >= 0 && position < messages.size) {
+            messages.removeAt(position)
+            notifyListeners()
+        }
+    }
+
     /**
      * 상태 변경을 통지받을 인터페이스
      */

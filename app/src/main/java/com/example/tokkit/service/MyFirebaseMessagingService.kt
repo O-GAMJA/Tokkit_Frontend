@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.tokkit.MainActivity // 알림 클릭 시 열 앱 액티비티
 import com.example.tokkit.R
+import com.example.tokkit.ReviewTypeActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -21,30 +22,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("FCM", "From: ${remoteMessage.from}")
 
-        // 데이터 메시지 확인
-        if (remoteMessage.data.isNotEmpty()) {
-            Log.d("FCM", "Message data payload: ${remoteMessage.data}")
-            val title = remoteMessage.data["title"] ?: "Tokkit 알림"
-            val body = remoteMessage.data["body"] ?: "데이터 메시지가 도착했습니다"
-            sendNotification(title, body)
-        }
+        val title = remoteMessage.data["title"] ?: remoteMessage.notification?.title ?: "Tokkit 알림"
+        val body = remoteMessage.data["body"] ?: remoteMessage.notification?.body ?: "알림 메시지가 도착했습니다"
+        val noteId = remoteMessage.data["note_id"] // ✅ UUID 형태 문자열
 
-        // 알림 메시지 확인
-        remoteMessage.notification?.let {
-            val title = it.title ?: "Tokkit 알림"
-            val body = it.body ?: "알림 메시지가 도착했습니다"
-            sendNotification(title, body)
-        }
-
+        sendNotification(title, body, noteId)
     }
 
-    private fun sendNotification(title: String, messageBody: String) {
+    private fun sendNotification(title: String, messageBody: String, noteId: String?) {
         val channelId = "default_channel_id"
         val notificationId = 1001
         val largeIcon = BitmapFactory.decodeResource(resources, R.drawable.rabbit1)
 
-        val intent = Intent(this, MainActivity::class.java).apply {
+        val intent = Intent(this, ReviewTypeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("NOTE_ID", noteId) // ✅ noteId 전달
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -53,19 +45,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.rabbit_icon) // 흰색 벡터가 더 권장됨
+            .setSmallIcon(R.drawable.rabbit_icon)
             .setContentTitle(title)
             .setContentText(messageBody)
-            .setLargeIcon(largeIcon) // ✅ 오른쪽 상단에 원형으로 표시됨
+            .setLargeIcon(largeIcon)
             .setAutoCancel(true)
             //.setColor(Color.GRAY)
             .setColor(ContextCompat.getColor(this, R.color.bora200))
             .setContentIntent(pendingIntent)
 
-
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Android O 이상은 알림 채널이 필요함
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -81,8 +71,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "🔥 새 FCM 토큰: $token")
-
-        // TODO: 이 토큰을 서버에 전송 (백엔드 저장용)
+        // TODO: 백엔드로 전송
     }
-
 }
+

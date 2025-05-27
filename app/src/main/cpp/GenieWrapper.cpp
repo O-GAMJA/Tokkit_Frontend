@@ -178,3 +178,25 @@ std::string GenieWrapper::GetResponseForPrompt(const std::string& user_prompt,
     }
     return user_data.data;
 }
+
+void GenieWrapper::SetQuizMode(bool is_quiz)
+{
+    prompt_handler.SetQuizMode(is_quiz);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_tokkit_genie_GenieWrapper_setQuizMode(JNIEnv* env, jobject thiz, jboolean is_quiz)
+{
+    // Java에서 native handle 가져오기
+    jclass clazz = env->GetObjectClass(thiz);
+    jfieldID fieldId = env->GetFieldID(clazz, "genieWrapperNativeHandle", "J");
+    jlong nativeHandle = env->GetLongField(thiz, fieldId);
+
+    // handle → C++ 객체로 캐스팅
+    auto* wrapper = reinterpret_cast<App::GenieWrapper*>(nativeHandle);
+    if (wrapper != nullptr)
+    {
+        wrapper->SetQuizMode(is_quiz == JNI_TRUE);
+    }
+}

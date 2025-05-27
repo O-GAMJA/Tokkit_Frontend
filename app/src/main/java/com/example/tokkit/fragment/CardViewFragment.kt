@@ -19,6 +19,7 @@ import android.app.Activity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.HomeFragment
+import com.example.tokkit.MainActivity
 
 class CardViewFragment : Fragment() {
 
@@ -34,6 +35,14 @@ class CardViewFragment : Fragment() {
             val modified = result.data?.getBooleanExtra("noteModified", false) ?: false
             val wasTagSearch = result.data?.getBooleanExtra("wasTagSearch", false) ?: false
             val tagName = result.data?.getStringExtra("tagName")
+
+            if (result.resultCode == Activity.RESULT_OK) {
+                val isBookmarkChanged = result.data?.getBooleanExtra("isBookmarkChanged", false) ?: false
+                if (isBookmarkChanged) {
+                    // MainActivity의 디렉토리 트리 새로고침 요청
+                    (requireActivity() as? MainActivity)?.reloadDirectoryTree()
+                }
+            }
 
             if (deleted || modified) {
                 if (wasTagSearch && tagName != null) {
@@ -79,6 +88,7 @@ class CardViewFragment : Fragment() {
                 intent.putExtra("isTagSearch", isTagSearch)
                 intent.putExtra("tagName", tagName)
 
+                // registerForActivityResult 사용
                 detailLauncher.launch(intent)
             },
             useCardLayout = true,

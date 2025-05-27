@@ -67,4 +67,15 @@ public class GenieWrapper {
     static {
         System.loadLibrary("tokkit");
     }
+
+    public void setOcrText(String ocrText) {
+        if (ocrText != null && !ocrText.isEmpty()) {
+            setOcrText(genieWrapperNativeHandle, ocrText);
+        }
+    }
+
+    private native void setOcrText(long nativeHandle, String ocrText);
+
+    public native void setQuizMode(boolean isQuiz);
+
 }

@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
         <uses-permission android:name="android.permission.RECORD_AUDIO"/>
         <uses-permission android:name="android.permission.INTERNET"/>
+        <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+        <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
         <application
         android:allowBackup="true"
@@ -173,8 +175,20 @@
         </activity>
 
         <activity
-        android:name=".genie.GenieConversationActivity"
-        android:exported="false" />
+            android:name=".ReviewSpeakingActivity"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".ReviewTypeActivity"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".genie.GenieConversationActivity"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="true"/>
 
         <activity
             android:name=".genie.MarkdownNoteActivity"

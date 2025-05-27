@@ -174,6 +174,33 @@ class NoteViewModel : ViewModel() {
         }
     }
 
+    fun updateComment(commentId: Long, newContent: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.updateComment(commentId, newContent)
+            onResult(success)
+        }
+    }
+
+    fun deleteComment(commentId: Long, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.deleteComment(commentId)
+            onResult(success)
+        }
+    }
+
+    fun toggleCommentEmoji(
+        commentId: Long,
+        emojiName: String,
+        isAlreadyReacted: Boolean,
+        onComplete: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            Log.d("NoteViewModel", "toggleCommentEmoji 호출됨: commentId=$commentId, emoji=$emojiName, isReacted=$isAlreadyReacted")
+            val result = repository.toggleCommentEmoji(commentId, emojiName, isAlreadyReacted)
+            onComplete(result)
+        }
+    }
+
     private val _similarNotes = MutableLiveData<List<SimilarNoteItem>>()
     val similarNotes: LiveData<List<SimilarNoteItem>> get() = _similarNotes
 

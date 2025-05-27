@@ -60,7 +60,6 @@ interface NoteApiService {
         @Body emoji: EmojiRequest
     ): ApiResponse<Note>
 
-
     // 북마크 달기 api
     @POST("/notes/{noteId}/bookmark")
     suspend fun addBookmark(
@@ -72,7 +71,6 @@ interface NoteApiService {
     suspend fun removeBookmark(
         @Path("noteId") noteId: String
     ): ApiResponse<BookmarkResponse>
-
 
     // 댓글 목록 조회 api
     @GET("/comments/{noteId}")
@@ -89,13 +87,49 @@ interface NoteApiService {
         @Body commentRequest: CommentRequest
     ): ApiResponse<Unit>
 
+    // 댓글 수정 api
+    @PATCH("/comments/{commentId}")
+    suspend fun updateComment(
+        @Path("commentId") commentId: Long,
+        @Body content: Map<String, String>
+    ): ApiResponse<Unit>
+
+    // 댓글 삭제 api
+    @DELETE("/comments/{commentId}")
+    suspend fun deleteComment(
+        @Path("commentId") commentId: Long
+    ): ApiResponse<Unit>
+
+    // 댓글 이모지 추가 api
+    @POST("/comments/{commentId}/emoji")
+    suspend fun addEmoji(
+        @Path("commentId") commentId: Long,
+        @Body body: Map<String, String> // e.g., {"emojiName": "LIKE"}
+    ): ApiResponse<Unit>
+
+    // 댓글 이모지 삭제 api
+    @HTTP(method = "DELETE", path = "/comments/{commentId}/emoji", hasBody = true)
+    suspend fun removeEmoji(
+        @Path("commentId") commentId: Long,
+        @Body body: Map<String, String> // e.g., {"emojiName": "LIKE"}
+    ): ApiResponse<Unit>
+
     // 노트 저장 api
     @POST("/notes")
+    @Headers("Content-Type: application/json")
     suspend fun createNote(
         @Query("memberId") memberId: Long,
+        @Query("batch") batch: Boolean,
         @Body notes: List<NoteCreateRequest>
     ): ApiResponse<NoteCreateResponse>
 
+    // 유저가 가진 태그 개수 조회(버블 차트)
+    @GET("/notes/tags")
+    suspend fun getTagsByMemberId(
+        @Query("memberId") memberId: Long
+    ): ApiResponse<List<TagCount>>
+
+    // 특정 태그로 노트 목록 조회(검색)
     @GET("/notes/tags/{tagName}")
     suspend fun getNotesByTag(
         @Path("tagName") tagName: String,

@@ -5,6 +5,7 @@ data class Note(
     val note_id: String?,
     val title: String,
     val content: String?,
+    val previewContent: String?,
     val imageUrl: String?,
     val createdAt: String?,
     val updatedAt: String?,
@@ -65,6 +66,11 @@ data class BookmarkResponse(
     val bookmarkStatusDTO: BookmarkStatus
 )
 
+data class TagCount(
+    val name: String,
+    val count: Int
+)
+
 data class ApiResponse<T>(
     val isSuccess: Boolean,
     val code: String,
@@ -82,6 +88,7 @@ data class NoteCreateRequest(
     val conversationLog: String,
     val stage: String = "STAGE0",
     val tags: List<String>? = null,
+    val nextReviewAt: String? = null
 )
 
 data class NoteCreateResponse(
@@ -138,4 +145,9 @@ data class SearchPaginationInfo(
     val page_size: Int,
     val result_count: Int,
     val has_more: Boolean
+)
+
+// OCR 응답
+data class OcrResponse(
+    val translatedText: String
 )

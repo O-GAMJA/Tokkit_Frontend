@@ -44,7 +44,18 @@ class NoteAdapter(
             is CardViewHolder -> {
                 with(holder.binding) {
                     tvTitle.text = note.title
-                    markwon.setMarkdown(tvContent, note.content?.take(100)?.plus("...") ?: "내용 없음")
+
+                    // previewContent가 있으면 사용하고, 없으면 content 사용
+                    val noteContent = if (!note.previewContent.isNullOrEmpty()) {
+                        note.previewContent
+                    } else if (!note.content.isNullOrEmpty()) {
+                        note.content.take(100).plus("...")
+                    } else {
+                        "내용 없음"
+                    }
+
+                    markwon.setMarkdown(tvContent, noteContent)
+
                     tvDate.text = if (note.createdAt != null && note.createdAt.length >= 10) {
                         note.createdAt.substring(0, 10) // "2025-05-13"
                     } else {
@@ -60,7 +71,18 @@ class NoteAdapter(
             is ListViewHolder -> {
                 with(holder.binding) {
                     tvTitle.text = note.title
-                    markwon.setMarkdown(tvContent, note.content?.take(80)?.plus("...") ?: "내용 없음")
+
+                    // previewContent가 있으면 사용하고, 없으면 content 사용
+                    val noteContent = if (!note.previewContent.isNullOrEmpty()) {
+                        note.previewContent
+                    } else if (!note.content.isNullOrEmpty()) {
+                        note.content.take(80).plus("...")
+                    } else {
+                        "내용 없음"
+                    }
+
+                    markwon.setMarkdown(tvContent, noteContent)
+
                     tvDate.text = if (note.createdAt != null && note.createdAt.length >= 10) {
                         note.createdAt.substring(0, 10) // "2025-05-13"
                     } else {

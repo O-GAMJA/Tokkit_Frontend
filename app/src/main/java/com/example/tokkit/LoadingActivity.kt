@@ -156,9 +156,9 @@ class LoadingActivity : AppCompatActivity() {
                             val s3Api = RetrofitClient.s3Api
                             val uniqueFileName = "note_image_${UUID.randomUUID()}.jpg"
 
-                            Log.d(TAG, "S3 프리사인드 URL 요청 시작: fileType=profile, fileName=$uniqueFileName")
+                            Log.d(TAG, "S3 프리사인드 URL 요청 시작: fileType=banner, fileName=$uniqueFileName")
 
-                            val s3Response = s3Api.getPreSignedUrl("profile", uniqueFileName)
+                            val s3Response = s3Api.getPreSignedUrl("banner", uniqueFileName)
 
                             if (s3Response.isSuccess) {
                                 // S3 URL 발급 성공

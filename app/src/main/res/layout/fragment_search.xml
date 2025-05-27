@@ -5,60 +5,56 @@
     android:layout_height="match_parent"
     android:background="@color/main_backgound">
 
-    <!-- 검색어 입력부-->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/searchContainer"
+    <!-- 검색창 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/searchBar"
         android:layout_width="0dp"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:background="@drawable/rounded_search_bg"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="2dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- 검색 아이콘 -->
-        <ImageView
-            android:id="@+id/ivSearchIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_marginStart="16dp"
-            android:src="@drawable/ic_search"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp">
 
-        <!-- 검색 입력창 -->
-        <EditText
-            android:id="@+id/etSearch"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:background="@null"
-            android:hint="검색어를 입력하세요"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:singleLine="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/ivClearSearch"
-            app:layout_constraintStart_toEndOf="@+id/ivSearchIcon"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/ivSearchIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="16dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_search" />
 
-        <!-- X 버튼 -->
-        <ImageView
-            android:id="@+id/ivClearSearch"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="16dp"
-            android:src="@drawable/ic_close"
-            android:visibility="visible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_toEndOf="@id/ivSearchIcon"
+                android:layout_toStartOf="@+id/ivClearSearch"
+                android:hint="검색어를 입력하세요"
+                android:paddingStart="8dp"
+                android:background="@null"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:inputType="text" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageView
+                android:id="@+id/ivClearSearch"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="16dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_close"
+                android:visibility="visible" />
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- 로딩 프로그레스 -->
     <ProgressBar
@@ -66,7 +62,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -83,7 +79,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer" />
+        app:layout_constraintTop_toBottomOf="@id/searchBar" />
 
     <!-- 검색 결과 없음 View -->
     <LinearLayout
@@ -95,7 +91,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer">
+        app:layout_constraintTop_toBottomOf="@id/searchBar">
 
         <ImageView
             android:layout_width="120dp"
