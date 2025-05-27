@@ -136,7 +136,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
         app:layout_constraintStart_toEndOf="@+id/btn_mic"
         app:layout_constraintTop_toTopOf="@+id/btn_mic"
-        android:layout_marginStart="25dp"/>
+        android:layout_marginStart="10dp"/>
 
     <!-- 노트 생성 로딩 오버레이 -->
     <FrameLayout
