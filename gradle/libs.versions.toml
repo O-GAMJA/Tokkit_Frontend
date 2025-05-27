@@ -32,3 +32,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 # ksp = { id = "com.google.devtools.ksp", version = "1.9.0-1.0.13" }
 ksp = { id = "com.google.devtools.ksp", version = "1.9.10-1.0.13" }
+kotlin-parcelize = { id = "kotlin-parcelize", version = "1.9.10" }
+

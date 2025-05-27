@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
+    id("kotlin-parcelize")
 }
 
 val qnnSDKLocalPath = "C:\\Qualcomm\\AIStack\\QAIRT\\2.32.6.250402" // 실제 경로로 수정 필요
@@ -205,5 +206,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging")
 
-
+    // lifecycleScope
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 }

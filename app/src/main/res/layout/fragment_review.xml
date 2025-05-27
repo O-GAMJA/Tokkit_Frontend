@@ -47,7 +47,7 @@
                 android:paddingTop="8dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="1단계"
+                android:text="0단계"
                 android:textStyle="bold"
                 android:textColor="@color/gray" />
 
@@ -61,7 +61,7 @@
                 android:paddingTop="8dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="2단계"
+                android:text="1단계"
                 android:textStyle="bold"
                 android:textColor="@color/gray" />
 
@@ -75,7 +75,7 @@
                 android:paddingTop="8dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="3단계"
+                android:text="2단계"
                 android:textStyle="bold"
                 android:textColor="@color/gray" />
 
@@ -89,7 +89,7 @@
                 android:paddingTop="8dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="4단계"
+                android:text="3단계"
                 android:textStyle="bold"
                 android:textColor="@color/gray" />
 
@@ -97,12 +97,26 @@
                 android:id="@+id/btnStep5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/rounded_stage_bg2"
                 android:paddingStart="20dp"
                 android:paddingTop="8dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="5단계"
+                android:text="4단계"
+                android:textStyle="bold"
+                android:textColor="@color/gray" />
+
+            <TextView
+                android:id="@+id/btnStep6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_stage_bg2"
+                android:paddingStart="20dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="8dp"
+                android:text="완료"
                 android:textStyle="bold"
                 android:textColor="@color/gray" />
         </LinearLayout>

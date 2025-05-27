@@ -8,10 +8,12 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.tokkit.adapter.GenericArticleAdapter
+import com.example.tokkit.adapter.NoteAdapter
+import com.example.tokkit.data.remote.model.Note
 import com.example.tokkit.databinding.FragmentReviewBinding
-import com.example.tokkit.model.Article
+import io.noties.markwon.Markwon
 
 class ReviewFragment : Fragment() {
 
@@ -19,10 +21,12 @@ class ReviewFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val stageButtons = mutableListOf<TextView>()
-    private var selectedStage: Int = 0 // 0은 전체, 1-5는 각 단계
+    private var selectedStage: Int = 0 // 0은 전체, 1-5는 각 단계, 6은 완료
 
-    // 모든 아티클 데이터
-    private val allArticles = mutableListOf<Article>()
+    private lateinit var viewModel: ReviewViewModel
+    private lateinit var noteAdapter: NoteAdapter
+    private lateinit var markwon: Markwon
+    private val allNotes = mutableListOf<Note>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,33 +40,69 @@ class ReviewFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ViewModel 초기화
+        viewModel = ViewModelProvider(this)[ReviewViewModel::class.java]
+
+        // Markwon 초기화
+        markwon = Markwon.create(requireContext())
+
+        // 어댑터 초기화
+        noteAdapter = NoteAdapter(
+            onItemClick = { note ->
+                val intent = Intent(requireContext(), ForgettingCurveActivity::class.java)
+                intent.putExtra("NOTE_ID", note.id)
+                intent.putExtra("NOTE_CONTENT", note.content)
+                intent.putExtra("ARTICLE_TITLE", note.title)
+
+                // 완료 상태 확인
+                val isComplete = note.tags?.contains("COMPLETE") == true
+                if (isComplete) {
+                    intent.putExtra("IS_COMPLETE", true)
+                    intent.putExtra("ARTICLE_STAGE", 5) // 완료 상태에서는 최대 단계로 설정
+                } else {
+                    intent.putExtra("IS_COMPLETE", false)
+                    intent.putExtra("ARTICLE_STAGE", note.tags?.find { it.startsWith("단계") }?.removePrefix("단계")?.toIntOrNull() ?: 0)
+                }
+
+                startActivity(intent)
+            },
+            useCardLayout = true,  // 카드 레이아웃 사용
+            markwon = markwon
+        )
+
         // 단계 버튼 초기화
         initStageButtons()
 
         // 리사이클러뷰 설정
         setupRecyclerView()
 
-        // 샘플 데이터 로드
-        loadSampleData()
+        // 노트 + 단계 정보 불러오기
+        viewModel.loadNotesWithStages(memberId = 1L) // 실제 사용자 ID로 대체
 
-        // 초기 데이터 표시
-        updateArticleList()
+        // LiveData 관찰
+        viewModel.notes.observe(viewLifecycleOwner) { notes ->
+            allNotes.clear()
+            allNotes.addAll(notes)
+            updateNoteList()
+        }
+
     }
 
     private fun initStageButtons() {
-        // 각 버튼을 리스트에 저장
+        // 각 버튼을 리스트에 저장 (btnStep6 추가)
         stageButtons.add(binding.btnAll)
         stageButtons.add(binding.btnStep1)
         stageButtons.add(binding.btnStep2)
         stageButtons.add(binding.btnStep3)
         stageButtons.add(binding.btnStep4)
         stageButtons.add(binding.btnStep5)
+        stageButtons.add(binding.btnStep6) // 완료 단계 버튼 추가
 
         // 버튼 클릭 이벤트 설정
         for (i in stageButtons.indices) {
             stageButtons[i].setOnClickListener {
                 updateSelectedStage(i)
-                updateArticleList()
+                updateNoteList()
             }
         }
     }
@@ -86,120 +126,29 @@ class ReviewFragment : Fragment() {
 
     private fun setupRecyclerView() {
         binding.recyclerReviewArticles.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerReviewArticles.adapter = noteAdapter
     }
 
-    private fun loadSampleData() {
-        // 더미 데이터
-        allArticles.add(
-            Article(
-                "1단계: 데이터 통신 기초",
-                "데이터 통신의 기본 개념과 역사에 대한 설명. 통신 매체의 종류와 특징에 대해 학습합니다.",
-                "2024.01.01",
-                R.drawable.ic_tcp_ip,
-                1
-            )
-        )
-        allArticles.add(
-            Article(
-                "1단계: 네트워크 모델",
-                "OSI 7계층 모델과 TCP/IP 모델의 비교 및 각 계층별 역할에 대한 소개입니다.",
-                "2024.01.02",
-                R.drawable.ic_tcp_ip,
-                1
-            )
-        )
-        allArticles.add(
-            Article(
-                "2단계: 물리 계층",
-                "물리 계층의 역할과 특징, 전송 매체의 종류와 신호 처리 방법에 대해 설명합니다.",
-                "2024.01.03",
-                R.drawable.ic_tcp_ip,
-                2
-            )
-        )
-        allArticles.add(
-            Article(
-                "2단계: 데이터 링크 계층",
-                "프레임 구조와 오류 검출/정정, MAC 주소, 이더넷 프로토콜에 대해 다룹니다.",
-                "2024.01.04",
-                R.drawable.ic_tcp_ip,
-                2
-            )
-        )
-        allArticles.add(
-            Article(
-                "3단계: 네트워크 계층",
-                "IP 주소 체계와 라우팅 알고리즘, 서브넷 마스크에 대한 상세한 설명입니다.",
-                "2024.01.05",
-                R.drawable.ic_tcp_ip,
-                3
-            )
-        )
-        allArticles.add(
-            Article(
-                "3단계: IPv4와 IPv6",
-                "IPv4와 IPv6의 차이점과 전환 과정, 주소 할당 방식에 대해 학습합니다.",
-                "2024.01.06",
-                R.drawable.ic_tcp_ip,
-                3
-            )
-        )
-        allArticles.add(
-            Article(
-                "4단계: 전송 계층 - TCP",
-                "TCP/IP (Transmission Control Protocol)의 특징과 연결 설정 과정에 대해 설명합니다.",
-                "2024.01.07",
-                R.drawable.ic_tcp_ip,
-                4
-            )
-        )
-        allArticles.add(
-            Article(
-                "4단계: 전송 계층 - UDP",
-                "UDP(User Datagram Protocol)의 특징과 TCP와의 비교, 적용 사례를 소개합니다.",
-                "2024.01.08",
-                R.drawable.ic_tcp_ip,
-                4
-            )
-        )
-        allArticles.add(
-            Article(
-                "5단계: 응용 계층 프로토콜",
-                "HTTP, FTP, SMTP 등 주요 응용 계층 프로토콜의 기능과 특징에 대해 다룹니다.",
-                "2024.01.09",
-                R.drawable.ic_tcp_ip,
-                5
-            )
-        )
-        allArticles.add(
-            Article(
-                "5단계: 웹 서비스와 API",
-                "REST API, SOAP, GraphQL 등 웹 서비스 아키텍처와 활용 방법을 설명합니다.",
-                "2024.01.10",
-                R.drawable.ic_tcp_ip,
-                5
-            )
-        )
-    }
-
-    private fun updateArticleList() {
-        // 선택된 단계에 따라 아티클 필터링
-        val filteredArticles = if (selectedStage == 0) {
-            // 전체 선택시 모든 아티클 표시
-            allArticles
-        } else {
-            // 특정 단계 선택시 해당 단계 아티클만 필터링
-            allArticles.filter { it.stage == selectedStage }
+    private fun updateNoteList() {
+        val filtered = when (selectedStage) {
+            0 -> allNotes // 전체 표시
+            6 -> {
+                // 완료 단계: COMPLETE 태그가 있는 노트들만 필터링
+                allNotes.filter { note ->
+                    note.tags?.contains("COMPLETE") == true
+                }
+            }
+            else -> {
+                // 1-5단계: 해당 단계 번호로 필터링 (selectedStage - 1)
+                allNotes.filter { note ->
+                    note.tags?.any { it == "단계${selectedStage - 1}" } ?: false
+                }
+            }
         }
 
-        // 어댑터 설정
-        val adapter = GenericArticleAdapter(filteredArticles) { article ->
-            val intent = Intent(requireContext(), ForgettingCurveActivity::class.java)
-            intent.putExtra("ARTICLE_TITLE", article.title)
-            intent.putExtra("ARTICLE_STAGE", article.stage)
-            startActivity(intent)
+        noteAdapter.submitList(filtered) {
+            binding.recyclerReviewArticles.scrollToPosition(0)
         }
-        binding.recyclerReviewArticles.adapter = adapter
     }
 
     override fun onDestroyView() {
