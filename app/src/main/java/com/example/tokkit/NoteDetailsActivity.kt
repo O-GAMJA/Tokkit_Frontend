@@ -67,6 +67,12 @@ class NoteDetailsActivity : AppCompatActivity() {
         Log.d("NoteDetails", "이미지 URL: $imageUrl")
         Log.d("NoteDetails", "S3 이미지 키: $s3ImageKey")
 
+        // ondevice stable diffusion에서 온 이미지 경로 확인
+        val generatedImagePath = intent.getStringExtra("GENERATED_IMAGE_PATH")
+        val generatedImageSuccess = intent.getBooleanExtra("GENERATED_IMAGE_SUCCESS", false)
+        Log.d("NoteDetails", "생성된 이미지 경로: $generatedImagePath")
+        Log.d("NoteDetails", "생성된 이미지 성공 여부: $generatedImageSuccess")
+
         // 공개 설정 라디오 버튼 리스너 설정
         binding.visibilityRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             isPublic = checkedId == R.id.publicOption
@@ -148,9 +154,89 @@ class NoteDetailsActivity : AppCompatActivity() {
             startActivityForResult(intent, 102)
         }
 
-        // 이미지 표시 처리
-        setupImageDisplay(s3ImageKey, imageUrl)
+        // ondevice stable diffusion앱에서 직접 생성된 이미지 처리 (onCreate에서)
+        if (generatedImageSuccess && !generatedImagePath.isNullOrEmpty()) {
+            Log.d("NoteDetails", "onCreate에서 생성된 이미지 직접 처리: $generatedImagePath")
+            loadGeneratedImageDirectly(generatedImagePath)
+        } else {
+            // 기존 이미지 표시 처리
+            setupImageDisplay(s3ImageKey, imageUrl)
+        }
     }
+
+    // 생성된 이미지를 직접 로드하는 함수 추가
+    private fun loadGeneratedImageDirectly(imagePath: String) {
+        val imageFile = File(imagePath)
+        if (imageFile.exists()) {
+            Log.d("NoteDetails", "onCreate에서 생성된 이미지 로드: $imagePath")
+
+            Glide.with(this)
+                .load(imageFile)
+                .error(R.drawable.ic_default_image)
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("NoteDetails", "onCreate에서 생성된 이미지 로드 실패: ${e?.message}", e)
+                        // 기본 이미지 표시로 폴백
+                        binding.imageUpload.setImageResource(R.drawable.image_upload)
+                        applyImageLayoutSettings()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("NoteDetails", "onCreate에서 생성된 이미지 로드 성공")
+
+                        // 실제 이미지 모드로 레이아웃 설정
+                        val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+                        layoutParams.width = dpToPx(300)
+                        layoutParams.height = dpToPx(300)
+                        binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+                        layoutParams.topMargin = dpToPx(0)
+                        binding.imageUpload.layoutParams = layoutParams
+                        binding.imageUpload.adjustViewBounds = true
+                        binding.imageUpload.requestLayout()
+
+                        // 성공 메시지 표시
+                        Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
+
+                        // 임시 파일 정리 (약간의 지연 후) - LocalDream의 임시 파일인 경우만
+                        val isTempFile = intent.getBooleanExtra("IS_TEMP_FILE", false)
+                        if (isTempFile) {
+                            binding.imageUpload.postDelayed({
+                                try {
+                                    if (imageFile.exists()) {
+                                        val deleted = imageFile.delete()
+                                        Log.d("NoteDetails", "임시 파일 삭제 ${if (deleted) "성공" else "실패"}: ${imageFile.absolutePath}")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w("NoteDetails", "임시 파일 삭제 실패", e)
+                                }
+                            }, 3000) // 3초 후 삭제
+                        }
+
+                        return false
+                    }
+                })
+                .into(binding.imageUpload)
+
+        } else {
+            Log.e("NoteDetails", "onCreate에서 생성된 이미지 파일 찾을 수 없음: $imagePath")
+            // 기본 이미지 표시로 폴백
+            binding.imageUpload.setImageResource(R.drawable.image_upload)
+            applyImageLayoutSettings()
+        }
+    }
+
 
     private fun setupImageDisplay(s3ImageKey: String?, imageUrl: String?) {
         Log.d("NoteDetails", "이미지 표시 시작 - S3 키: $s3ImageKey, URL: $imageUrl")
@@ -220,7 +306,15 @@ class NoteDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadImageFromPath() {
-        val imageFilePath = intent.getStringExtra("IMAGE_FILE_PATH")
+        // 일반적인 이미지 파일 경로 확인
+        var imageFilePath = intent.getStringExtra("IMAGE_FILE_PATH")
+
+        // ondevice stable diffusion에서 생성된 이미지 경로도 확인
+        if (imageFilePath.isNullOrEmpty()) {
+            imageFilePath = intent.getStringExtra("GENERATED_IMAGE_PATH")
+            Log.d("NoteDetails", "LocalDream 생성 이미지 경로 사용: $imageFilePath")
+        }
+
         var imageLoaded = false
 
         if (!imageFilePath.isNullOrEmpty()) {
@@ -253,7 +347,29 @@ class NoteDetailsActivity : AppCompatActivity() {
                         ): Boolean {
                             Log.d("NoteDetails", "로컬 파일 로드 성공")
                             imageLoaded = true
-                            applyImageLayoutSettings()
+
+                            // 실제 이미지 모드로 레이아웃 설정
+                            val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+                            layoutParams.width = dpToPx(300)
+                            layoutParams.height = dpToPx(300)
+                            binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+                            layoutParams.topMargin = dpToPx(0)
+                            binding.imageUpload.layoutParams = layoutParams
+                            binding.imageUpload.adjustViewBounds = true
+                            binding.imageUpload.requestLayout()
+
+                            // ondevice stable diffusion에서 생성된 이미지인 경우 임시 파일 정리
+                            if (intent.getBooleanExtra("GENERATED_IMAGE_SUCCESS", false)) {
+                                binding.imageUpload.postDelayed({
+                                    try {
+                                        imageFile.delete()
+                                        Log.d("NoteDetails", "임시 파일 삭제 완료")
+                                    } catch (e: Exception) {
+                                        Log.w("NoteDetails", "임시 파일 삭제 실패", e)
+                                    }
+                                }, 2000)
+                            }
+
                             return false
                         }
                     })
@@ -409,8 +525,54 @@ class NoteDetailsActivity : AppCompatActivity() {
             finish()
         }
 
+        popupView.findViewById<LinearLayout>(R.id.btn_generate_offline).setOnClickListener {
+            try {
+                val intent = Intent()
+                intent.setClassName(
+                    "io.github.xororz.localdream",
+                    "io.github.xororz.localdream.MainActivity"
+                )
+
+                // 노트 내용에서 프롬프트 추출/생성
+                val noteContent = getIntent().getStringExtra("MARKDOWN_CONTENT") ?: ""
+                val noteTitle = getIntent().getStringExtra("NOTE_TITLE") ?: ""
+                val conversationText = getIntent().getStringExtra("CONVERSATION_TEXT") ?: ""
+
+                // 프롬프트 생성 (노트 내용을 기반으로)
+                val prompt = generatePromptFromContent(noteContent, noteTitle, conversationText)
+
+                // 데이터 전달
+                intent.putExtra("AUTO_GENERATE", true)
+                intent.putExtra("PROMPT", prompt)
+                intent.putExtra("NOTE_CONTENT", noteContent)
+                intent.putExtra("NOTE_TITLE", noteTitle)
+                intent.putExtra("SOURCE_APP", "tokkit")
+
+                startActivity(intent)
+                popupWindow.dismiss()
+
+                // 결과를 기다리기 위해 finish() 안함
+                // finish()
+            } catch (e: Exception) {
+                Toast.makeText(this@NoteDetailsActivity, "오프라인 AI 앱을 찾을 수 없습니다", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+      
         // 터치한 좌표를 기준으로 팝업 띄우기 (왼쪽 상단 정렬)
         popupWindow.showAtLocation(binding.root, 0, x, y)
+    }
+
+    // 노트 내용에서 프롬프트를 생성하는 함수
+    private fun generatePromptFromContent(content: String, title: String, conversation: String): String {
+        // 간단한 프롬프트 생성 로직
+        return when {
+            title.isNotEmpty() -> title
+            content.length > 100 -> content.substring(0, 100) + "..."
+            content.isNotEmpty() -> content
+            conversation.isNotEmpty() -> conversation.substring(0, minOf(100, conversation.length))
+            else -> "beautiful artwork"
+        }
     }
 
     private fun openGallery() {
@@ -422,6 +584,106 @@ class NoteDetailsActivity : AppCompatActivity() {
     private fun dpToPx(dp: Int): Int {
         val density = resources.displayMetrics.density
         return (dp * density).toInt()
+    }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // 새로운 인텐트를 현재 액티비티의 인텐트로 설정
+
+        Log.d("NoteDetails", "onNewIntent 호출됨")
+
+        // 외부 앱에서 생성된 이미지 결과 처리
+        if (intent.getBooleanExtra("GENERATED_IMAGE_SUCCESS", false)) {
+            val imagePath = intent.getStringExtra("GENERATED_IMAGE_PATH")
+
+            Log.d("NoteDetails", "이미지 생성 결과 수신 - 경로: $imagePath")
+
+            // 전달받은 추가 데이터 처리
+            val noteContent = intent.getStringExtra("NOTE_CONTENT")
+            val markdownContent = intent.getStringExtra("MARKDOWN_CONTENT")
+            val noteTitle = intent.getStringExtra("NOTE_TITLE")
+            val conversationText = intent.getStringExtra("CONVERSATION_TEXT")
+
+            Log.d("NoteDetails", "추가 데이터 수신:")
+            Log.d("NoteDetails", "- 노트 내용: $noteContent")
+            Log.d("NoteDetails", "- 마크다운: $markdownContent")
+            Log.d("NoteDetails", "- 제목: $noteTitle")
+            Log.d("NoteDetails", "- 대화: $conversationText")
+
+            if (!imagePath.isNullOrEmpty()) {
+                val imageFile = File(imagePath)
+                if (imageFile.exists()) {
+                    Log.d("NoteDetails", "외부 앱에서 생성된 이미지 수신: $imagePath")
+
+                    // 이미지를 ImageView에 표시
+                    Glide.with(this)
+                        .load(imageFile)
+                        .placeholder(binding.imageUpload.drawable) // 현재 이미지를 플레이스홀더로 사용
+                        .error(R.drawable.ic_default_image)
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                Log.e("NoteDetails", "생성된 이미지 로드 실패: ${e?.message}", e)
+                                Toast.makeText(this@NoteDetailsActivity, "이미지 로드에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                                return false
+                            }
+
+                            override fun onResourceReady(
+                                resource: Drawable?,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                dataSource: DataSource?,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                Log.d("NoteDetails", "생성된 이미지 로드 성공")
+
+                                // 레이아웃 설정 적용 (실제 이미지 모드로 변경)
+                                val layoutParams = binding.imageUpload.layoutParams as ConstraintLayout.LayoutParams
+                                layoutParams.width = dpToPx(300)
+                                layoutParams.height = dpToPx(300)
+                                binding.imageUpload.scaleType = ImageView.ScaleType.CENTER_CROP
+                                layoutParams.topMargin = dpToPx(0)
+                                binding.imageUpload.layoutParams = layoutParams
+                                binding.imageUpload.adjustViewBounds = true
+                                binding.imageUpload.requestLayout()
+
+                                // 성공 메시지 표시
+                                Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
+
+                                // 임시 파일 정리를 지연시킴 (이미지 로드 후)
+                                val isTempFile = intent.getBooleanExtra("IS_TEMP_FILE", false)
+                                if (isTempFile) {
+                                    binding.imageUpload.postDelayed({
+                                        try {
+                                            if (imageFile.exists()) {
+                                                val deleted = imageFile.delete()
+                                                Log.d("NoteDetails", "임시 파일 삭제 ${if (deleted) "성공" else "실패"}: ${imageFile.absolutePath}")
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.w("NoteDetails", "임시 파일 삭제 실패", e)
+                                        }
+                                    }, 3000)
+                                }
+
+                                return false
+                            }
+                        })
+                        .into(binding.imageUpload)
+
+                } else {
+                    Log.e("NoteDetails", "생성된 이미지 파일을 찾을 수 없음: $imagePath")
+                    Toast.makeText(this, "생성된 이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.e("NoteDetails", "이미지 경로가 비어있음")
+                Toast.makeText(this, "이미지 경로를 받지 못했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
