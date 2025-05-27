@@ -50,7 +50,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentText(messageBody)
             .setLargeIcon(largeIcon)
             .setAutoCancel(true)
-            //.setColor(Color.GRAY)
+            //.setColor(Color.GRAY) // 디폴트는 그레이.
             .setColor(ContextCompat.getColor(this, R.color.bora200))
             .setContentIntent(pendingIntent)
 
