@@ -53,6 +53,12 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
 
+    private var scrollHandler = Handler(Looper.getMainLooper())
+    private var scrollRunnable: Runnable? = null
+    private var isUserScrolling = false
+    private var lastScrollTime = 0L
+    private val SCROLL_DELAY = 200L // 200ms 딜레이
+
     companion object {
         private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
         const val KEY_HTP_CONFIG = "htp_config_path"
@@ -206,9 +212,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         messages.clear()
         messages.addAll(ConversationManager.getAllMessages())
         adapter.notifyDataSetChanged()
-        if (messages.isNotEmpty()) {
-            binding.chatRecyclerView.scrollToPosition(messages.size - 1)
-        }
+        scrollToBottom() // 새 메서드 사용
 
         Log.d("GenieChat", "loadMessagesFromManager(): 메시지 ${messages.size}개 로딩됨")
         for ((index, message) in messages.withIndex()) {
@@ -337,6 +341,8 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                                 tts.speak(lastSentence, TextToSpeech.QUEUE_ADD, null, null)
                                 sentenceBuffer.clear()
                             }
+                            // 응답 완료 후에도 한 번 더 스크롤
+                            scrollToBottom()
                         }
                         responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                     }
@@ -345,15 +351,21 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         }
     }
 
+    // 자동 스크롤 메서드 (부드러운 스크롤)
+    private fun scrollToBottom() {
+        if (messages.isNotEmpty()) {
+            binding.chatRecyclerView.smoothScrollToPosition(messages.size - 1)
+        }
+    }
+
+
     // ConversationManager.ConversationChangeListener 구현
     override fun onConversationChanged(updatedMessages: List<ChatMessage>) {
         runOnUiThread {
             messages.clear()
             messages.addAll(updatedMessages)
             adapter.notifyDataSetChanged()
-            if (messages.isNotEmpty()) {
-                binding.chatRecyclerView.scrollToPosition(messages.size - 1)
-            }
+            //scrollToBottom() // 새 메서드 사용
 
             Log.d("GenieChat", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
             for ((index, message) in messages.withIndex()) {
@@ -361,6 +373,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
         }
     }
+
 
     // 노트 생성 로딩 오버레이 표시
     private fun showNoteLoadingOverlay() {
