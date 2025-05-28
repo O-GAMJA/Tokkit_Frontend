@@ -69,9 +69,9 @@ class CardViewFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        observeViewModel()
+        Log.d("CardViewFragment", "=== onViewCreated 호출됨 ===")
         setupRecyclerView()
-        loadData()
+        observeViewModel()
     }
 
     private fun setupRecyclerView() {
@@ -121,28 +121,40 @@ class CardViewFragment : Fragment() {
     private fun observeViewModel() {
         // 노트 데이터 관찰
         noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
-            Log.d("CardViewFragment", "노트 목록 업데이트됨: ${notes.size}개")
-            adapter.submitList(notes)
+            Log.d("CardViewFragment", "=== Observer 호출됨 ===")
+            Log.d("CardViewFragment", "받은 노트 개수: ${notes.size}")
+            Log.d("CardViewFragment", "현재 어댑터 아이템 개수: ${adapter.itemCount}")
+
+            // 노트 ID들 출력
+            notes.forEachIndexed { index, note ->
+                Log.d("CardViewFragment", "노트 $index: ID=${note.id}, 제목=${note.title}")
+            }
+
+            // 중복 ID 체크
+            val ids = notes.map { it.id }
+            val uniqueIds = ids.toSet()
+            if (ids.size != uniqueIds.size) {
+                Log.e("CardViewFragment", "❌ 중복된 ID 발견! 전체: ${ids.size}, 유니크: ${uniqueIds.size}")
+                Log.e("CardViewFragment", "중복 ID들: ${ids.groupBy { it }.filter { it.value.size > 1 }.keys}")
+            } else {
+                Log.d("CardViewFragment", "✅ ID 중복 없음")
+            }
+
+            adapter.submitList(notes.toList())
         }
 
         // 로딩 상태 관찰
         noteViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            Log.d("CardViewFragment", "로딩 상태: $isLoading")
             binding.progressBar?.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
         // 에러 상태 관찰
         noteViewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
-                //Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                Log.d("CardViewFragment", "에러: $error")
             }
         }
-    }
-
-    private fun loadData() {
-        Log.d("CardViewFragment", "loadData() 호출됨")
-        noteViewModel.resetNotes() // 초기화
-        // 실제 로그인 사용자 ID로 대체해야 함
-        noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
     }
 
     override fun onDestroyView() {
@@ -152,7 +164,12 @@ class CardViewFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // ViewModel 관찰 다시 설정
-        observeViewModel()
+        Log.d("CardViewFragment", "=== onResume 호출됨 ===")
+        Log.d("CardViewFragment", "현재 ViewModel의 노트 개수: ${noteViewModel.notes.value?.size}")
     }
+
+    // onResume()에서 observeViewModel() 재호출 제거
+    // Fragment의 생명주기에서 observeViewModel()은 onViewCreated()에서 한 번만 호출하는 것이 정상
+
+
 }

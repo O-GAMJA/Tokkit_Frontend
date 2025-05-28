@@ -71,13 +71,22 @@ class NoteViewModel : ViewModel() {
         if (isLoadingPage || _isLastPage.value == true) return
 
         isLoadingPage = true
+        val nextPage = currentPage + 1 // 다음 페이지 번호
+
+        Log.d("NoteViewModel", "=== loadMoreNotes 호출됨 ===")
+        Log.d("NoteViewModel", "현재 페이지: $currentPage, 다음 페이지: $nextPage")
+
         viewModelScope.launch {
             try {
-                val newResult = repository.getNotes(memberId, currentPage, pageSize)
+                val newResult = repository.getNotes(memberId, nextPage, pageSize)
+                Log.d("NoteViewModel", "새 페이지($nextPage)에서 받은 노트 수: ${newResult.notes.size}")
+
                 val currentList = _notes.value ?: emptyList()
                 _notes.value = currentList + newResult.notes
                 _isLastPage.value = newResult.paginationInfo.isLast
-                currentPage++
+                currentPage = nextPage // 성공적으로 로드한 후 페이지 번호 업데이트
+
+                Log.d("NoteViewModel", "총 노트 개수: ${_notes.value?.size}")
             } catch (e: Exception) {
                 Log.e("NoteViewModel", "페이지 로드 실패", e)
             } finally {
