@@ -1,5 +1,6 @@
 package com.example.tokkit
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityQuizResultBinding
@@ -45,9 +46,21 @@ class QuizResultActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val result = ReviewRepository().submitQuizReview(noteId, score, correctCount)
+//                if (result != null) {
+//                    Log.d("QUIZ_REVIEW", "복습 제출 완료: stage=${result.newStage}, next=${result.nextReviewAt}")
+//                }
                 if (result != null) {
-                    Log.d("QUIZ_REVIEW", "복습 제출 완료: stage=${result.newStage}, next=${result.nextReviewAt}")
-                } else {
+                    Log.d("QUIZ_REVIEW", "복습 제출 완료: stage=${result.newStage}")
+
+                    val intent = Intent(this@QuizResultActivity, ForgettingCurveActivity::class.java).apply {
+                        putExtra("NOTE_ID", noteId)
+                        putExtra("ARTICLE_STAGE", result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0)
+                        putExtra("IS_COMPLETE", result.newStage == "COMPLETE")
+                    }
+                    startActivity(intent)
+                    finish()
+                }
+                else {
                     CustomToastUtil.showToast(
                         context = this@QuizResultActivity,
                         message = "복습 결과 제출 실패",

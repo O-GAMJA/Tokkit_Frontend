@@ -82,6 +82,7 @@ class ForgettingCurveActivity : AppCompatActivity() {
                         putExtra("NOTE_ID", noteId)
                         putParcelableArrayListExtra("QUIZ_LIST", ArrayList(quizList))
                     }
+                    finish()
                     startActivity(intent)
                 } else {
                     CustomToastUtil.showToast(
@@ -132,7 +133,7 @@ class ForgettingCurveActivity : AppCompatActivity() {
                 putExtra(ReviewSpeakingActivity.KEY_HTP_CONFIG, htpConfigPath)
                 putExtra(ReviewSpeakingActivity.KEY_MODEL_NAME, modelName)
             }
-
+            finish()
             // startActivityForResult 사용
             startActivityForResult(intent, REQUEST_REVIEW_SPEAKING)
         }
@@ -247,5 +248,13 @@ class ForgettingCurveActivity : AppCompatActivity() {
         super.onResume()
         // onResume에서도 데이터 리로드
         noteId?.let { loadReviewDetail(it) }
+    }
+
+    override fun finish() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("GO_TO_REVIEW", true)
+        }
+        startActivity(intent)
+        super.finish()
     }
 }
