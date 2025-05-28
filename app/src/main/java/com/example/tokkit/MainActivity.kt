@@ -10,7 +10,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
@@ -24,6 +23,7 @@ import com.example.tokkit.util.RetrofitClient
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
+import com.example.tokkit.util.CustomToastUtil
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -261,10 +261,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     startActivity(intent)
                 } catch (e: Exception) {
                     Log.e("MainActivity", "상세 화면 이동 중 오류", e)
-                    Toast.makeText(this, "페이지를 열 수 없습니다", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "페이지를 열 수 없습니다",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             } else {
-                Toast.makeText(this, "이 항목은 조회할 수 없습니다", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이 항목은 조회할 수 없습니다",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
 

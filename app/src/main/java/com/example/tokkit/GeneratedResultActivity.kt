@@ -6,7 +6,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -22,14 +21,11 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okio.buffer
-import okio.sink
+import com.example.tokkit.util.CustomToastUtil
 
 class GeneratedResultActivity : AppCompatActivity() {
 
@@ -161,11 +157,11 @@ class GeneratedResultActivity : AppCompatActivity() {
             } else {
                 Log.e(TAG, "이미지가 로드되지 않아 저장할 수 없습니다")
                 // 사용자에게 토스트 메시지 표시
-                android.widget.Toast.makeText(
-                    this,
-                    "이미지가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미지가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
 
@@ -186,7 +182,11 @@ class GeneratedResultActivity : AppCompatActivity() {
             // 데이터가 비어있는지 확인
             if (markdownContent.isBlank()) {
                 Log.e(TAG, "마크다운 내용이 비어있어 재생성할 수 없습니다")
-                Toast.makeText(this, "재생성할 노트 내용이 없습니다", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "재생성할 노트 내용이 없습니다",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
@@ -249,32 +249,26 @@ class GeneratedResultActivity : AppCompatActivity() {
                         Log.d(TAG, "S3 업로드 성공: ${response.code}")
                         s3UploadSuccessful = true
 
-                        // 성공 메시지 표시
-                        android.widget.Toast.makeText(
-                            this@GeneratedResultActivity,
-                            "이미지가 서버에 업로드되었습니다",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
                     } else {
                         Log.e(TAG, "S3 업로드 실패: ${response.code} - ${response.message}")
 
                         // 실패 메시지 표시
-                        android.widget.Toast.makeText(
-                            this@GeneratedResultActivity,
-                            "이미지 업로드에 실패했습니다. 기본 저장 방식을 사용합니다.",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        CustomToastUtil.showToast(
+                            context = this@GeneratedResultActivity,
+                            message = "이미지 업로드에 실패했습니다. 기본 저장 방식을 사용합니다.",
+                            iconResId = R.drawable.ic_bot
+                        )
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "S3 업로드 중 예외 발생", e)
 
                 withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        this@GeneratedResultActivity,
-                        "이미지 업로드 중 오류 발생: ${e.message}",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
+                    CustomToastUtil.showToast(
+                        context = this@GeneratedResultActivity,
+                        message = "이미지 업로드 중 오류 발생: ${e.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }

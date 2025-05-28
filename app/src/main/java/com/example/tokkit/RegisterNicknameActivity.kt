@@ -5,9 +5,9 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityRegisterNicknameBinding
+import com.example.tokkit.util.CustomToastUtil
 
 class RegisterNicknameActivity : AppCompatActivity() {
 
@@ -65,7 +65,11 @@ class RegisterNicknameActivity : AppCompatActivity() {
         val nickname = binding.etNickname.text.toString().trim()
 
         // DB 없이 그냥 회원가입 완료 처리 (모든 값 출력)
-        Toast.makeText(this, "회원가입 완료! ID: $userId, 닉네임: $nickname", Toast.LENGTH_SHORT).show()
+        CustomToastUtil.showToast(
+            context = this,
+            message = "회원가입 완료! ID: $userId, 닉네임: $nickname",
+            iconResId = R.drawable.ic_bot
+        )
 
         // 메인 화면으로 이동
         val intent = Intent(this, MainActivity::class.java)

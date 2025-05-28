@@ -1,9 +1,9 @@
 package com.example.tokkit
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityAlarmSettingBinding
+import com.example.tokkit.util.CustomToastUtil
 
 class AlarmSettingActivity : AppCompatActivity() {
 
@@ -19,7 +19,12 @@ class AlarmSettingActivity : AppCompatActivity() {
         }
 
         binding.btnSave.setOnClickListener {
-            Toast.makeText(this, "설정이 저장되었습니다", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "설정이 저장되었습니다.",
+                iconResId = R.drawable.ic_bot
+            )
+            finish()
         }
 
         binding.switchReview.setOnCheckedChangeListener { _, isChecked ->

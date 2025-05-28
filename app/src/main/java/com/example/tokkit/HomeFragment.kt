@@ -8,20 +8,15 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.tokkit.adapter.HomePagerAdapter
 import com.example.tokkit.adapter.TagListAdapter
 import com.example.tokkit.data.local.entities.Tag
-import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.databinding.FragmentHomeBinding
-import com.example.tokkit.util.RetrofitClient
-import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
 
 class HomeFragment : Fragment() {

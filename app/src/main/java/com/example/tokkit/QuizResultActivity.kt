@@ -4,10 +4,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityQuizResultBinding
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.example.tokkit.data.remote.repository.ReviewRepository
 import kotlinx.coroutines.launch
+import com.example.tokkit.util.CustomToastUtil
 
 class QuizResultActivity : AppCompatActivity() {
 
@@ -48,7 +48,11 @@ class QuizResultActivity : AppCompatActivity() {
                 if (result != null) {
                     Log.d("QUIZ_REVIEW", "복습 제출 완료: stage=${result.newStage}, next=${result.nextReviewAt}")
                 } else {
-                    Toast.makeText(this@QuizResultActivity, "복습 결과 제출 실패", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@QuizResultActivity,
+                        message = "복습 결과 제출 실패",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
                 finish()
             }
