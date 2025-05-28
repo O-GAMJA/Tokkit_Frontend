@@ -2,6 +2,7 @@ package com.example.tokkit.util
 
 import com.example.tokkit.data.remote.api.AuthApi
 import com.example.tokkit.data.remote.api.ImageApiService
+import com.example.tokkit.data.remote.api.MemberApiService
 import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.data.remote.api.S3ApiService
 import okhttp3.OkHttpClient
@@ -46,8 +47,12 @@ object RetrofitClient {
         retrofit.create(S3ApiService::class.java)
     }
 
-    // ✅ 로그인 관련 API 추가
+    // 로그인 관련 API 추가
     val authApi: AuthApi by lazy {
         retrofit.create(AuthApi::class.java)
+    }
+
+    val memberApi: MemberApiService by lazy {
+        retrofit.create(MemberApiService::class.java)
     }
 }
