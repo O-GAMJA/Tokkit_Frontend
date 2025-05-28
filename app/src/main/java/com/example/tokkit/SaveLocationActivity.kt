@@ -242,7 +242,7 @@ class SaveLocationActivity : AppCompatActivity() {
         selectedDirectoryId = directoryId
 
         // 선택된 폴더 강조 표시
-        folderView.setBackgroundColor(ContextCompat.getColor(this, R.color.main))
+        folderView.setBackgroundColor(ContextCompat.getColor(this, R.color.bora200))
 
         // 로그
         Log.d("SaveLocation", "선택된 폴더 경로: ${folderPath.joinToString(" > ")}, 디렉토리 ID: $directoryId")

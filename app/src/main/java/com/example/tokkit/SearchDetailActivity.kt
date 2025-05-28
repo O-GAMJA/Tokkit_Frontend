@@ -44,6 +44,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import com.example.tokkit.util.CustomToastUtil
+import android.media.MediaPlayer
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -69,6 +70,10 @@ class SearchDetailActivity : AppCompatActivity() {
     private var etComment: EditText? = null
     private var bottomSheetDialog: BottomSheetDialog? = null
 
+    private var mediaPlayer: MediaPlayer? = null
+    private var isAudioLoaded = false
+    private var audioUrl: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySearchDetailBinding.inflate(layoutInflater)
@@ -76,6 +81,70 @@ class SearchDetailActivity : AppCompatActivity() {
 
         val noteId = intent.getStringExtra("NOTE_ID") ?: return
         currentNoteId = noteId
+
+        // 음성파일 미리 불러오기
+        fetchLectureAudio(noteId)
+
+        binding.btnPlay.setOnClickListener {
+            if (!isAudioLoaded || audioUrl == null) {
+                CustomToastUtil.showToast(this, "음성 파일이 아직 준비되지 않았습니다.", R.drawable.ic_bot)
+                return@setOnClickListener
+            }
+
+            if (mediaPlayer == null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(audioUrl)
+                    prepare()
+                    setOnCompletionListener {
+                        stopAudio()
+                    }
+                }
+            }
+
+            mediaPlayer?.start()
+
+            binding.btnPlay.visibility = View.GONE
+            binding.btnStop.visibility = View.VISIBLE
+            binding.btnRestart.visibility = View.VISIBLE
+        }
+
+
+
+        binding.btnStop.setOnClickListener {
+            mediaPlayer?.pause()
+            binding.btnPlay.visibility = View.VISIBLE
+            binding.btnStop.visibility = View.GONE
+            binding.btnRestart.visibility = View.GONE
+        }
+
+        binding.btnRestart.setOnClickListener {
+            if (!isAudioLoaded || audioUrl == null) {
+                CustomToastUtil.showToast(this, "음성 파일이 아직 준비되지 않았습니다.", R.drawable.ic_bot)
+                return@setOnClickListener
+            }
+
+            if (mediaPlayer == null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(audioUrl)
+                    setOnPreparedListener {
+                        seekTo(0) // 처음으로 이동
+                    }
+                    setOnCompletionListener {
+                        stopAudio()
+                    }
+                    prepareAsync() // 자동 재생 방지
+                }
+            } else {
+                mediaPlayer?.pause()         // 혹시 재생 중이었으면 정지
+                mediaPlayer?.seekTo(0)       // 처음으로 이동
+            }
+
+            // 버튼 상태 전환
+            binding.btnRestart.visibility = View.GONE
+            binding.btnStop.visibility = View.GONE
+            binding.btnPlay.visibility = View.VISIBLE
+        }
+
 
         noteViewModel.loadNoteById(noteId)
 
@@ -804,6 +873,46 @@ class SearchDetailActivity : AppCompatActivity() {
         }
         setResult(RESULT_OK, result)
         super.onBackPressed()
+    }
+
+    private fun fetchLectureAudio(noteId: String) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.noteApi.getLectureAudio(noteId)
+
+                Log.d("AudioFetch", "HTTP 상태 코드: ${response.code()}")
+                Log.d("AudioFetch", "응답 바디: ${response.body()}")
+                Log.d("AudioFetch", "에러 바디: ${response.errorBody()?.string()}")
+
+                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                    audioUrl = response.body()!!.result.audioUrl
+                    isAudioLoaded = true
+                    Log.d("AudioFetch", "오디오 URL: $audioUrl")
+                } else {
+                    Log.w("AudioFetch", "오디오 응답 실패. isSuccess=${response.body()?.isSuccess}, message=${response.body()?.message}")
+                    CustomToastUtil.showToast(this@SearchDetailActivity, "음성파일을 불러오지 못했습니다.", R.drawable.ic_bot)
+                }
+            } catch (e: Exception) {
+                Log.e("AudioFetch", "예외 발생: ${e.localizedMessage}", e)
+                CustomToastUtil.showToast(this@SearchDetailActivity, "네트워크 오류", R.drawable.ic_bot)
+            }
+        }
+    }
+
+
+    private fun stopAudio() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+
+        binding.btnPlay.visibility = View.VISIBLE
+        binding.btnStop.visibility = View.GONE
+        binding.btnRestart.visibility = View.GONE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAudio()
     }
 
 }
