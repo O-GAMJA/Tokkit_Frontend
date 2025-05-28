@@ -1,6 +1,7 @@
 package com.example.tokkit
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -261,6 +262,27 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         folderNameTv.text = directory.name
         folderIcon.setImageResource(R.drawable.ic_folder)
+
+        // 북마크 폴더인 경우 디자인 변경
+        if (directory.name == "bookmark") {
+            folderIcon.setImageResource(R.drawable.ic_bookmark2)
+            folderView.setBackgroundResource(R.drawable.bookmark_folder_background)
+            val iconParams = folderIcon.layoutParams
+            iconParams.width = 31.dpToPx()
+            iconParams.height = 31.dpToPx()
+            folderIcon.layoutParams = iconParams
+           // folderNameTv.textSize = 18f
+            folderNameTv.setTypeface(null, Typeface.BOLD)
+            // 텍스트 색상도 조절
+            // folderNameTv.setTextColor(ContextCompat.getColor(this, android.R.color.black))
+        }else {
+            folderIcon.setImageResource(R.drawable.ic_folder)
+            // 일반 폴더는 기본 크기 유지
+            val iconParams = folderIcon.layoutParams
+            iconParams.width = 24.dpToPx()
+            iconParams.height = 24.dpToPx()
+            folderIcon.layoutParams = iconParams
+        }
 
         // 하위 디렉토리와 노트 확인
         val hasChildren = directory.children.isNotEmpty() || directory.notes.isNotEmpty()
