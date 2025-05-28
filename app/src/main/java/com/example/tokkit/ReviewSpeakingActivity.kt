@@ -37,7 +37,6 @@ import com.example.tokkit.util.CustomToastUtil
 
 class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
 
-
         private lateinit var binding: ActivityReviewSpeakingBinding
         private val messages = ArrayList<ChatMessage>(1000)
         private lateinit var adapter: MessageRecyclerViewAdapter
@@ -56,6 +55,8 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
 
         private val markdownPromptHandler = MarkdownPromptHandler()
         private var isListening = false
+
+
 
         companion object {
             private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
@@ -77,6 +78,7 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
             // 저장된 대화 내용 로드
             ConversationManager.loadConversation(this)
 
+            // RecyclerView 설정
             adapter = MessageRecyclerViewAdapter(this, messages)
             binding.chatRecyclerView.adapter = adapter
             binding.chatRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -189,13 +191,6 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                     false
                 }
 
-//                // 채팅 모드 전환 버튼 - ChatActivity로 전환
-//                binding.btnChatMode.setOnClickListener {
-//                    val intent = Intent(this, ChatActivity::class.java)
-//                    startActivity(intent)
-//                    finish()
-//                }
-
                 // 대화 복습 종료 버튼
                 binding.btnCreateNote.setOnClickListener {
                     val noteId = intent.getStringExtra("NOTE_ID") ?: return@setOnClickListener
@@ -227,12 +222,6 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                                 }
 
                                 setResult(RESULT_OK, resultIntent)
-//                                CustomToastUtil.showToast(
-//                                    context = this@ReviewSpeakingActivity,
-//                                    message = "모든 복습이 완료되었습니다!\" else \"복습 완료!\\n새 단계: ${result.newStage}",
-//                                    iconResId = R.drawable.ic_bot
-//                                )
-
                                 finish()
                             } else {
                                 CustomToastUtil.showToast(
@@ -256,13 +245,12 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
             }
         }
 
+
+
         private fun loadMessagesFromManager() {
             messages.clear()
             messages.addAll(ConversationManager.getAllMessages())
             adapter.notifyDataSetChanged()
-            if (messages.isNotEmpty()) {
-                binding.chatRecyclerView.scrollToPosition(messages.size - 1)
-            }
 
             Log.d("GenieChat", "loadMessagesFromManager(): 메시지 ${messages.size}개 로딩됨")
             for ((index, message) in messages.withIndex()) {
@@ -288,8 +276,6 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                 }
 
                 override fun onError(error: Int) {
-//                    Toast.makeText(this@GenieConversationActivity, "STT 오류 발생: $error", Toast.LENGTH_SHORT).show()
-
                     // 원래 마이크 버튼 복귀
                     binding.lottieMic.cancelAnimation()
                     binding.lottieMic.visibility = View.INVISIBLE
@@ -390,119 +376,116 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                             }
                             responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                         }
-                    }
-                })
-            }
-        }
-
-        // ConversationManager.ConversationChangeListener 구현
-        override fun onConversationChanged(updatedMessages: List<ChatMessage>) {
-            runOnUiThread {
-                messages.clear()
-                messages.addAll(updatedMessages)
-                adapter.notifyDataSetChanged()
-                if (messages.isNotEmpty()) {
-                    binding.chatRecyclerView.scrollToPosition(messages.size - 1)
                 }
-
-                Log.d("GenieChat", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
-                for ((index, message) in messages.withIndex()) {
-                    Log.d("GenieChat", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
-                }
-            }
-        }
-
-        // 대화 복습 종료 로딩 오버레이 표시
-        private fun showNoteLoadingOverlay() {
-            // 로딩 오버레이 표시
-            binding.noteLoadingOverlay.visibility = View.VISIBLE
-
-            // 문서 애니메이션 시작
-            binding.lottieDocAnimation.playAnimation()
-        }
-
-        // 대화 복습 종료 로딩 오버레이 숨기기
-        private fun hideNoteLoadingOverlay() {
-            // 로딩 오버레이 숨기기
-            binding.noteLoadingOverlay.visibility = View.GONE
-
-            // 문서 애니메이션 중지
-            binding.lottieDocAnimation.cancelAnimation()
-        }
-
-        private fun setupSwipeToDelete() {
-            val swipeCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean = false
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                    val position = viewHolder.adapterPosition
-                    showDeleteConfirmDialog(position)
-                }
-            }
-
-            ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.chatRecyclerView)
-        }
-
-        private fun showDeleteConfirmDialog(position: Int) {
-            AlertDialog.Builder(this)
-                .setTitle("메시지 삭제")
-                .setMessage("이 메시지를 삭제하시겠습니까?")
-                .setPositiveButton("삭제") { _, _ ->
-                    deleteMessage(position)
-                }
-                .setNegativeButton("취소") { _, _ ->
-                    // 삭제 취소 시 스와이프 복구
-                    adapter.notifyItemChanged(position)
-                }
-                .setCancelable(false)
-                .show()
-        }
-
-        private fun deleteMessage(position: Int) {
-            if (position >= 0 && position < messages.size) {
-                // ConversationManager에서 메시지 삭제
-                ConversationManager.removeMessageAt(position)
-
-                // UI 갱신은 ConversationChangeListener를 통해 자동으로 처리됨
-                // 사용자에게 알림
-                Snackbar.make(binding.root, "메시지가 삭제되었습니다", Snackbar.LENGTH_SHORT).show()
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            if (requestCode == REQUEST_RECORD_AUDIO && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                initializeRecognizer()
-            } else {
-                CustomToastUtil.showToast(
-                    context = this,
-                    message = "음성 권한이 필요합니다.",
-                    iconResId = R.drawable.ic_bot
-                )
-            }
-        }
-
-        override fun onPause() {
-            super.onPause()
-            // 활동이 중지될 때 대화 상태 저장
-            ConversationManager.saveConversation(this)
-        }
-
-        override fun onDestroy() {
-            // ConversationManager 리스너 제거
-            ConversationManager.removeListener(this)
-
-            if (::speechRecognizer.isInitialized) {
-                speechRecognizer.destroy()
-            }
-            if (::tts.isInitialized) {
-                tts.stop()
-                tts.shutdown()
-            }
-            super.onDestroy()
+            })
         }
     }
+
+    // ConversationManager.ConversationChangeListener 구현
+    override fun onConversationChanged(updatedMessages: List<ChatMessage>) {
+        runOnUiThread {
+            messages.clear()
+            messages.addAll(updatedMessages)
+            adapter.notifyDataSetChanged()
+
+            Log.d("GenieChat", "onConversationChanged(): 메시지 ${messages.size}개 로딩됨")
+            for ((index, message) in messages.withIndex()) {
+                Log.d("GenieChat", "[$index] ${if (message.isMessageFromUser()) "USER" else "BOT"}: ${message.getMessage()}")
+            }
+        }
+    }
+
+    // 대화 복습 종료 로딩 오버레이 표시
+    private fun showNoteLoadingOverlay() {
+        // 로딩 오버레이 표시
+        binding.noteLoadingOverlay.visibility = View.VISIBLE
+
+        // 문서 애니메이션 시작
+        binding.lottieDocAnimation.playAnimation()
+    }
+
+    // 대화 복습 종료 로딩 오버레이 숨기기
+    private fun hideNoteLoadingOverlay() {
+        // 로딩 오버레이 숨기기
+        binding.noteLoadingOverlay.visibility = View.GONE
+
+        // 문서 애니메이션 중지
+        binding.lottieDocAnimation.cancelAnimation()
+    }
+
+    private fun setupSwipeToDelete() {
+        val swipeCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                showDeleteConfirmDialog(position)
+            }
+        }
+
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.chatRecyclerView)
+    }
+
+    private fun showDeleteConfirmDialog(position: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("메시지 삭제")
+            .setMessage("이 메시지를 삭제하시겠습니까?")
+            .setPositiveButton("삭제") { _, _ ->
+                deleteMessage(position)
+            }
+            .setNegativeButton("취소") { _, _ ->
+                // 삭제 취소 시 스와이프 복구
+                adapter.notifyItemChanged(position)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun deleteMessage(position: Int) {
+        if (position >= 0 && position < messages.size) {
+            // ConversationManager에서 메시지 삭제
+            ConversationManager.removeMessageAt(position)
+
+            // UI 갱신은 ConversationChangeListener를 통해 자동으로 처리됨
+            // 사용자에게 알림
+            Snackbar.make(binding.root, "메시지가 삭제되었습니다", Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_RECORD_AUDIO && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            initializeRecognizer()
+        } else {
+            CustomToastUtil.showToast(
+                context = this,
+                message = "음성 권한이 필요합니다.",
+                iconResId = R.drawable.ic_bot
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // 활동이 중지될 때 대화 상태 저장
+        ConversationManager.saveConversation(this)
+    }
+
+    override fun onDestroy() {
+        // ConversationManager 리스너 제거
+        ConversationManager.removeListener(this)
+
+        if (::speechRecognizer.isInitialized) {
+            speechRecognizer.destroy()
+        }
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
+        super.onDestroy()
+    }
+}
