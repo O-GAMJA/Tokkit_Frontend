@@ -479,7 +479,8 @@ class SearchDetailActivity : AppCompatActivity() {
                     commentId = response.commentId,
                     isMine = response.isMine,
                     isLiked = response.emojis["LIKE"]?.reactedByCurrentUser ?: false,
-                    parentId = response.parentId
+                    parentId = response.parentId,
+                    profileImageUrl = response.profileImageUrl // ✅ 이 줄 추가!
                 )
             }
 
