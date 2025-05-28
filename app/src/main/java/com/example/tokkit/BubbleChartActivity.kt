@@ -1,6 +1,7 @@
 package com.example.tokkit
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -35,6 +36,10 @@ class BubbleChartActivity : AppCompatActivity() {
         binding.webView.apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+
+            // 투명 배경 설정
+            setBackgroundColor(Color.TRANSPARENT)
+            setLayerType(WebView.LAYER_TYPE_SOFTWARE, null)
 
             // JavaScript Interface 추가 - 태그 클릭 이벤트 처리
             addJavascriptInterface(WebAppInterface(), "Android")
