@@ -31,6 +31,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var binding: ActivityMainBinding
     private lateinit var navigationContainer: LinearLayout
 
+    // 현재 활성화된 Fragment 태그를 추적
+    private var currentFragmentTag: String? = null
+
+    // Fragment 인스턴스들을 미리 생성하여 관리
+    private val fragmentMap = mutableMapOf<String, Fragment>()
+
     // Fragment 태그 상수
     companion object {
         private const val TAG_HOME = "HOME_FRAGMENT"
@@ -47,6 +53,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Fragment들을 미리 초기화
+        initializeFragments()
 
         // 커스텀 네비게이션 드로어 설정
         setupCustomNavigationDrawer()
@@ -67,6 +76,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // 초기 프래그먼트 설정
         if (savedInstanceState == null) {
             showFragment(TAG_HOME)
+        } else {
+            // 화면 회전 등으로 인한 복원 시 현재 Fragment 태그 복원
+            currentFragmentTag = savedInstanceState.getString("current_fragment_tag", TAG_HOME)
         }
 
         // 바텀 네비게이션 설정
@@ -90,6 +102,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 현재 Fragment 태그 저장
+        outState.putString("current_fragment_tag", currentFragmentTag)
+    }
+
+    // Fragment들을 미리 초기화하는 함수
+    private fun initializeFragments() {
+        fragmentMap[TAG_HOME] = HomeFragment()
+        fragmentMap[TAG_SEARCH] = SearchFragment()
+        fragmentMap[TAG_REVIEW] = ReviewFragment()
+        fragmentMap[TAG_MYPAGE] = MypageFragment()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -109,58 +135,68 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 showFragment(TAG_HOME)
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_home
 
-                // Fragment가 완전히 로드된 후 태그 검색 실행
+                // Fragment 전환이 완료된 후 태그 검색 실행
                 supportFragmentManager.executePendingTransactions()
 
-                val homeFragment = supportFragmentManager.findFragmentByTag(TAG_HOME) as? HomeFragment
-                homeFragment?.let { fragment ->
-                    // Bundle로 태그 정보 설정
-                    val bundle = Bundle().apply {
-                        putString("search_tag", selectedTag)
-                        putBoolean("is_tag_search", true)
+                // 약간의 지연을 주어 Fragment가 완전히 로드된 후 실행
+                binding.root.post {
+                    val homeFragment =
+                        supportFragmentManager.findFragmentByTag(TAG_HOME) as? HomeFragment
+                    homeFragment?.let { fragment ->
+                        val bundle = Bundle().apply {
+                            putString("search_tag", selectedTag)
+                            putBoolean("is_tag_search", true)
+                        }
+                        fragment.arguments = bundle
+                        fragment.searchFromExternalTag(selectedTag)
                     }
-                    fragment.arguments = bundle
-
-                    // 태그 검색 실행
-                    fragment.searchFromExternalTag(selectedTag)
                 }
             }
         }
     }
 
-    private fun showFragment(tag: String) {
-        val fragmentManager = supportFragmentManager
-        val currentFragment = fragmentManager.findFragmentById(R.id.fragment_container)
-        val targetFragment = fragmentManager.findFragmentByTag(tag)
 
-        // 이미 해당 Fragment가 표시중이면 리턴
-        if (currentFragment != null && currentFragment.tag == tag) {
+    private fun showFragment(tag: String) {
+        // 이미 같은 Fragment가 활성화되어 있으면 리턴
+        if (currentFragmentTag == tag) {
+            Log.d("MainActivity", "같은 Fragment가 이미 활성화됨: $tag")
             return
         }
 
+        val fragmentManager = supportFragmentManager
         val transaction = fragmentManager.beginTransaction()
 
-        // 현재 Fragment가 있으면 숨기기
-        currentFragment?.let {
-            transaction.hide(it)
-        }
-
-        if (targetFragment != null) {
-            // 이미 생성된 Fragment가 있으면 보이기
-            transaction.show(targetFragment)
-        } else {
-            // 새로운 Fragment 생성하여 추가
-            val newFragment = when (tag) {
-                TAG_HOME -> HomeFragment()
-                TAG_SEARCH -> SearchFragment()
-                TAG_REVIEW -> ReviewFragment()
-                TAG_MYPAGE -> MypageFragment()
-                else -> HomeFragment()
+        // 현재 Fragment 숨기기
+        currentFragmentTag?.let { currentTag ->
+            val currentFragment = fragmentManager.findFragmentByTag(currentTag)
+            currentFragment?.let {
+                transaction.hide(it)
+                Log.d("MainActivity", "Fragment 숨김: $currentTag")
             }
-            transaction.add(R.id.fragment_container, newFragment, tag)
         }
 
-        transaction.commit()
+        // 대상 Fragment 확인
+        var targetFragment = fragmentManager.findFragmentByTag(tag)
+
+        if (targetFragment == null) {
+            // Fragment가 없으면 새로 생성
+            targetFragment = fragmentMap[tag] ?: HomeFragment()
+            transaction.add(R.id.fragment_container, targetFragment, tag)
+            Log.d("MainActivity", "새 Fragment 추가: $tag")
+        } else {
+            // 이미 있는 Fragment 보이기
+            transaction.show(targetFragment)
+            Log.d("MainActivity", "기존 Fragment 표시: $tag")
+        }
+
+        // 트랜잭션 커밋
+        try {
+            transaction.commitNow() // commit() 대신 commitNow() 사용하여 즉시 실행
+            currentFragmentTag = tag
+            Log.d("MainActivity", "Fragment 전환 완료: $tag")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Fragment 전환 실패: $tag", e)
+        }
     }
 
     private fun setupCustomNavigationDrawer() {
@@ -525,13 +561,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun setupBottomNavigation() {
-        // 바텀 네비게이션 배경 제거
         binding.bottomNavigationView.background = null
-
-        // 가운데 아이템 비활성화
         binding.bottomNavigationView.menu.getItem(2).isEnabled = false
 
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
+            // 연속 클릭 방지를 위한 체크
+            if (isFragmentChanging()) {
+                Log.d("MainActivity", "Fragment 전환 중이므로 클릭 무시")
+                return@setOnItemSelectedListener false
+            }
+
             when (item.itemId) {
                 R.id.fragment_home -> {
                     showFragment(TAG_HOME)
@@ -554,6 +593,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    // Fragment 전환 중인지 확인하는 함수
+    private fun isFragmentChanging(): Boolean {
+        return supportFragmentManager.isStateSaved ||
+                supportFragmentManager.executePendingTransactions()
+    }
+
+
+
     private fun setupSearchFab() {
         binding.searchFab.setOnClickListener {
             // FAB 클릭 시 동작 구현
@@ -571,6 +618,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     // NavigationView 아이템 클릭 이벤트 처리
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        // 연속 클릭 방지
+        if (isFragmentChanging()) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            return false
+        }
+
         when (item.itemId) {
             R.id.nav_home -> {
                 showFragment(TAG_HOME)
@@ -589,15 +642,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_settings
             }
             R.id.nav_settings -> {
-                // 설정 화면으로 이동하는 코드 (필요시 추가)
+                // 설정 화면으로 이동하는 코드
             }
             R.id.nav_logout -> {
-                // 로그아웃 기능 구현 (필요시 추가)
+                // 로그아웃 기능 구현
             }
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
+
 
     fun reloadDirectoryTree() {
         loadDirectoryTreeFromApi()
