@@ -91,14 +91,17 @@ class SearchDetailActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(audioUrl)
-                prepare()
-                start()
-                setOnCompletionListener {
-                    stopAudio()
+            if (mediaPlayer == null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(audioUrl)
+                    prepare()
+                    setOnCompletionListener {
+                        stopAudio()
+                    }
                 }
             }
+
+            mediaPlayer?.start()
 
             binding.btnPlay.visibility = View.GONE
             binding.btnStop.visibility = View.VISIBLE
@@ -106,8 +109,12 @@ class SearchDetailActivity : AppCompatActivity() {
         }
 
 
+
         binding.btnStop.setOnClickListener {
-            stopAudio()
+            mediaPlayer?.pause()
+            binding.btnPlay.visibility = View.VISIBLE
+            binding.btnStop.visibility = View.GONE
+            binding.btnRestart.visibility = View.GONE
         }
 
         binding.btnRestart.setOnClickListener {
@@ -116,22 +123,28 @@ class SearchDetailActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(audioUrl)
-                prepare()
-                start()
-                setOnCompletionListener {
-                    stopAudio()
+            if (mediaPlayer == null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(audioUrl)
+                    setOnPreparedListener {
+                        seekTo(0) // 처음으로 이동
+                    }
+                    setOnCompletionListener {
+                        stopAudio()
+                    }
+                    prepareAsync() // 자동 재생 방지
                 }
+            } else {
+                mediaPlayer?.pause()         // 혹시 재생 중이었으면 정지
+                mediaPlayer?.seekTo(0)       // 처음으로 이동
             }
 
-            binding.btnPlay.visibility = View.GONE
-            binding.btnStop.visibility = View.VISIBLE
-            binding.btnRestart.visibility = View.VISIBLE
+            // 버튼 상태 전환
+            binding.btnRestart.visibility = View.GONE
+            binding.btnStop.visibility = View.GONE
+            binding.btnPlay.visibility = View.VISIBLE
         }
+
 
         noteViewModel.loadNoteById(noteId)
 
@@ -865,18 +878,26 @@ class SearchDetailActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.noteApi.getLectureAudio(noteId)
+
+                Log.d("AudioFetch", "HTTP 상태 코드: ${response.code()}")
+                Log.d("AudioFetch", "응답 바디: ${response.body()}")
+                Log.d("AudioFetch", "에러 바디: ${response.errorBody()?.string()}")
+
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     audioUrl = response.body()!!.result.audioUrl
                     isAudioLoaded = true
+                    Log.d("AudioFetch", "오디오 URL: $audioUrl")
                 } else {
+                    Log.w("AudioFetch", "오디오 응답 실패. isSuccess=${response.body()?.isSuccess}, message=${response.body()?.message}")
                     CustomToastUtil.showToast(this@SearchDetailActivity, "음성파일을 불러오지 못했습니다.", R.drawable.ic_bot)
                 }
             } catch (e: Exception) {
-                Log.e("AudioFetch", "오류 발생", e)
+                Log.e("AudioFetch", "예외 발생: ${e.localizedMessage}", e)
                 CustomToastUtil.showToast(this@SearchDetailActivity, "네트워크 오류", R.drawable.ic_bot)
             }
         }
     }
+
 
     private fun stopAudio() {
         mediaPlayer?.stop()
@@ -892,6 +913,5 @@ class SearchDetailActivity : AppCompatActivity() {
         super.onDestroy()
         stopAudio()
     }
-
 
 }
