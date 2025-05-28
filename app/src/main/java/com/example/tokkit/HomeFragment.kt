@@ -69,26 +69,26 @@ class HomeFragment : Fragment() {
         tagAdapter = TagListAdapter { clickedTag ->
             addTagIfNotExists(clickedTag.name)
             binding.etSearch.text.clear()
-            binding.cardRecyclerWrapper.visibility = View.GONE
+//            binding.cardRecyclerWrapper.visibility = View.GONE
 
             // 태그 선택 시 해당 태그로 노트 검색
             selectedTag = clickedTag.name
             isSearchByTag = true
             searchNotesByTag(selectedTag!!)
         }
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = tagAdapter
+//        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+//        binding.recyclerView.adapter = tagAdapter
 
-        // 검색 결과 관찰
-        tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
-            if (tags.isNotEmpty()) {
-                tagAdapter.submitList(tags)
-                binding.cardRecyclerWrapper.visibility = View.VISIBLE
-            } else {
-                tagAdapter.submitList(emptyList())
-                binding.cardRecyclerWrapper.visibility = View.GONE
-            }
-        }
+//        // 검색 결과 관찰
+//        tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
+//            if (tags.isNotEmpty()) {
+//                tagAdapter.submitList(tags)
+//                binding.cardRecyclerWrapper.visibility = View.VISIBLE
+//            } else {
+//                tagAdapter.submitList(emptyList())
+//                binding.cardRecyclerWrapper.visibility = View.GONE
+//            }
+//        }
 
         // 검색 실시간 반영
         binding.etSearch.addTextChangedListener(object : TextWatcher {
