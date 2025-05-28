@@ -56,6 +56,24 @@
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- 추천 노트 안내 텍스트뷰 -->
+    <TextView
+        android:id="@+id/tvRecommendedLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="당신의 학습 기록을 기반으로 추천된 노트입니다"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/main"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
     <!-- 로딩 프로그레스 -->
     <ProgressBar
         android:id="@+id/progressBar"
