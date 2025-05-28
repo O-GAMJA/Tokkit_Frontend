@@ -46,6 +46,14 @@ interface NoteApiService {
         @Query("size") size: Int = 5
     ): ApiResponse<SimilarNoteResponse>
 
+    // 추천 노트 조회 api
+    @GET("/search/recommendations")
+    suspend fun getRecommendedNotes(
+        @Query("memberId") memberId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): ApiResponse<SearchResponse>
+
     // 이모지 추가 api
     @POST("/notes/{noteId}/emoji")
     suspend fun addEmoji(

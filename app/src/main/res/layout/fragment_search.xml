@@ -104,7 +104,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="검색어를 입력하세요"
+            android:text="검색어를 입력하세요."
             android:textColor="@color/gray"
             android:textSize="16sp" />
     </LinearLayout>
