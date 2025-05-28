@@ -140,6 +140,34 @@ class HomeFragment : Fragment() {
             // 필요시 자동완성 기능 구현
         }
 
+        // 에러 상태 관찰 - TAG4001 에러 처리 추가
+        noteViewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Log.d("HomeFragment", "에러 발생: $error")
+                if (error.contains("TAG4001") || (error.contains("HTTP 404") && isSearchByTag)) {
+                    // TAG4001 에러 또는 태그 검색 중 HTTP 404 에러는 검색 결과가 없음을 의미
+                    Log.d("HomeFragment", "태그 검색 결과 없음 - 에러: $error")
+                    showEmptySearchResult()
+                } else if (!error.contains("HTTP 404")) {
+                    // 다른 에러는 토스트로 표시 (HTTP 404는 제외)
+                    // Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // 노트 데이터 관찰 - 빈 결과 처리
+        noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("HomeFragment", "노트 목록 업데이트: ${notes.size}개, isSearchByTag: $isSearchByTag")
+            if (isSearchByTag && notes.isEmpty()) {
+                // 태그 검색 중이고 결과가 비어있으면 빈 결과 화면 표시
+                Log.d("HomeFragment", "태그 검색 결과 없음 - 빈 리스트")
+                showEmptySearchResult()
+            } else if (notes.isNotEmpty()) {
+                // 결과가 있으면 빈 결과 화면 숨기기
+                hideEmptySearchResult()
+            }
+        }
+
         // Fragment 생성 시 외부 태그 검색이 있다면 실행
         if (isExternalTagSearch && !selectedTag.isNullOrEmpty()) {
             // Fragment가 완전히 로드된 후 태그 검색 실행
@@ -154,8 +182,30 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun showEmptySearchResult() {
+        // ViewPager 숨기고 빈 결과 화면 표시
+        binding.viewPager.visibility = View.GONE
+        binding.emptyResultView.visibility = View.VISIBLE
+
+        // 텍스트 업데이트
+        binding.tvEmptyResult.text = if (selectedTag != null) {
+            "'$selectedTag' 태그에 대한 검색 결과가 없습니다"
+        } else {
+            "검색 결과가 없습니다"
+        }
+    }
+
+    private fun hideEmptySearchResult() {
+        // ViewPager 표시하고 빈 결과 화면 숨기기
+        binding.viewPager.visibility = View.VISIBLE
+        binding.emptyResultView.visibility = View.GONE
+    }
+
     private fun resetNoteSearch() {
         Log.d("HomeFragment", "노트 목록 리셋 실행")
+
+        // 빈 결과 화면 숨기기
+        hideEmptySearchResult()
 
         // 전체 노트 목록으로 복원
         noteViewModel.resetNotes()
@@ -177,19 +227,11 @@ class HomeFragment : Fragment() {
     fun searchNotesByTag(tagName: String) {
         Log.d("HomeFragment", "태그 검색 시작: $tagName")
 
+        // 빈 결과 화면 숨기기 (검색 시작 시)
+        hideEmptySearchResult()
+
         // ViewModel을 통한 태그 검색
         noteViewModel.searchNotesByTag(tagName, 1L, 0, 10)
-
-        // LiveData 관찰 - 기존 옵저버 제거하고 새로 등록
-        noteViewModel.notes.removeObservers(viewLifecycleOwner)
-        noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
-            Log.d("HomeFragment", "태그 검색 결과 받음: ${notes.size}개")
-            if (notes.isEmpty()) {
-                //Toast.makeText(requireContext(), "'$tagName' 태그가 포함된 노트가 없습니다", Toast.LENGTH_SHORT).show()
-            } else {
-                //Toast.makeText(requireContext(), "'$tagName' 태그 검색 결과: ${notes.size}개의 노트", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun makeStatusBarTransparent() {
