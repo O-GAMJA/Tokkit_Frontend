@@ -49,6 +49,8 @@ class SearchFragment : Fragment() {
         val memberId = 1L  // TODO: 실제 로그인된 사용자 ID로 대체
         loadRecommendedNotes(memberId)
 
+        binding.tvRecommendedLabel.visibility = View.GONE
+
         setupRecyclerView()
         setupSearchListener()
 
@@ -171,7 +173,6 @@ class SearchFragment : Fragment() {
         }
     }
 
-
     private fun updateUIWithResults(query: String, results: List<SimilarNoteItem>) {
         if (results.isEmpty()) {
             showEmptyResult(query)
@@ -186,9 +187,19 @@ class SearchFragment : Fragment() {
         binding.recyclerSearchResults.visibility = View.VISIBLE
         binding.emptyResultView.visibility = View.GONE
         adapter.submitList(sortedResults)
+
+        // 추천 노트 안내 텍스트뷰 표시 여부 결정
+        if (query.isBlank()) {
+            binding.tvRecommendedLabel.visibility = View.VISIBLE
+        } else {
+            binding.tvRecommendedLabel.visibility = View.GONE
+        }
     }
 
+
     private fun showEmptyResult(query: String) {
+        binding.tvRecommendedLabel.visibility = View.GONE  // 추천 안내 문구 숨기기
+
         if (query.isBlank()) {
             if (recommendedNotes.isNotEmpty()) {
                 binding.recyclerSearchResults.visibility = View.VISIBLE
@@ -220,6 +231,8 @@ class SearchFragment : Fragment() {
                 binding.tvEmptyResult.text = "검색어를 입력하세요."
                 adapter.submitList(emptyList())
             }
+        } else {
+            binding.tvRecommendedLabel.visibility = View.GONE  // 검색어 있을 경우 숨기기
         }
     }
 

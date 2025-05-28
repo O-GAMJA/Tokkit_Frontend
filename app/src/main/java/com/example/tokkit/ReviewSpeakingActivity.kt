@@ -193,6 +193,15 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
 
                 // 대화 복습 종료 버튼
                 binding.btnCreateNote.setOnClickListener {
+                    if (!isReviewComplete()) {
+                        CustomToastUtil.showToast(
+                            context = this,
+                            message = "최소 2개의 질문에 답변해야 복습을 마무리할 수 있어요!",
+                            iconResId = R.drawable.ic_bot
+                        )
+                        return@setOnClickListener
+                    }
+
                     val noteId = intent.getStringExtra("NOTE_ID") ?: return@setOnClickListener
                     val content = ConversationManager.getConversationText()
 
@@ -207,23 +216,45 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                                 ConversationManager.clearMessages()
                                 ConversationManager.clearSavedConversation(this@ReviewSpeakingActivity)
 
-                                // 결과를 Intent에 담아서 전달
-                                val resultIntent = Intent().apply {
-                                    putExtra("NEW_STAGE", result.newStage)
-
-                                    // newStage가 COMPLETE인지 확인하여 정수값도 함께 전달
-                                    if (result.newStage == "COMPLETE") {
-                                        putExtra("NEW_STAGE_INT", 5) // 완료 상태
-                                    } else {
-                                        // 숫자 단계 추출
-                                        val stageInt = result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0
-                                        putExtra("NEW_STAGE_INT", stageInt)
-                                    }
+                                val intent = Intent(this@ReviewSpeakingActivity, ForgettingCurveActivity::class.java).apply {
+                                    putExtra("NOTE_ID", noteId)
+                                    putExtra("ARTICLE_STAGE", result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0)
+                                    putExtra("IS_COMPLETE", result.newStage == "COMPLETE")
                                 }
 
                                 setResult(RESULT_OK, resultIntent)
+                                startActivity(intent)
                                 finish()
-                            } else {
+                            }
+
+//                            if (result != null) {
+//                                ConversationManager.clearMessages()
+//                                ConversationManager.clearSavedConversation(this@ReviewSpeakingActivity)
+//
+//                                // 결과를 Intent에 담아서 전달
+//                                val resultIntent = Intent().apply {
+//                                    putExtra("NEW_STAGE", result.newStage)
+//
+//                                    // newStage가 COMPLETE인지 확인하여 정수값도 함께 전달
+//                                    if (result.newStage == "COMPLETE") {
+//                                        putExtra("NEW_STAGE_INT", 5) // 완료 상태
+//                                    } else {
+//                                        // 숫자 단계 추출
+//                                        val stageInt = result.newStage.filter { it.isDigit() }.toIntOrNull() ?: 0
+//                                        putExtra("NEW_STAGE_INT", stageInt)
+//                                    }
+//                                }
+//
+//                                setResult(RESULT_OK, resultIntent)
+////                                CustomToastUtil.showToast(
+////                                    context = this@ReviewSpeakingActivity,
+////                                    message = "모든 복습이 완료되었습니다!\" else \"복습 완료!\\n새 단계: ${result.newStage}",
+////                                    iconResId = R.drawable.ic_bot
+////                                )
+//
+//                                finish()
+//                            }
+                        else {
                                 CustomToastUtil.showToast(
                                     context = this@ReviewSpeakingActivity,
                                     message = "복습 제출 실패",
@@ -466,6 +497,10 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                 message = "음성 권한이 필요합니다.",
                 iconResId = R.drawable.ic_bot
             )
+
+        private fun isReviewComplete(): Boolean {
+            val userMessages = messages.count { it.isMessageFromUser() }
+            return userMessages >= 3
         }
     }
 
