@@ -121,6 +121,8 @@ class NoteDetailsActivity : AppCompatActivity() {
             // API 호출 시작 로그 추가
             Log.d("NoteDetails", "노트 저장 API 호출 시작")
 
+            // 로딩 오버레이 표시
+            showSaveLoadingOverlay()
             // 저장 시도 메시지 표시
             CustomToastUtil.showToast(
                 context = this,
@@ -175,6 +177,30 @@ class NoteDetailsActivity : AppCompatActivity() {
             // 기존 이미지 표시 처리
             setupImageDisplay(s3ImageKey, imageUrl)
         }
+    }
+
+    // 저장 로딩 오버레이 표시
+    private fun showSaveLoadingOverlay() {
+        binding.saveLoadingOverlay.visibility = View.VISIBLE
+        binding.lottieSaveLoading.playAnimation()
+
+        // 저장 버튼 비활성화
+        binding.saveNoteButton.isEnabled = false
+        binding.saveNoteButton.alpha = 0.5f
+
+        Log.d("NoteDetails", "저장 로딩 오버레이 표시")
+    }
+
+    // 저장 로딩 오버레이 숨기기
+    private fun hideSaveLoadingOverlay() {
+        binding.saveLoadingOverlay.visibility = View.GONE
+        binding.lottieSaveLoading.cancelAnimation()
+
+        // 저장 버튼 활성화
+        binding.saveNoteButton.isEnabled = true
+        binding.saveNoteButton.alpha = 1.0f
+
+        Log.d("NoteDetails", "저장 로딩 오버레이 숨김")
     }
 
     // 생성된 이미지를 직접 로드하는 함수 추가
@@ -924,13 +950,16 @@ class NoteDetailsActivity : AppCompatActivity() {
         // 빈 데이터 검사
         if (markdownContent.isBlank()) {
             Log.e("NoteDetails", "마크다운 내용이 비어있어 저장할 수 없습니다")
-
+            hideSaveLoadingOverlay()
             //Toast.makeText(this, "저장할 노트 내용이 없습니다.", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (noteTitle.isBlank()) {
             Log.e("NoteDetails", "노트 제목이 비어있어 저장할 수 없습니다")
+
+            hideSaveLoadingOverlay()
+
             CustomToastUtil.showToast(
                 context = this,
                 message = "노트 제목이 필요합니다.",
@@ -956,6 +985,10 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // LocalDream에서 생성된 이미지가 있는 경우 S3에 업로드
                 if (generatedImageBitmap != null && finalImageKey.isNullOrEmpty()) {
                     Log.d("NoteDetails", "LocalDream 생성 이미지를 S3에 업로드 시도")
+
+                    // 로딩 텍스트 업데이트
+                    binding.saveLoadingText.text = "이미지 업로드 중..."
+
                     //Toast.makeText(this@NoteDetailsActivity, "이미지를 업로드 중입니다...", Toast.LENGTH_SHORT).show()
 
                     finalImageKey = uploadImageToS3(generatedImageBitmap!!)
@@ -966,6 +999,9 @@ class NoteDetailsActivity : AppCompatActivity() {
                         finalImageKey = "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
                     }
                 }
+
+                // 로딩 텍스트를 노트 저장으로 업데이트
+                binding.saveLoadingText.text = "노트 저장 중..."
 
                 // 이미지 키 설정 - 우선순위: 업로드된 이미지 키 > 기존 S3 키 > 기본 키
                 val imageKey = finalImageKey
@@ -1015,6 +1051,9 @@ class NoteDetailsActivity : AppCompatActivity() {
                 }
                 Log.d("NoteDetails", "API 호출 완료: ${response.code}, ${response.message}")
 
+                // 로딩 오버레이 숨기기
+                hideSaveLoadingOverlay()
+
                 if (response.isSuccess) {
                     // 저장 성공
                     Log.d("NoteDetails", "노트 저장 성공: ${response.result}")
@@ -1052,6 +1091,8 @@ class NoteDetailsActivity : AppCompatActivity() {
                 val errorBody = e.response()?.errorBody()?.string() ?: "오류 내용 없음"
 
                 Log.e("NoteDetails", "HTTP 오류 발생: 코드=$errorCode, 응답 본문=$errorBody", e)
+                // 로딩 오버레이 숨기기
+                hideSaveLoadingOverlay()
                 CustomToastUtil.showToast(
                     context = this@NoteDetailsActivity,
                     message = "서버 오류가 발생했습니다 (코드: $errorCode)",
@@ -1060,6 +1101,8 @@ class NoteDetailsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 // 일반 예외 처리
                 Log.e("NoteDetails", "노트 저장 중 오류 발생", e)
+                // 로딩 오버레이 숨기기
+                hideSaveLoadingOverlay()
                 CustomToastUtil.showToast(
                     context = this@NoteDetailsActivity,
                     message = "오류 발생: ${e.message}",

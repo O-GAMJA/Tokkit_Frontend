@@ -233,18 +233,51 @@ class NoteViewModel : ViewModel() {
     // 태그로 검색 시 호출하는 함수
     fun searchNotesByTag(tagName: String, memberId: Long, page: Int = 0, size: Int = 10) {
         _isLoading.value = true
+        _error.value = null // 에러 초기화
         currentTagName = tagName
         tagSearchPage = page
         _isTagSearchMode.value = true
+
+        Log.d("NoteViewModel", "태그 검색 시작: tagName=$tagName, page=$page, size=$size")
 
         viewModelScope.launch {
             try {
                 val result = repository.getNotesByTag(tagName, memberId, page, size)
                 // 태그 검색 결과로 노트 목록 초기화
-                _notes.value = result.notes
+                if (page == 0) {
+                    _notes.value = result.notes
+                } else {
+                    val currentList = _notes.value ?: emptyList()
+                    _notes.value = currentList + result.notes
+                }
                 _isLastPage.value = result.paginationInfo.isLast
+
+                // 검색 결과가 없는 경우 처리
+                if (result.notes.isEmpty() && page == 0) {
+                    Log.d("NoteViewModel", "태그 검색 결과 없음")
+                    _error.value = "TAG4001: 해당 태그명을 가진 노트를 찾을 수 없습니다."
+                }
+
             } catch (e: Exception) {
-                _error.value = e.message ?: "태그 검색 실패"
+                Log.e("NoteViewModel", "태그 검색 중 예외 발생", e)
+
+                if (page == 0) {
+                    _notes.value = emptyList()
+                }
+
+                // HTTP 상태 코드 확인하여 TAG4001로 변환
+                when {
+                    e.message?.contains("404") == true -> {
+                        Log.d("NoteViewModel", "HTTP 404를 TAG4001로 변환")
+                        _error.value = "TAG4001: 해당 태그명을 가진 노트를 찾을 수 없습니다."
+                    }
+                    e.message?.contains("TAG4001") == true -> {
+                        _error.value = "TAG4001: 해당 태그명을 가진 노트를 찾을 수 없습니다."
+                    }
+                    else -> {
+                        _error.value = e.message ?: "태그 검색 실패"
+                    }
+                }
             } finally {
                 _isLoading.value = false
             }
@@ -277,5 +310,9 @@ class NoteViewModel : ViewModel() {
         _isTagSearchMode.value = false
         currentTagName = null
         tagSearchPage = 0
+    }
+    // 에러 초기화
+    fun clearError() {
+        _error.value = null
     }
 }

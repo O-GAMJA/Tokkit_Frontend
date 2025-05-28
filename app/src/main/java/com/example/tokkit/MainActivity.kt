@@ -1,6 +1,7 @@
 package com.example.tokkit
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -30,6 +31,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var binding: ActivityMainBinding
     private lateinit var navigationContainer: LinearLayout
 
+    // Fragment 태그 상수
+    companion object {
+        private const val TAG_HOME = "HOME_FRAGMENT"
+        private const val TAG_SEARCH = "SEARCH_FRAGMENT"
+        private const val TAG_REVIEW = "REVIEW_FRAGMENT"
+        private const val TAG_MYPAGE = "MYPAGE_FRAGMENT"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +66,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // 초기 프래그먼트 설정
         if (savedInstanceState == null) {
-            replaceFragment(HomeFragment())
+            showFragment(TAG_HOME)
         }
 
         // 바텀 네비게이션 설정
@@ -66,6 +74,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // FAB 이벤트 설정
         setupSearchFab()
+
+        // Intent에서 태그 검색 정보 확인
+        handleTagSearchIntent(intent)
 
         // 🔥 FCM 토큰 가져와서 로그로 출력
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
@@ -77,6 +88,79 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val token = task.result
             Log.d("FCM", "🔥 현재 FCM 토큰: $token")
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // 새로운 Intent가 들어왔을 때도 처리
+        handleTagSearchIntent(intent)
+    }
+
+    private fun handleTagSearchIntent(intent: Intent?) {
+        intent?.let {
+            val selectedTag = it.getStringExtra("selected_tag")
+            val searchByTag = it.getBooleanExtra("search_by_tag", false)
+
+            if (searchByTag && !selectedTag.isNullOrEmpty()) {
+                Log.d("MainActivity", "버블 차트에서 태그 선택됨: $selectedTag")
+
+                // HomeFragment 표시
+                showFragment(TAG_HOME)
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_home
+
+                // Fragment가 완전히 로드된 후 태그 검색 실행
+                supportFragmentManager.executePendingTransactions()
+
+                val homeFragment = supportFragmentManager.findFragmentByTag(TAG_HOME) as? HomeFragment
+                homeFragment?.let { fragment ->
+                    // Bundle로 태그 정보 설정
+                    val bundle = Bundle().apply {
+                        putString("search_tag", selectedTag)
+                        putBoolean("is_tag_search", true)
+                    }
+                    fragment.arguments = bundle
+
+                    // 태그 검색 실행
+                    fragment.searchFromExternalTag(selectedTag)
+                }
+            }
+        }
+    }
+
+    private fun showFragment(tag: String) {
+        val fragmentManager = supportFragmentManager
+        val currentFragment = fragmentManager.findFragmentById(R.id.fragment_container)
+        val targetFragment = fragmentManager.findFragmentByTag(tag)
+
+        // 이미 해당 Fragment가 표시중이면 리턴
+        if (currentFragment != null && currentFragment.tag == tag) {
+            return
+        }
+
+        val transaction = fragmentManager.beginTransaction()
+
+        // 현재 Fragment가 있으면 숨기기
+        currentFragment?.let {
+            transaction.hide(it)
+        }
+
+        if (targetFragment != null) {
+            // 이미 생성된 Fragment가 있으면 보이기
+            transaction.show(targetFragment)
+        } else {
+            // 새로운 Fragment 생성하여 추가
+            val newFragment = when (tag) {
+                TAG_HOME -> HomeFragment()
+                TAG_SEARCH -> SearchFragment()
+                TAG_REVIEW -> ReviewFragment()
+                TAG_MYPAGE -> MypageFragment()
+                else -> HomeFragment()
+            }
+            transaction.add(R.id.fragment_container, newFragment, tag)
+        }
+
+        transaction.commit()
     }
 
     private fun setupCustomNavigationDrawer() {
@@ -169,6 +253,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             logDirectoryContents(childDir, "$indent  ")
         }
     }
+
     private fun addDirectoryViewForNav(directory: Directory, container: LinearLayout, parentPath: List<String>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, container, false)
         val folderNameTv = folderView.findViewById<TextView>(R.id.tvFolderName)
@@ -177,6 +262,27 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         folderNameTv.text = directory.name
         folderIcon.setImageResource(R.drawable.ic_folder)
+
+        // 북마크 폴더인 경우 디자인 변경
+        if (directory.name == "bookmark") {
+            folderIcon.setImageResource(R.drawable.ic_bookmark2)
+            folderView.setBackgroundResource(R.drawable.bookmark_folder_background)
+            val iconParams = folderIcon.layoutParams
+            iconParams.width = 31.dpToPx()
+            iconParams.height = 31.dpToPx()
+            folderIcon.layoutParams = iconParams
+           // folderNameTv.textSize = 18f
+            folderNameTv.setTypeface(null, Typeface.BOLD)
+            // 텍스트 색상도 조절
+            // folderNameTv.setTextColor(ContextCompat.getColor(this, android.R.color.black))
+        }else {
+            folderIcon.setImageResource(R.drawable.ic_folder)
+            // 일반 폴더는 기본 크기 유지
+            val iconParams = folderIcon.layoutParams
+            iconParams.width = 24.dpToPx()
+            iconParams.height = 24.dpToPx()
+            folderIcon.layoutParams = iconParams
+        }
 
         // 하위 디렉토리와 노트 확인
         val hasChildren = directory.children.isNotEmpty() || directory.notes.isNotEmpty()
@@ -261,6 +367,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     startActivity(intent)
                 } catch (e: Exception) {
                     Log.e("MainActivity", "상세 화면 이동 중 오류", e)
+
                     CustomToastUtil.showToast(
                         context = this,
                         message = "페이지를 열 수 없습니다",
@@ -278,7 +385,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         container.addView(pageView)
     }
-
 
     private fun addMainFolder(folderName: String, subItems: List<Any>) {
         val folderView = layoutInflater.inflate(R.layout.item_folder, navigationContainer, false)
@@ -397,7 +503,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         container.addView(pageView)
     }
 
-
     //상태 바 투명하게
     private fun setStatusBarTransparent() {
         window.apply {
@@ -429,19 +534,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.fragment_home -> {
-                    replaceFragment(HomeFragment())
+                    showFragment(TAG_HOME)
                     binding.navigationView.setCheckedItem(R.id.nav_home)
                 }
                 R.id.fragment_search -> {
-                    replaceFragment(SearchFragment())
+                    showFragment(TAG_SEARCH)
                     binding.navigationView.setCheckedItem(R.id.nav_search)
                 }
                 R.id.fragment_review -> {
-                    replaceFragment(ReviewFragment())
+                    showFragment(TAG_REVIEW)
                     binding.navigationView.setCheckedItem(R.id.nav_review)
                 }
                 R.id.fragment_settings -> {
-                    replaceFragment(MypageFragment())
+                    showFragment(TAG_MYPAGE)
                     binding.navigationView.setCheckedItem(R.id.nav_mypage)
                 }
             }
@@ -457,7 +562,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    // 프래그먼트 교체 함수
+    // 프래그먼트 교체 함수 (기존 방식 - 필요시 사용)
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
@@ -468,19 +573,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_home -> {
-                replaceFragment(HomeFragment())
+                showFragment(TAG_HOME)
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_home
             }
             R.id.nav_search -> {
-                replaceFragment(SearchFragment())
+                showFragment(TAG_SEARCH)
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_search
             }
             R.id.nav_review -> {
-                replaceFragment(ReviewFragment())
+                showFragment(TAG_REVIEW)
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_review
             }
             R.id.nav_mypage -> {
-                replaceFragment(MypageFragment())
+                showFragment(TAG_MYPAGE)
                 binding.bottomNavigationView.selectedItemId = R.id.fragment_settings
             }
             R.id.nav_settings -> {
@@ -493,6 +598,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
+
     fun reloadDirectoryTree() {
         loadDirectoryTreeFromApi()
     }

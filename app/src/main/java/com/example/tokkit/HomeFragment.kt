@@ -31,6 +31,9 @@ class HomeFragment : Fragment() {
     private var selectedTag: String? = null
     private var isSearchByTag = false
 
+    // 외부에서 태그 검색 모드로 진입했는지 확인하는 플래그
+    private var isExternalTagSearch = false
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -41,6 +44,23 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         makeStatusBarTransparent()
+
+        // Arguments에서 태그 검색 정보 확인
+        arguments?.let { args ->
+            val searchTag = args.getString("search_tag")
+            val isTagSearch = args.getBoolean("is_tag_search", false)
+
+            if (isTagSearch && !searchTag.isNullOrEmpty()) {
+                isExternalTagSearch = true
+                selectedTag = searchTag
+                isSearchByTag = true
+
+                Log.d("HomeFragment", "Arguments에서 태그 검색 정보 확인: $searchTag")
+
+                // 즉시 태그 칩 추가
+                addTagIfNotExists(searchTag)
+            }
+        }
 
         // ViewPager 구성
         val pagerAdapter = HomePagerAdapter(this)
@@ -53,9 +73,11 @@ class HomeFragment : Fragment() {
                 // 현재 선택된 탭에 맞게 데이터 갱신
                 if (isSearchByTag && selectedTag != null) {
                     // 검색 중이면 검색 결과 다시 적용
+                    Log.d("HomeFragment", "ViewPager 페이지 변경 - 태그 검색 유지: $selectedTag")
                     searchNotesByTag(selectedTag!!)
-                } else {
-                    // 아니면 기본 노트 목록 로드
+                } else if (!isSearchByTag && !isExternalTagSearch) {
+                    // 태그 검색도 아니고 외부 태그 검색 모드도 아닐 때만 기본 노트 목록 로드
+                    Log.d("HomeFragment", "ViewPager 페이지 변경 - 전체 노트 로드")
                     noteViewModel.resetNotes()
                     noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
                 }
@@ -69,26 +91,12 @@ class HomeFragment : Fragment() {
         tagAdapter = TagListAdapter { clickedTag ->
             addTagIfNotExists(clickedTag.name)
             binding.etSearch.text.clear()
-//            binding.cardRecyclerWrapper.visibility = View.GONE
 
             // 태그 선택 시 해당 태그로 노트 검색
             selectedTag = clickedTag.name
             isSearchByTag = true
             searchNotesByTag(selectedTag!!)
         }
-//        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-//        binding.recyclerView.adapter = tagAdapter
-
-//        // 검색 결과 관찰
-//        tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
-//            if (tags.isNotEmpty()) {
-//                tagAdapter.submitList(tags)
-//                binding.cardRecyclerWrapper.visibility = View.VISIBLE
-//            } else {
-//                tagAdapter.submitList(emptyList())
-//                binding.cardRecyclerWrapper.visibility = View.GONE
-//            }
-//        }
 
         // 검색 실시간 반영
         binding.etSearch.addTextChangedListener(object : TextWatcher {
@@ -96,7 +104,6 @@ class HomeFragment : Fragment() {
                 val query = s.toString().trim()
                 if (query.isNotEmpty()) {
                     tagViewModel.searchTags(query)
-                    // 여기서 결과 RecyclerView에 반영하고 싶으면 추가 구현
                 }
             }
 
@@ -106,12 +113,7 @@ class HomeFragment : Fragment() {
 
         binding.ivClearSearch.setOnClickListener {
             binding.etSearch.text.clear()
-            // 검색어를 지울 때 원래 전체 노트 목록으로 복원
-            if (isSearchByTag) {
-                isSearchByTag = false
-                selectedTag = null
-                resetNoteSearch()
-            }
+            // 검색어를 지울 때만 검색창 내용 클리어, 태그 칩은 유지
         }
 
         binding.etSearch.setOnEditorActionListener { _, _, _ ->
@@ -128,39 +130,103 @@ class HomeFragment : Fragment() {
             true
         }
 
-        // LiveData 관찰 (원하면 RecyclerView로 보여주기 가능)
+        // LiveData 관찰
         tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
+            // 필요시 자동완성 기능 구현
+        }
+
+        // 에러 상태 관찰 - TAG4001 에러 처리 추가
+        noteViewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Log.d("HomeFragment", "에러 발생: $error")
+                if (error.contains("TAG4001") || (error.contains("HTTP 404") && isSearchByTag)) {
+                    // TAG4001 에러 또는 태그 검색 중 HTTP 404 에러는 검색 결과가 없음을 의미
+                    Log.d("HomeFragment", "태그 검색 결과 없음 - 에러: $error")
+                    showEmptySearchResult()
+                } else if (!error.contains("HTTP 404")) {
+                    // 다른 에러는 토스트로 표시 (HTTP 404는 제외)
+                    // Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // 노트 데이터 관찰 - 빈 결과 처리
+        noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
+            Log.d("HomeFragment", "노트 목록 업데이트: ${notes.size}개, isSearchByTag: $isSearchByTag")
+            if (isSearchByTag && notes.isEmpty()) {
+                // 태그 검색 중이고 결과가 비어있으면 빈 결과 화면 표시
+                Log.d("HomeFragment", "태그 검색 결과 없음 - 빈 리스트")
+                showEmptySearchResult()
+            } else if (notes.isNotEmpty()) {
+                // 결과가 있으면 빈 결과 화면 숨기기
+                hideEmptySearchResult()
+            }
+        }
+
+        // Fragment 생성 시 외부 태그 검색이 있다면 실행
+        if (isExternalTagSearch && !selectedTag.isNullOrEmpty()) {
+            // Fragment가 완전히 로드된 후 태그 검색 실행
+            binding.root.post {
+                Log.d("HomeFragment", "외부 태그 검색 자동 실행: $selectedTag")
+                searchNotesByTag(selectedTag!!)
+            }
+        } else if (!isSearchByTag && !isExternalTagSearch) {
+            // 일반적인 홈 화면 진입 시에만 전체 노트 로드
+            Log.d("HomeFragment", "일반 홈 화면 진입 - 전체 노트 로드")
+            noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
         }
     }
 
+    private fun showEmptySearchResult() {
+        // ViewPager 숨기고 빈 결과 화면 표시
+        binding.viewPager.visibility = View.GONE
+        binding.emptyResultView.visibility = View.VISIBLE
+
+        // 텍스트 업데이트
+        binding.tvEmptyResult.text = if (selectedTag != null) {
+            "'$selectedTag' 태그에 대한 검색 결과가 없습니다"
+        } else {
+            "검색 결과가 없습니다"
+        }
+    }
+
+    private fun hideEmptySearchResult() {
+        // ViewPager 표시하고 빈 결과 화면 숨기기
+        binding.viewPager.visibility = View.VISIBLE
+        binding.emptyResultView.visibility = View.GONE
+    }
+
     private fun resetNoteSearch() {
+        Log.d("HomeFragment", "노트 목록 리셋 실행")
+
+        // 빈 결과 화면 숨기기
+        hideEmptySearchResult()
+
         // 전체 노트 목록으로 복원
-        noteViewModel.resetNotes() // resetNotes() 내부에서 exitTagSearchMode()가 호출됨
+        noteViewModel.resetNotes()
         noteViewModel.loadNotes(memberId = 1L, page = 0, size = 10)
 
-        // 로딩 상태 확인을 위해 로그 추가
-        Log.d("HomeFragment", "노트 목록 리셋 실행(태그)")
-
-        // HomeFragment의 상태 변수도 초기화
+        // HomeFragment의 상태 변수 초기화
         isSearchByTag = false
         selectedTag = null
+        isExternalTagSearch = false // 외부 태그 검색 모드도 초기화
 
         // 선택된 태그 칩 초기화
         binding.horizontalTagContainer.removeAllViews()
         addedTags.clear()
-    }
-    fun searchNotesByTag(tagName: String) {
-        // 기존 직접 API 호출하는 코드 대신 ViewModel 함수 활용
-        noteViewModel.searchNotesByTag(tagName, 1L, 0, 10)
 
-        // LiveData 관찰을 통한 처리
-        noteViewModel.notes.observe(viewLifecycleOwner) { notes ->
-            if (notes.isEmpty()) {
-                //Toast.makeText(requireContext(), "'$tagName' 태그가 포함된 노트가 없습니다", Toast.LENGTH_SHORT).show()
-            } else {
-                // Toast.makeText(requireContext(), "'$tagName' 태그 검색 결과: ${notes.size}개의 노트", Toast.LENGTH_SHORT).show()
-            }
-        }
+        // 검색창도 클리어
+        binding.etSearch.text.clear()
+    }
+
+    fun searchNotesByTag(tagName: String) {
+        Log.d("HomeFragment", "태그 검색 시작: $tagName")
+
+        // 빈 결과 화면 숨기기 (검색 시작 시)
+        hideEmptySearchResult()
+
+        // ViewModel을 통한 태그 검색
+        noteViewModel.searchNotesByTag(tagName, 1L, 0, 10)
     }
 
     private fun makeStatusBarTransparent() {
@@ -194,6 +260,9 @@ class HomeFragment : Fragment() {
             val newTag = Tag(name = name)
             addedTags.add(newTag)
             addChipForTag(newTag)
+            Log.d("HomeFragment", "태그 칩 추가: $name")
+        } else {
+            Log.d("HomeFragment", "태그 칩 이미 존재: $name")
         }
     }
 
@@ -207,25 +276,25 @@ class HomeFragment : Fragment() {
         tagText.text = "# ${tag.name}"
 
         btnDelete.setOnClickListener {
+            Log.d("HomeFragment", "태그 칩 삭제 클릭: ${tag.name}")
             addedTags.removeIf { it.name.equals(tag.name, ignoreCase = true) }
             (chipView.parent as? ViewGroup)?.removeView(chipView)
 
             // 선택된 태그를 삭제한 경우, 원래 노트 목록으로 돌아가기
             if (isSearchByTag && selectedTag == tag.name) {
-                isSearchByTag = false
-                selectedTag = null
                 resetNoteSearch()
             }
         }
 
-        // 태그 클릭 시 해당 태그로 검색
+        // 태그 클릭 시 해당 태그로 검색 (재검색)
         chipView.setOnClickListener {
+            Log.d("HomeFragment", "태그 칩 클릭: ${tag.name}")
             selectedTag = tag.name
             isSearchByTag = true
             searchNotesByTag(selectedTag!!)
         }
 
-        //  여기에 마진을 설정하여 칩 간 여백 주기
+        // 마진 설정하여 칩 간 여백 주기
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -234,8 +303,35 @@ class HomeFragment : Fragment() {
         chipView.layoutParams = layoutParams
 
         binding.horizontalTagContainer.addView(chipView)
+        Log.d("HomeFragment", "태그 칩이 컨테이너에 추가됨: ${tag.name}")
     }
 
+    /**
+     * 외부에서 태그 검색을 요청할 때 사용하는 메소드
+     * (버블 차트에서 태그 클릭 시 호출됨)
+     */
+    fun searchFromExternalTag(tagName: String) {
+        Log.d("HomeFragment", "외부에서 태그 검색 요청: $tagName")
+
+        // 외부 태그 검색 모드 활성화
+        isExternalTagSearch = true
+
+        // 기존 검색 상태는 초기화하지 않고, 새로운 태그만 추가
+        // 기존 태그들은 유지하면서 새 태그 추가
+        addTagIfNotExists(tagName)
+
+        // 태그 검색 실행
+        selectedTag = tagName
+        isSearchByTag = true
+
+        // 검색 실행
+        searchNotesByTag(tagName)
+
+        // 검색 결과 메시지 표시
+        //Toast.makeText(requireContext(), "'$tagName' 태그로 검색합니다", Toast.LENGTH_SHORT).show()
+
+        Log.d("HomeFragment", "현재 태그 컨테이너 자식 수: ${binding.horizontalTagContainer.childCount}")
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

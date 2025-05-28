@@ -7,9 +7,11 @@
 
     <ImageView
         android:id="@+id/ivExpandIcon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_expand" />
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:src="@drawable/ic_expand"
+        android:layout_gravity="center_vertical"
+        />
 
     <ImageView
         android:id="@+id/ivFolderIcon"
