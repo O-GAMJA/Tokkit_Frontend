@@ -32,7 +32,7 @@ class TagManageActivity : AppCompatActivity() {
         binding = ActivityTagManageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        insertDummyTagsIfEmpty()
+//        insertDummyTagsIfEmpty()
 
         val preSelectedTags = intent.getStringArrayListExtra("existingTags") ?: arrayListOf()
 

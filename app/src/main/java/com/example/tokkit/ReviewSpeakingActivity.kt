@@ -21,9 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.tokkit.ChatActivity
 import com.example.tokkit.data.remote.repository.ReviewRepository
-import com.example.tokkit.databinding.ActivityGenieChatBinding
 import com.example.tokkit.databinding.ActivityReviewSpeakingBinding
 import com.example.tokkit.genie.*
 import com.google.android.material.snackbar.Snackbar
@@ -33,9 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Paths
 import java.util.*
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import com.example.tokkit.util.CustomToastUtil
 
 
 class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
@@ -126,7 +123,11 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                 val bundle = intent.extras
                 if (bundle == null) {
                     Log.e("GenieChat", "설정 정보 누락")
-                    Toast.makeText(this, "설정 정보를 가져오지 못했습니다.", Toast.LENGTH_LONG).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "설정 정보를 가져오지 못했습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                     finish()
                     return
                 }
@@ -226,16 +227,19 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                                 }
 
                                 setResult(RESULT_OK, resultIntent)
-
-                                Toast.makeText(
-                                    this@ReviewSpeakingActivity,
-                                    if (result.newStage == "COMPLETE") "모든 복습이 완료되었습니다!" else "복습 완료!\n새 단계: ${result.newStage}",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                CustomToastUtil.showToast(
+                                    context = this@ReviewSpeakingActivity,
+                                    message = "모든 복습이 완료되었습니다!\" else \"복습 완료!\\n새 단계: ${result.newStage}",
+                                    iconResId = R.drawable.ic_bot
+                                )
 
                                 finish()
                             } else {
-                                Toast.makeText(this@ReviewSpeakingActivity, "복습 제출 실패", Toast.LENGTH_SHORT).show()
+                                CustomToastUtil.showToast(
+                                    context = this@ReviewSpeakingActivity,
+                                    message = "복습 제출 실패",
+                                    iconResId = R.drawable.ic_bot
+                                )
                             }
                         }
                     }
@@ -243,7 +247,11 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
 
             } catch (e: Exception) {
                 Log.e("GenieChat", "에러: ${e}")
-                Toast.makeText(this, "초기화 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "초기화 오류: ${e.message}",
+                    iconResId = R.drawable.ic_bot
+                )
                 finish()
             }
         }
@@ -470,7 +478,11 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
             if (requestCode == REQUEST_RECORD_AUDIO && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 initializeRecognizer()
             } else {
-                Toast.makeText(this, "음성 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "음성 권한이 필요합니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
 

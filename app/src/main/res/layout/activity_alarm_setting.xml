@@ -98,10 +98,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:thumbTint="@color/switch_thumb_color"
-                    android:trackTint="@color/switch_track_color" />
+                    android:trackTint="@color/switch_track_color"
+                    android:checked="true"/>
             </LinearLayout>
 
-            <!-- ✅ Divider 추가 -->
+            <!-- Divider 추가 -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -131,7 +132,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:thumbTint="@color/switch_thumb_color"
-                    android:trackTint="@color/switch_track_color" />
+                    android:trackTint="@color/switch_track_color"
+                    android:checked="true"/>
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>

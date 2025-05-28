@@ -18,7 +18,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.tokkit.databinding.ActivityChatBinding
 import com.example.tokkit.genie.ChatMessage
@@ -38,6 +37,7 @@ import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import com.example.tokkit.util.CustomToastUtil
 
 class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
     private lateinit var binding: ActivityChatBinding
@@ -191,11 +191,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 runOnUiThread {
                     // 로딩 오버레이 숨기기
                     hideNoteLoadingOverlay()
-
-                    Toast.makeText(this,
-                        "노트 생성 중 오류가 발생했습니다: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "노트 생성 중 오류가 발생했습니다: ${e.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }
@@ -351,7 +351,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             }
 
             override fun onError(error: Int) {
-                Toast.makeText(this@ChatActivity, "음성 인식 오류 발생: $error", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@ChatActivity,
+                    message = "음성 인식 오류 발생: $error",
+                    iconResId = R.drawable.ic_bot
+                )
 
                 // 원래 마이크 버튼 복귀
                 binding.lottieMic.cancelAnimation()
@@ -388,7 +392,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 speechRecognizer.startListening(intent)
             } catch (e: Exception) {
                 Log.e("ChatActivity", "STT 시작 오류: ${e.message}")
-                Toast.makeText(this, "음성 인식 시작 실패", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "음성 인식 시작 실패",
+                    iconResId = R.drawable.ic_bot
+                )
 
                 // 원래 마이크 버튼 복귀
                 binding.lottieMic.cancelAnimation()
@@ -495,7 +503,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 "SM8650" -> "qualcomm-snapdragon-8-gen3.json"
                 "QCS8550" -> "qualcomm-snapdragon-8-gen2.json"
                 else -> {
-                    Toast.makeText(this, "지원되지 않는 디바이스입니다", Toast.LENGTH_LONG).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "지원되지 않는 디바이스입니다",
+                        iconResId = R.drawable.ic_bot
+                    )
                     return
                 }
             }
@@ -519,7 +531,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 초기화 오류: ${e.message}", e)
-            Toast.makeText(this, "Genie 초기화 중 오류 발생: ${e.message}", Toast.LENGTH_LONG).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "Genie 초기화 중 오류 발생: ${e.message}",
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 
@@ -544,7 +560,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 "SM8650" -> "qualcomm-snapdragon-8-gen3.json"
                 "QCS8550" -> "qualcomm-snapdragon-8-gen2.json"
                 else -> {
-                    Toast.makeText(this, "지원되지 않는 디바이스입니다", Toast.LENGTH_LONG).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "지원되지 않는 디바이스입니다",
+                        iconResId = R.drawable.ic_bot
+                    )
                     return
                 }
             }
@@ -566,7 +586,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 대화 시작 오류: ${e.message}", e)
-            Toast.makeText(this, "Genie 대화 시작 중 오류 발생: ${e.message}", Toast.LENGTH_LONG).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "Genie 대화 시작 중 오류 발생: ${e.message}",
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 
@@ -657,7 +681,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         if (requestCode == REQUEST_RECORD_AUDIO && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             initializeRecognizer()
         } else {
-            Toast.makeText(this, "음성 인식을 위해 마이크 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "음성 인식을 위해 마이크 권한이 필요합니다",
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 

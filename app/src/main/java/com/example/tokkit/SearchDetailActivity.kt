@@ -43,6 +43,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
+import com.example.tokkit.util.CustomToastUtil
 
 class SearchDetailActivity : AppCompatActivity() {
 
@@ -123,7 +124,11 @@ class SearchDetailActivity : AppCompatActivity() {
                 binding.fireCount.text = emojiStatus.count["fire"]?.toString() ?: "0"
                 binding.hundredCount.text = emojiStatus.count["hundred"]?.toString() ?: "0"
             } else {
-                Toast.makeText(this, "노트를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "노트를 불러올 수 없습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
 
@@ -241,7 +246,11 @@ class SearchDetailActivity : AppCompatActivity() {
                 val response = RetrofitClient.noteApi.updateNote(noteId, patchData)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
                     isModified = true
-                    Toast.makeText(this@SearchDetailActivity, "노트가 수정되었습니다.", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@SearchDetailActivity,
+                        message = "노트가 수정되었습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
 
                     // 마크다운 결과 반영
                     binding.tvTitle.text = newTitle
@@ -264,11 +273,19 @@ class SearchDetailActivity : AppCompatActivity() {
 
                     isEditMode = false
                 } else {
-                    Toast.makeText(this@SearchDetailActivity, "수정 실패", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@SearchDetailActivity,
+                        message = "수정 실패",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("SaveNote", "오류", e)
-                Toast.makeText(this@SearchDetailActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@SearchDetailActivity,
+                    message = "네트워크 오류",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }
@@ -279,19 +296,30 @@ class SearchDetailActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.noteApi.deleteNote(noteId)
                 if (response.isSuccessful && response.body()?.isSuccess == true) {
-                    Toast.makeText(this@SearchDetailActivity, "노트가 삭제되었습니다.", Toast.LENGTH_SHORT).show()
-
+                    CustomToastUtil.showToast(
+                        context = this@SearchDetailActivity,
+                        message = "노트가 삭제되었습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                     val result = Intent().apply {
                         putExtra("noteDeleted", true)
                     }
                     setResult(RESULT_OK, result)
                     finish()
                 } else {
-                    Toast.makeText(this@SearchDetailActivity, "삭제 실패: ${response.body()?.message}", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@SearchDetailActivity,
+                        message = "삭제 실패: ${response.body()?.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("DeleteNote", "삭제 오류", e)
-                Toast.makeText(this@SearchDetailActivity, "서버 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@SearchDetailActivity,
+                    message = "서버 오류가 발생했습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }
@@ -513,7 +541,7 @@ class SearchDetailActivity : AppCompatActivity() {
                         etComment?.text?.clear()
                         replyingToCommentId = null
                         etComment?.hint = "댓글을 입력하세요"
-                        Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
+//                        Toast.makeText(this, "댓글 등록 완료", Toast.LENGTH_SHORT).show()
 
                         // 댓글 등록 후 초기화 + 0페이지 로드
                         currentPage = 0
@@ -522,7 +550,11 @@ class SearchDetailActivity : AppCompatActivity() {
                         noteViewModel.loadComments(noteId, 0)
                     },
                     onFail = {
-                        Toast.makeText(this, "댓글 등록 실패", Toast.LENGTH_SHORT).show()
+                        CustomToastUtil.showToast(
+                            context = this,
+                            message = "댓글 등록 실패",
+                            iconResId = R.drawable.ic_bot
+                        )
                     }
                 )
             }
@@ -682,7 +714,11 @@ class SearchDetailActivity : AppCompatActivity() {
                             noteViewModel.resetComments()
                             noteViewModel.loadComments(currentNoteId!!, 0)
                         } else {
-                            Toast.makeText(this, "삭제 실패", Toast.LENGTH_SHORT).show()
+                            CustomToastUtil.showToast(
+                                context = this,
+                                message = "삭제 실패",
+                                iconResId = R.drawable.ic_bot
+                            )
                         }
                     }
                     true
@@ -723,7 +759,11 @@ class SearchDetailActivity : AppCompatActivity() {
                         noteViewModel.resetComments()
                         noteViewModel.loadComments(currentNoteId!!, 0)
                     } else {
-                        Toast.makeText(this, "수정 실패", Toast.LENGTH_SHORT).show()
+                        CustomToastUtil.showToast(
+                            context = this,
+                            message = "수정 실패",
+                            iconResId = R.drawable.ic_bot
+                        )
                     }
                     dialog.dismiss()
                 }
@@ -745,7 +785,11 @@ class SearchDetailActivity : AppCompatActivity() {
                 noteViewModel.resetComments()
                 noteViewModel.loadComments(currentNoteId!!, 0)
             } else {
-                Toast.makeText(this, "이모지 처리 실패", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이모지 처리 실패",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }

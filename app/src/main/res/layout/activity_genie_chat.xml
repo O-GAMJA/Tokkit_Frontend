@@ -118,7 +118,7 @@
         android:layout_height="65dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="채팅 모드 전환"
-        android:src="@drawable/rabbit1"
+        android:src="@drawable/ic_bot"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toBottomOf="@+id/btn_mic"
         app:layout_constraintEnd_toStartOf="@+id/btn_mic"

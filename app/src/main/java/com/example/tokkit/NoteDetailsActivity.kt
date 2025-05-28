@@ -14,18 +14,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.data.remote.api.S3ApiService
-import com.example.tokkit.data.remote.model.ApiResponse
 import com.example.tokkit.data.remote.model.NoteCreateRequest
 import com.example.tokkit.databinding.ActivityNoteDetailsBinding
 import com.example.tokkit.genie.ConversationManager
@@ -45,6 +41,7 @@ import java.io.File
 import java.util.UUID
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.example.tokkit.util.CustomToastUtil
 
 
 class NoteDetailsActivity : AppCompatActivity() {
@@ -125,7 +122,11 @@ class NoteDetailsActivity : AppCompatActivity() {
             Log.d("NoteDetails", "노트 저장 API 호출 시작")
 
             // 저장 시도 메시지 표시
-            Toast.makeText(this, "노트를 저장 중입니다...", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "노트를 저장 중입니다...",
+                iconResId = R.drawable.ic_bot
+            )
 
             saveNoteToServer(
                 noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "노트 제목",
@@ -223,7 +224,7 @@ class NoteDetailsActivity : AppCompatActivity() {
                         binding.imageUpload.requestLayout()
 
                         // 성공 메시지 표시
-                        Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
 
                         // 임시 파일 정리 (약간의 지연 후) - LocalDream의 임시 파일인 경우만
                         val isTempFile = intent.getBooleanExtra("IS_TEMP_FILE", false)
@@ -603,7 +604,11 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // 결과를 기다리기 위해 finish() 안함
                 // finish()
             } catch (e: Exception) {
-                Toast.makeText(this@NoteDetailsActivity, "오프라인 AI 앱을 찾을 수 없습니다", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@NoteDetailsActivity,
+                    message = "오프라인 AI 앱을 찾을 수 없습니다",
+                    iconResId = R.drawable.ic_bot
+                )
                 Log.e("NoteDetails", "LocalDream 앱 실행 실패", e)
             }
         }
@@ -721,7 +726,11 @@ class NoteDetailsActivity : AppCompatActivity() {
                                 isFirstResource: Boolean
                             ): Boolean {
                                 Log.e("NoteDetails", "생성된 이미지 로드 실패: ${e?.message}", e)
-                                Toast.makeText(this@NoteDetailsActivity, "이미지 로드에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                                CustomToastUtil.showToast(
+                                    context = this@NoteDetailsActivity,
+                                    message = "이미지 로드에 실패했습니다.",
+                                    iconResId = R.drawable.ic_bot
+                                )
                                 return false
                             }
 
@@ -745,7 +754,7 @@ class NoteDetailsActivity : AppCompatActivity() {
                                 binding.imageUpload.requestLayout()
 
                                 // 성공 메시지 표시
-                                Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
+                                //Toast.makeText(this@NoteDetailsActivity, "이미지가 생성되었습니다!", Toast.LENGTH_SHORT).show()
 
                                 // 임시 파일 정리를 지연시킴 (이미지 로드 후)
                                 val isTempFile = intent.getBooleanExtra("IS_TEMP_FILE", false)
@@ -769,11 +778,19 @@ class NoteDetailsActivity : AppCompatActivity() {
 
                 } else {
                     Log.e("NoteDetails", "생성된 이미지 파일을 찾을 수 없음: $imagePath")
-                    Toast.makeText(this, "생성된 이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "생성된 이미지를 불러올 수 없습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             } else {
                 Log.e("NoteDetails", "이미지 경로가 비어있음")
-                Toast.makeText(this, "이미지 경로를 받지 못했습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미지 경로를 받지 못했습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }
@@ -880,7 +897,7 @@ class NoteDetailsActivity : AppCompatActivity() {
                 if (uploadResponse.isSuccessful) {
                     Log.d("NoteDetails", "S3 업로드 성공: $imageKey")
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(this@NoteDetailsActivity, "이미지가 서버에 업로드되었습니다", Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this@NoteDetailsActivity, "이미지가 서버에 업로드되었습니다", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext imageKey
                 } else {
@@ -907,13 +924,18 @@ class NoteDetailsActivity : AppCompatActivity() {
         // 빈 데이터 검사
         if (markdownContent.isBlank()) {
             Log.e("NoteDetails", "마크다운 내용이 비어있어 저장할 수 없습니다")
-            Toast.makeText(this, "저장할 노트 내용이 없습니다.", Toast.LENGTH_SHORT).show()
+
+            //Toast.makeText(this, "저장할 노트 내용이 없습니다.", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (noteTitle.isBlank()) {
             Log.e("NoteDetails", "노트 제목이 비어있어 저장할 수 없습니다")
-            Toast.makeText(this, "노트 제목이 필요합니다.", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "노트 제목이 필요합니다.",
+                iconResId = R.drawable.ic_bot
+            )
             return
         }
 
@@ -934,13 +956,13 @@ class NoteDetailsActivity : AppCompatActivity() {
                 // LocalDream에서 생성된 이미지가 있는 경우 S3에 업로드
                 if (generatedImageBitmap != null && finalImageKey.isNullOrEmpty()) {
                     Log.d("NoteDetails", "LocalDream 생성 이미지를 S3에 업로드 시도")
-                    Toast.makeText(this@NoteDetailsActivity, "이미지를 업로드 중입니다...", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(this@NoteDetailsActivity, "이미지를 업로드 중입니다...", Toast.LENGTH_SHORT).show()
 
                     finalImageKey = uploadImageToS3(generatedImageBitmap!!)
 
                     if (finalImageKey == null) {
                         Log.e("NoteDetails", "이미지 업로드 실패, 기본 이미지 키 사용")
-                        Toast.makeText(this@NoteDetailsActivity, "이미지 업로드에 실패했습니다. 기본 이미지로 저장됩니다.", Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this@NoteDetailsActivity, "이미지 업로드에 실패했습니다. 기본 이미지로 저장됩니다.", Toast.LENGTH_SHORT).show()
                         finalImageKey = "profile-images/test-image_c37fb6f2-2fec-4d41-8f06-53d226de2ac6"
                     }
                 }
@@ -1004,7 +1026,11 @@ class NoteDetailsActivity : AppCompatActivity() {
                     Log.d("NoteDetails", "대화 내용 초기화 완료")
 
                     // 성공 메시지 표시
-                    Toast.makeText(this@NoteDetailsActivity, "노트가 저장되었습니다", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@NoteDetailsActivity,
+                        message = "노트가 저장되었습니다",
+                        iconResId = R.drawable.ic_bot
+                    )
 
                     // 메인 화면으로 돌아가기
                     val intent = Intent(this@NoteDetailsActivity, MainActivity::class.java)
@@ -1014,7 +1040,11 @@ class NoteDetailsActivity : AppCompatActivity() {
                 } else {
                     // 저장 실패
                     Log.e("NoteDetails", "노트 저장 실패: ${response.message}")
-                    Toast.makeText(this@NoteDetailsActivity, "노트 저장에 실패했습니다: ${response.message}", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@NoteDetailsActivity,
+                        message = "노트 저장에 실패했습니다: ${response.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             } catch (e: HttpException) {
                 // HTTP 예외 처리
@@ -1022,11 +1052,19 @@ class NoteDetailsActivity : AppCompatActivity() {
                 val errorBody = e.response()?.errorBody()?.string() ?: "오류 내용 없음"
 
                 Log.e("NoteDetails", "HTTP 오류 발생: 코드=$errorCode, 응답 본문=$errorBody", e)
-                Toast.makeText(this@NoteDetailsActivity, "서버 오류가 발생했습니다 (코드: $errorCode)", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@NoteDetailsActivity,
+                    message = "서버 오류가 발생했습니다 (코드: $errorCode)",
+                    iconResId = R.drawable.ic_bot
+                )
             } catch (e: Exception) {
                 // 일반 예외 처리
                 Log.e("NoteDetails", "노트 저장 중 오류 발생", e)
-                Toast.makeText(this@NoteDetailsActivity, "오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@NoteDetailsActivity,
+                    message = "오류 발생: ${e.message}",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }

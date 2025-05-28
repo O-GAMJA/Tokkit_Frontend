@@ -4,9 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityRegisterPhoneVarificationBinding
+import com.example.tokkit.util.CustomToastUtil
 
 class RegisterPhoneVarificationActivity : AppCompatActivity() {
 
@@ -54,7 +54,11 @@ class RegisterPhoneVarificationActivity : AppCompatActivity() {
         }
 
         // 테스트를 위해 인증번호 출력
-        Toast.makeText(this, "인증번호: $verificationCode", Toast.LENGTH_LONG).show()
+        CustomToastUtil.showToast(
+            context = this,
+            message = "인증번호: $verificationCode",
+            iconResId = R.drawable.ic_bot
+        )
     }
 
     private fun validateCode() {

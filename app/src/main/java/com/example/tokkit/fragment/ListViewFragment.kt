@@ -130,7 +130,7 @@ class ListViewFragment : Fragment() {
         // 에러 상태 관찰
         noteViewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                //Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
     }

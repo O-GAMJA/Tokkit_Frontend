@@ -8,20 +8,15 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.tokkit.adapter.HomePagerAdapter
 import com.example.tokkit.adapter.TagListAdapter
 import com.example.tokkit.data.local.entities.Tag
-import com.example.tokkit.data.remote.api.NoteApiService
 import com.example.tokkit.databinding.FragmentHomeBinding
-import com.example.tokkit.util.RetrofitClient
-import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
 
 class HomeFragment : Fragment() {
@@ -74,26 +69,26 @@ class HomeFragment : Fragment() {
         tagAdapter = TagListAdapter { clickedTag ->
             addTagIfNotExists(clickedTag.name)
             binding.etSearch.text.clear()
-            binding.cardRecyclerWrapper.visibility = View.GONE
+//            binding.cardRecyclerWrapper.visibility = View.GONE
 
             // 태그 선택 시 해당 태그로 노트 검색
             selectedTag = clickedTag.name
             isSearchByTag = true
             searchNotesByTag(selectedTag!!)
         }
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = tagAdapter
+//        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+//        binding.recyclerView.adapter = tagAdapter
 
-        // 검색 결과 관찰
-        tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
-            if (tags.isNotEmpty()) {
-                tagAdapter.submitList(tags)
-                binding.cardRecyclerWrapper.visibility = View.VISIBLE
-            } else {
-                tagAdapter.submitList(emptyList())
-                binding.cardRecyclerWrapper.visibility = View.GONE
-            }
-        }
+//        // 검색 결과 관찰
+//        tagViewModel.filteredTags.observe(viewLifecycleOwner) { tags ->
+//            if (tags.isNotEmpty()) {
+//                tagAdapter.submitList(tags)
+//                binding.cardRecyclerWrapper.visibility = View.VISIBLE
+//            } else {
+//                tagAdapter.submitList(emptyList())
+//                binding.cardRecyclerWrapper.visibility = View.GONE
+//            }
+//        }
 
         // 검색 실시간 반영
         binding.etSearch.addTextChangedListener(object : TextWatcher {

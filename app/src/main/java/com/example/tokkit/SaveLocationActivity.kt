@@ -25,6 +25,7 @@ import com.example.tokkit.databinding.DialogAddFolderBinding
 import com.example.tokkit.util.RetrofitClient
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import com.example.tokkit.util.CustomToastUtil
 
 class SaveLocationActivity : AppCompatActivity() {
 
@@ -115,18 +116,26 @@ class SaveLocationActivity : AppCompatActivity() {
                 } else {
                     // API 호출은 성공했지만 결과가 실패인 경우
                     Log.e("SaveLocation", "디렉토리 트리 로드 실패: ${response.message}")
-                    Toast.makeText(this@SaveLocationActivity, "폴더 정보를 불러오지 못했습니다: ${response.message}", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@SaveLocationActivity,
+                        message = "폴더 정보를 불러오지 못했습니다: ${response.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                     setupDefaultFolders()
                 }
             } catch (e: HttpException) {
                 // HTTP 에러 발생 시
                 Log.e("SaveLocation", "디렉토리 트리 API 호출 에러: ${e.message()}", e)
-                Toast.makeText(this@SaveLocationActivity, "서버 연결 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@SaveLocationActivity, "서버 연결 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
                 setupDefaultFolders()
             } catch (e: Exception) {
                 // 기타 예외 발생 시
                 Log.e("SaveLocation", "디렉토리 트리 로드 중 예외 발생", e)
-                Toast.makeText(this@SaveLocationActivity, "폴더 정보를 불러오는 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@SaveLocationActivity,
+                    message = "폴더 정보를 불러오는 중 오류가 발생했습니다",
+                    iconResId = R.drawable.ic_bot
+                )
                 setupDefaultFolders()
             } finally {
                 showLoading(false)
@@ -345,15 +354,27 @@ class SaveLocationActivity : AppCompatActivity() {
                             loadDirectoryTree()
                         } else {
                             // API 호출은 성공했지만 결과가 실패인 경우
-                            Toast.makeText(this@SaveLocationActivity, "폴더 추가 실패: ${response.message}", Toast.LENGTH_SHORT).show()
+                            CustomToastUtil.showToast(
+                                context = this@SaveLocationActivity,
+                                message = "폴더 추가 실패: ${response.message}",
+                                iconResId = R.drawable.ic_bot
+                            )
                         }
                     } catch (e: Exception) {
                         Log.e("SaveLocation", "폴더 추가 중 오류 발생", e)
-                        Toast.makeText(this@SaveLocationActivity, "폴더 추가 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
+                        CustomToastUtil.showToast(
+                            context = this@SaveLocationActivity,
+                            message = "폴더 추가 중 오류가 발생했습니다: ${e.message}",
+                            iconResId = R.drawable.ic_bot
+                        )
                     }
                 }
             } else {
-                Toast.makeText(this@SaveLocationActivity, "폴더명을 입력해주세요", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@SaveLocationActivity,
+                    message = "폴더명을 입력해주세요",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }

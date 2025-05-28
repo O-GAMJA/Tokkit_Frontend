@@ -2,9 +2,9 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityEditNicknameBinding
+import com.example.tokkit.util.CustomToastUtil
 
 class EditNicknameActivity : AppCompatActivity() {
 
@@ -24,7 +24,11 @@ class EditNicknameActivity : AppCompatActivity() {
             resultIntent.putExtra("NEW_NICKNAME", newNickname)
             setResult(RESULT_OK, resultIntent)
 
-            Toast.makeText(this, "닉네임이 저장되었습니다", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "닉네임이 저장되었습니다.",
+                iconResId = R.drawable.ic_bot
+            )
             finish()
         }
 

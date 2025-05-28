@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.data.remote.model.ReviewStat
 import com.example.tokkit.data.remote.repository.ReviewRepository
@@ -15,6 +14,7 @@ import com.example.tokkit.adapter.ReviewStatAdapter
 import kotlinx.coroutines.launch
 import android.util.Log
 import java.nio.file.Paths
+import com.example.tokkit.util.CustomToastUtil
 
 class ForgettingCurveActivity : AppCompatActivity() {
 
@@ -60,27 +60,16 @@ class ForgettingCurveActivity : AppCompatActivity() {
             finish()
         }
 
-        // 퀴즈 버튼
-//        binding.btnQuiz.setOnClickListener {
-//            if (isComplete) {
-//                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
-//                return@setOnClickListener
-//            }
-//
-//            val intent = Intent(this, QuizActivity::class.java)
-//            intent.putExtra("ARTICLE_TITLE", articleTitle)
-//            intent.putExtra("ARTICLE_STAGE", articleStage)
-//            startActivity(intent)
-//        }
-
         binding.btnQuiz.setOnClickListener {
             if (isComplete) {
-                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미 복습이 완료된 노트입니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
-//            val memberId = getSharedPreferences("auth", MODE_PRIVATE).getLong("MEMBER_ID", -1)
-//            if (memberId == -1L || noteId == null) return@setOnClickListener
             val memberId = 1L
             if (noteId == null) return@setOnClickListener
 
@@ -95,7 +84,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
                     }
                     startActivity(intent)
                 } else {
-                    Toast.makeText(this@ForgettingCurveActivity, "퀴즈가 존재하지 않습니다.", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@ForgettingCurveActivity,
+                        message = "퀴즈가 존재하지 않습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }
@@ -104,7 +97,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
         // 말하기 버튼 - startActivityForResult 사용
         binding.btnSpeak.setOnClickListener {
             if (isComplete) {
-                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미 복습이 완료된 노트입니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
@@ -117,7 +114,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
                 "SM8650" -> "qualcomm-snapdragon-8-gen3.json"
                 "QCS8550" -> "qualcomm-snapdragon-8-gen2.json"
                 else -> {
-                    Toast.makeText(this, "지원되지 않는 디바이스입니다", Toast.LENGTH_LONG).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "지원되지 않는 디바이스입니다",
+                        iconResId = R.drawable.ic_bot
+                    )
                     return@setOnClickListener
                 }
             }
@@ -178,7 +179,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
             } else {
                 "복습이 완료되었습니다! 새 단계: $newStage"
             }
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = message,
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 
@@ -206,7 +211,11 @@ class ForgettingCurveActivity : AppCompatActivity() {
                 updateGraph(articleStage, isComplete)
 
             } else {
-                Toast.makeText(this@ForgettingCurveActivity, "복습 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@ForgettingCurveActivity,
+                    message = "복습 정보를 불러오지 못했습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         }
     }
