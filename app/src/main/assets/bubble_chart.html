@@ -39,6 +39,25 @@
           text-anchor: middle;
           dominant-baseline: middle;
         }
+
+        /* 버블 호버 효과 추가 */
+        .bubble-group {
+          cursor: pointer;
+          transition: opacity 0.2s;
+        }
+
+        .bubble-group:hover {
+          opacity: 0.8;
+        }
+
+        .bubble-group circle {
+          transition: stroke-width 0.2s;
+        }
+
+        .bubble-group:hover circle {
+          stroke: #fff;
+          stroke-width: 2px;
+        }
     </style>
 </head>
 <body>
@@ -74,13 +93,6 @@
         color: generateDistinctColor(i, sortedData.length)
       }));
 
-      // 데이터 가공 - 모든 태그 보여주는 버전
-<!--      const data = tagData.map((d, i) => ({-->
-<!--        name: d.name,-->
-<!--        size: d.count * 10 + 40,-->
-<!--        color: generateDistinctColor(i, tagData.length)-->
-<!--      }));-->
-
       const nodes = data.map(d => Object.assign({}, d, {
         r: d.size / 2,
         x: Math.random() * width,
@@ -99,11 +111,20 @@
         .data(nodes)
         .enter()
         .append("g")
+        .attr("class", "bubble-group")  // CSS 클래스 추가
         .call(d3.drag()
           .on("start", dragstarted)
           .on("drag", dragged)
           .on("end", dragended)
-        );
+        )
+        // 클릭 이벤트 추가
+        .on("click", function(event, d) {
+          console.log("태그 클릭됨:", d.name);
+          // Android WebView로 태그 클릭 이벤트 전달
+          if (typeof Android !== 'undefined' && Android.onTagClicked) {
+            Android.onTagClicked(d.name);
+          }
+        });
 
       g.append("circle")
         .attr("r", d => d.r)
