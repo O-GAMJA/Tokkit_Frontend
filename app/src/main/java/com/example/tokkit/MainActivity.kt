@@ -75,9 +75,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // 초기 프래그먼트 설정
         if (savedInstanceState == null) {
-            showFragment(TAG_HOME)
+            val goToReview = intent.getBooleanExtra("GO_TO_REVIEW", false)
+            if (goToReview) {
+                showFragment(TAG_REVIEW)
+                binding.bottomNavigationView.selectedItemId = R.id.fragment_review
+            } else {
+                showFragment(TAG_HOME)
+            }
         } else {
-            // 화면 회전 등으로 인한 복원 시 현재 Fragment 태그 복원
             currentFragmentTag = savedInstanceState.getString("current_fragment_tag", TAG_HOME)
         }
 
@@ -119,8 +124,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // 새로운 Intent가 들어왔을 때도 처리
-        handleTagSearchIntent(intent)
+
+        val goToReview = intent.getBooleanExtra("GO_TO_REVIEW", false)
+        if (goToReview) {
+            showFragment(TAG_REVIEW)
+            binding.bottomNavigationView.selectedItemId = R.id.fragment_review
+        }
     }
 
     private fun handleTagSearchIntent(intent: Intent?) {
