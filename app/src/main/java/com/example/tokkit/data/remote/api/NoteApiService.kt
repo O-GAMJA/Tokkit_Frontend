@@ -46,6 +46,14 @@ interface NoteApiService {
         @Query("size") size: Int = 5
     ): ApiResponse<SimilarNoteResponse>
 
+    // 추천 노트 조회 api
+    @GET("/search/recommendations")
+    suspend fun getRecommendedNotes(
+        @Query("memberId") memberId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): ApiResponse<SearchResponse>
+
     // 이모지 추가 api
     @POST("/notes/{noteId}/emoji")
     suspend fun addEmoji(
@@ -123,13 +131,13 @@ interface NoteApiService {
         @Body notes: List<NoteCreateRequest>
     ): ApiResponse<NoteCreateResponse>
 
-    // 유저가 가진 태그 개수 조회(버블 차트)
+    // 유저가 가진 태그 개수 조회(버블 차트) api
     @GET("/notes/tags")
     suspend fun getTagsByMemberId(
         @Query("memberId") memberId: Long
     ): ApiResponse<List<TagCount>>
 
-    // 특정 태그로 노트 목록 조회(검색)
+    // 특정 태그로 노트 목록 조회(검색) api
     @GET("/notes/tags/{tagName}")
     suspend fun getNotesByTag(
         @Path("tagName") tagName: String,
@@ -137,4 +145,8 @@ interface NoteApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10
     ): ApiResponse<NoteListResult>
+
+    // 음성강의 조회 api
+    @GET("/{noteId}")
+    suspend fun getLectureAudio(@Path("noteId") noteId: String): Response<ApiResponse<LectureAudioResponse>>
 }

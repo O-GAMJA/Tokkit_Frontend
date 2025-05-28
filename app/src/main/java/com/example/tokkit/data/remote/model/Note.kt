@@ -151,3 +151,8 @@ data class SearchPaginationInfo(
 data class OcrResponse(
     val translatedText: String
 )
+
+data class LectureAudioResponse(
+    val notedId: String,
+    val audioUrl: String
+)

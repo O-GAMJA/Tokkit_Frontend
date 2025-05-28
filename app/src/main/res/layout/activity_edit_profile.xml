@@ -149,6 +149,7 @@
                 android:textSize="16sp" />
 
             <TextView
+                android:id="@+id/idText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="abxcdje"
@@ -190,35 +191,6 @@
         <View android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#EEEEEE"/>
-
-        <!-- 전화번호 -->
-        <LinearLayout
-            android:id="@+id/phoneLayout"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="전화번호"
-                android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="010-0000-0000"
-                android:textColor="#888888"
-                android:layout_marginEnd="28dp" />
-
-<!--            <ImageView-->
-<!--                android:layout_width="20dp"-->
-<!--                android:layout_height="20dp"-->
-<!--                android:src="@drawable/ic_forward" />-->
-        </LinearLayout>
 
         <View android:layout_width="match_parent"
             android:layout_height="1dp"

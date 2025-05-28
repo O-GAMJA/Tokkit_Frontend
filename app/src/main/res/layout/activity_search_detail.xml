@@ -343,4 +343,44 @@
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- 재생 버튼 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnPlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_play"
+        android:contentDescription="재생"
+        app:backgroundTint="@color/bora200"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@id/reactionLayout"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 정지 버튼 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnStop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_stop"
+        android:contentDescription="정지"
+        app:backgroundTint="@color/bora200"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/reactionLayout"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 초기화 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnRestart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_restart"
+        android:contentDescription="처음부터 재생"
+        app:backgroundTint="@color/bora200"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/reactionLayout"
+        app:layout_constraintEnd_toStartOf="@id/btnStop" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

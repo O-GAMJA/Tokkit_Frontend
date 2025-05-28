@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import com.example.tokkit.databinding.ActivityEditProfileBinding
 
 class EditProfileActivity : AppCompatActivity() {
@@ -18,6 +19,19 @@ class EditProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val nickname = intent.getStringExtra("nickname") ?: "닉네임 없음"
+        val email = intent.getStringExtra("email") ?: "이메일 없음"
+        val profileImageUrl = intent.getStringExtra("profileImageUrl")
+
+        binding.nicknameText.text = nickname
+        binding.idText.text = email
+
+        Glide.with(this)
+            .load(profileImageUrl)
+            .circleCrop()
+            .into(binding.profileImage)
+
 
         nicknameLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
