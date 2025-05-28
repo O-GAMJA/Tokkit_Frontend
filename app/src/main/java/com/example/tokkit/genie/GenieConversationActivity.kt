@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tokkit.ChatActivity
+import com.example.tokkit.R
 import com.example.tokkit.databinding.ActivityGenieChatBinding
 import com.google.android.material.snackbar.Snackbar
 import java.nio.file.Paths
@@ -29,6 +30,7 @@ import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import com.example.tokkit.util.CustomToastUtil
 
 class GenieConversationActivity : AppCompatActivity(), ConversationManager.ConversationChangeListener {
 
@@ -115,7 +117,11 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             val bundle = intent.extras
             if (bundle == null) {
                 Log.e("GenieChat", "설정 정보 누락")
-                Toast.makeText(this, "설정 정보를 가져오지 못했습니다.", Toast.LENGTH_LONG).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "설정 정보를 가져오지 못했습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 finish()
                 return
             }
@@ -187,7 +193,11 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
         } catch (e: Exception) {
             Log.e("GenieChat", "에러: ${e}")
-            Toast.makeText(this, "초기화 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "초기화 오류: ${e.message}",
+                iconResId = R.drawable.ic_bot
+            )
             finish()
         }
     }
@@ -224,7 +234,11 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             }
 
             override fun onError(error: Int) {
-                Toast.makeText(this@GenieConversationActivity, "STT 오류 발생: $error", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this@GenieConversationActivity,
+                    message = "STT 오류 발생: $error",
+                    iconResId = R.drawable.ic_bot
+                )
 
                 // 원래 마이크 버튼 복귀
                 binding.lottieMic.cancelAnimation()
@@ -415,9 +429,11 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                     // 로딩 오버레이 숨기기
                     hideNoteLoadingOverlay()
 
-                    Toast.makeText(this@GenieConversationActivity,
-                        "노트 생성 중 오류가 발생했습니다: ${e.message}",
-                        Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@GenieConversationActivity,
+                        message = "노트 생성 중 오류가 발생했습니다: ${e.message}",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }
@@ -505,7 +521,11 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         if (requestCode == REQUEST_RECORD_AUDIO && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             initializeRecognizer()
         } else {
-            Toast.makeText(this, "음성 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "음성 권한이 필요합니다.",
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 

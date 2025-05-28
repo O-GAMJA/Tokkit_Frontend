@@ -3,9 +3,9 @@ package com.example.tokkit
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityEditPasswordBinding
+import com.example.tokkit.util.CustomToastUtil
 
 class EditPasswordActivity : AppCompatActivity() {
 
@@ -39,7 +39,11 @@ class EditPasswordActivity : AppCompatActivity() {
                     setResult(RESULT_OK, resultIntent)
 
                     binding.tvPasswordError.visibility = View.GONE
-                    Toast.makeText(this, "비밀번호가 저장되었습니다", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "비밀번호가 저장되었습니다",
+                        iconResId = R.drawable.ic_bot
+                    )
                     finish()
                 }
             }

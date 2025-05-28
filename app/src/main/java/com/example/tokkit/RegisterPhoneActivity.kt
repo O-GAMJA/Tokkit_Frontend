@@ -2,9 +2,10 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.tokkit.databinding.ActivityRegisterPhoneBinding
+import com.example.tokkit.util.CustomToastUtil
+
 class RegisterPhoneActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRegisterPhoneBinding
@@ -34,13 +35,21 @@ class RegisterPhoneActivity : AppCompatActivity() {
 
         // 전화번호 유효성 검사
         if (phoneNumber.isEmpty()) {
-            Toast.makeText(this, "전화번호를 입력해주세요", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "전화번호를 입력해주세요",
+                iconResId = R.drawable.ic_bot
+            )
             return
         }
 
         // 전화번호 형식 검사 (간단한 검사)
         if (!phoneNumber.matches(Regex("^01[0-9]{8,9}$"))) {
-            Toast.makeText(this, "올바른 전화번호 형식이 아닙니다", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "올바른 전화번호 형식이 아닙니다",
+                iconResId = R.drawable.ic_bot
+            )
             return
         }
 

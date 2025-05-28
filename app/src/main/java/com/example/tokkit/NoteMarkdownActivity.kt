@@ -2,8 +2,6 @@ package com.example.tokkit
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -56,7 +54,7 @@ class NoteMarkdownActivity : AppCompatActivity() {
         // 저장 버튼
         binding.btnSave.setOnClickListener {
             val noteContent = binding.markdownEditor.text.toString()
-            Toast.makeText(this, "노트가 저장되었습니다.", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this, "노트가 저장되었습니다.", Toast.LENGTH_SHORT).show()
 
             val userTitle = binding.tvTitle.text.toString()
             Log.d("NoteMarkdown", "NoteDetailsActivity로 제목 전달: $userTitle")

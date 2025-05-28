@@ -3,7 +3,6 @@ package com.example.tokkit
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.tokkit.data.remote.repository.ReviewRepository
@@ -11,6 +10,7 @@ import com.example.tokkit.databinding.ActivityReviewTypeBinding
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
 import com.example.tokkit.data.remote.repository.NoteRepository
+import com.example.tokkit.util.CustomToastUtil
 
 
 class ReviewTypeActivity : AppCompatActivity() {
@@ -41,19 +41,31 @@ class ReviewTypeActivity : AppCompatActivity() {
         binding.cardSpeak.setOnClickListener {
             Log.d("DEBUG", "cardSpeak 클릭됨")
             if (isComplete) {
-                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미 복습이 완료된 노트입니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
             if (noteId == null) {
-                Toast.makeText(this, "노트 ID가 없습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "노트 ID가 없습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
             lifecycleScope.launch {
                 val note = NoteRepository().getNoteById(noteId!!)
                 if (note == null || note.content == null) {
-                    Toast.makeText(this@ReviewTypeActivity, "노트를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this@ReviewTypeActivity,
+                        message = "노트를 불러오는 데 실패했습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                     return@launch
                 }
 
@@ -66,7 +78,11 @@ class ReviewTypeActivity : AppCompatActivity() {
                     "SM8650" -> "qualcomm-snapdragon-8-gen3.json"
                     "QCS8550" -> "qualcomm-snapdragon-8-gen2.json"
                     else -> {
-                        Toast.makeText(this@ReviewTypeActivity, "지원되지 않는 디바이스입니다", Toast.LENGTH_LONG).show()
+                        CustomToastUtil.showToast(
+                            context = this@ReviewTypeActivity,
+                            message = "지원되지 않는 디바이스입니다",
+                            iconResId = R.drawable.ic_bot
+                        )
                         return@launch
                     }
                 }
@@ -91,7 +107,11 @@ class ReviewTypeActivity : AppCompatActivity() {
         binding.cardQuiz.setOnClickListener {
             Log.d("DEBUG", "cardQuiz 클릭됨")
             if (isComplete) {
-                Toast.makeText(this, "이미 복습이 완료된 노트입니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미 복습이 완료된 노트입니다.",
+                    iconResId = R.drawable.ic_bot
+                )
                 return@setOnClickListener
             }
 
@@ -114,8 +134,11 @@ class ReviewTypeActivity : AppCompatActivity() {
                     startActivity(intent)
                 } else {
                     Log.d("DEBUG", "퀴즈가 존재하지 않음")
-                    Toast.makeText(this@ReviewTypeActivity, "퀴즈가 존재하지 않습니다.", Toast.LENGTH_SHORT)
-                        .show()
+                    CustomToastUtil.showToast(
+                        context = this@ReviewTypeActivity,
+                        message = "퀴즈가 존재하지 않습니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }

@@ -1,16 +1,13 @@
 package com.example.tokkit
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +23,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
+import com.example.tokkit.util.CustomToastUtil
 
 class AttachReferenceActivity : AppCompatActivity() {
 
@@ -117,7 +115,11 @@ class AttachReferenceActivity : AppCompatActivity() {
             }
             .setNegativeButton("취소") { dialog, _ ->
                 dialog.dismiss()
-                Toast.makeText(this, "권한이 거부되어 기능을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "권한이 거부되어 기능을 사용할 수 없습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
             .create()
             .show()
@@ -135,7 +137,11 @@ class AttachReferenceActivity : AppCompatActivity() {
             }
             .setNegativeButton("취소") { dialog, _ ->
                 dialog.dismiss()
-                Toast.makeText(this, "권한이 거부되어 기능을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "권한이 거부되어 기능을 사용할 수 없습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
             .create()
             .show()
@@ -151,7 +157,11 @@ class AttachReferenceActivity : AppCompatActivity() {
 
     private fun uploadImageForOcr(uri: Uri) {
         // 로딩 메시지 표시
-        Toast.makeText(this, "이미지 처리 중...", Toast.LENGTH_SHORT).show()
+        CustomToastUtil.showToast(
+            context = this,
+            message = "이미지 처리 중...",
+            iconResId = R.drawable.ic_bot
+        )
         Log.d(TAG, "이미지 업로드 시작: $uri")
 
         try {
@@ -182,20 +192,36 @@ class AttachReferenceActivity : AppCompatActivity() {
                             navigateToChatScreen()
                         } else {
                             Log.e(TAG, "OCR API 응답 실패: ${response.message}")
-                            Toast.makeText(this@AttachReferenceActivity, "텍스트 추출 실패: ${response.message}", Toast.LENGTH_SHORT).show()
+                            CustomToastUtil.showToast(
+                                context = this@AttachReferenceActivity,
+                                message = "텍스트 추출 실패: ${response.message}",
+                                iconResId = R.drawable.ic_bot
+                            )
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "OCR API 호출 중 오류 발생", e)
-                        Toast.makeText(this@AttachReferenceActivity, "이미지 처리 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                        CustomToastUtil.showToast(
+                            context = this@AttachReferenceActivity,
+                            message = "이미지 처리 중 오류가 발생했습니다.",
+                            iconResId = R.drawable.ic_bot
+                        )
                     }
                 }
             } else {
                 Log.e(TAG, "파일 변환 실패")
-                Toast.makeText(this, "이미지 파일을 처리할 수 없습니다.", Toast.LENGTH_SHORT).show()
+                CustomToastUtil.showToast(
+                    context = this,
+                    message = "이미지 파일을 처리할 수 없습니다.",
+                    iconResId = R.drawable.ic_bot
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "이미지 업로드 중 오류", e)
-            Toast.makeText(this, "이미지 처리 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+            CustomToastUtil.showToast(
+                context = this,
+                message = "이미지 처리 중 오류가 발생했습니다.",
+                iconResId = R.drawable.ic_bot
+            )
         }
     }
 
@@ -248,7 +274,11 @@ class AttachReferenceActivity : AppCompatActivity() {
                     showAppSettingsDialog()
                 } else {
                     // 일반 거부
-                    Toast.makeText(this, "이미지 처리를 위해 저장소 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                    CustomToastUtil.showToast(
+                        context = this,
+                        message = "이미지 처리를 위해 저장소 접근 권한이 필요합니다.",
+                        iconResId = R.drawable.ic_bot
+                    )
                 }
             }
         }
