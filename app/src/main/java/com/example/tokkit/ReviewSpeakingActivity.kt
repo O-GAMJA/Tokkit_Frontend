@@ -227,11 +227,11 @@ class ReviewSpeakingActivity : AppCompatActivity(), ConversationManager.Conversa
                                 }
 
                                 setResult(RESULT_OK, resultIntent)
-                                CustomToastUtil.showToast(
-                                    context = this@ReviewSpeakingActivity,
-                                    message = "모든 복습이 완료되었습니다!\" else \"복습 완료!\\n새 단계: ${result.newStage}",
-                                    iconResId = R.drawable.ic_bot
-                                )
+//                                CustomToastUtil.showToast(
+//                                    context = this@ReviewSpeakingActivity,
+//                                    message = "모든 복습이 완료되었습니다!\" else \"복습 완료!\\n새 단계: ${result.newStage}",
+//                                    iconResId = R.drawable.ic_bot
+//                                )
 
                                 finish()
                             } else {

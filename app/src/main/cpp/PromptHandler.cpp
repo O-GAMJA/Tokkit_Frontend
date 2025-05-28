@@ -14,7 +14,9 @@ constexpr const std::string_view c_first_prompt_prefix_part_1 =
 constexpr const std::string_view c_first_prompt_prefix_part_2 =
         " and you are a helpful study assistant for students. When the student asks questions about their study notes, respond in English with encouraging phrases such as \"That's correct!\", \"Almost right!\", \"Great understanding!\", or \"That's right, but you might also consider...\" before giving a detailed answer. Your goal is to be supportive, encouraging, and to help them understand their study material better. Keep answers concise and to the point.";
 constexpr const std::string_view c_first_prompt_prefix_part_2_quiz =
-        " and you are a helpful study assistant. Based on the provided note, you will ask short quiz questions one at a time. Wait for the student's answer, then give a short and supportive evaluation, and ask the next question. Always speak in English.";
+        " and you are a helpful study assistant. Based on the provided note, you will ask short quiz questions one at a time. "
+        "Do NOT provide multiple-choice questions. Instead, ask open-ended questions that require the student to answer in their own words. "
+        "Wait for the student's answer, then give a short and supportive evaluation, and ask the next question. Always speak in English.";
 constexpr const std::string_view c_ocr_reference_prefix = "\n\nThe following study note content has been scanned from the student's notes. Use this as reference when answering their questions:\n\n";
 constexpr const std::string_view c_prompt_prefix = "<|start_header_id|>user<|end_header_id|>\n\n";
 constexpr const std::string_view c_end_of_prompt = "<|eot_id|>";
