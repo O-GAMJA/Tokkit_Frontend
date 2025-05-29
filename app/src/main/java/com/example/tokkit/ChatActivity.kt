@@ -45,6 +45,8 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private lateinit var tts: TextToSpeech
     private lateinit var genieWrapper: GenieWrapper
     private lateinit var adapter: MessageRecyclerViewAdapter
+    private var isTtsPlaying = false
+
 
     private val messages = ArrayList<ChatMessage>(1000)
     private var isListening = false
@@ -152,6 +154,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun createMarkdownNote() {
+        // 노트 생성 시작 시 TTS 중지
+        stopCurrentTts()
+
         // 로딩 오버레이 표시
         showNoteLoadingOverlay()
 
@@ -238,6 +243,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
                         Log.d("ChatActivity", "TTS 시작: $utteranceId")
+                        isTtsPlaying = true
                         // 첫 TTS만 애니메이션 시작
                         if (!isSpeaking) {
                             runOnUiThread {
@@ -250,11 +256,16 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                         Log.d("ChatActivity", "TTS 완료: $utteranceId")
                         runOnUiThread {
                             processNextTTSInQueue()
+                            // 모든 TTS가 완료되었는지 확인
+                            if (ttsQueue.isEmpty() && !isProcessingTTS) {
+                                isTtsPlaying = false
+                            }
                         }
                     }
 
                     override fun onError(utteranceId: String?) {
                         Log.e("ChatActivity", "TTS 오류: $utteranceId")
+                        isTtsPlaying = false
                         runOnUiThread {
                             processNextTTSInQueue()
                         }
@@ -264,6 +275,41 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 Log.e("ChatActivity", "TTS 초기화 실패: $status")
             }
         }
+    }
+
+    // TTS 중지
+    private fun stopCurrentTts() {
+        if (::tts.isInitialized) {
+            Log.d("ChatActivity", "TTS 중지 시도: isTtsPlaying = $isTtsPlaying")
+
+            // TTS 완전히 중지
+            tts.stop()
+
+            // 큐 비우기
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                tts.speak("", TextToSpeech.QUEUE_FLUSH, null, "stop_utterance")
+            }
+
+            // 상태 초기화
+            isTtsPlaying = false
+            ttsQueue.clear()
+            isProcessingTTS = false
+            isResponseComplete = false
+
+            // 애니메이션 중지
+            stopTTSAnimation()
+
+            Log.d("ChatActivity", "TTS 중지 완료")
+        }
+
+        // 대기 중인 응답 타임아웃도 취소
+        responseCompleteRunnable?.let {
+            responseCompleteHandler.removeCallbacks(it)
+            Log.d("ChatActivity", "응답 타임아웃 취소됨")
+        }
+
+        // 문장 버퍼도 클리어
+        sentenceBuffer.clear()
     }
 
     private fun startTTSAnimation() {
@@ -375,6 +421,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun startSTT() {
+        // STT 시작 시 TTS 중지
+        stopCurrentTts()
+
         if (!isListening) {
             // 애니메이션 시작
             binding.btnMic.visibility = View.INVISIBLE
@@ -415,6 +464,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun handleUserInput(message: String) {
+        // 새로운 질문 시작 시 기존 TTS 중지
+        stopCurrentTts()
+
         // ConversationManager를 통해 사용자 메시지 추가
         val userMessage = ChatMessage(message, MessageSender.USER)
         ConversationManager.addMessage(userMessage)
@@ -476,6 +528,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                                 // TTS 큐가 비어있으면 즉시 애니메이션 중지
                                 if (ttsQueue.isEmpty() && !isProcessingTTS) {
                                     stopTTSAnimation()
+                                    isTtsPlaying = false
                                 }
                             }
                             responseCompleteHandler.postDelayed(responseCompleteRunnable!!, 1000)
@@ -550,6 +603,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun startGenieConversation() {
+        // Genie 대화 시작 시 TTS 중지
+        stopCurrentTts()
+
         try {
             val externalDir = externalCacheDir?.absolutePath ?: ""
 
@@ -709,11 +765,17 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
     override fun onPause() {
         super.onPause()
+        // 액티비티가 중지될 때 TTS도 중지
+        stopCurrentTts()
+
         // 활동이 중지될 때 대화 상태 저장
         ConversationManager.saveConversation(this)
     }
 
     override fun onDestroy() {
+        // TTS 완전히 정리
+        stopCurrentTts()
+
         // ConversationManager 리스너 제거
         ConversationManager.removeListener(this)
 
