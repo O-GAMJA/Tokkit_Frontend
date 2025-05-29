@@ -244,21 +244,29 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                     override fun onStart(utteranceId: String?) {
                         Log.d("ChatActivity", "TTS 시작: $utteranceId")
                         isTtsPlaying = true
-                        // 첫 TTS만 애니메이션 시작
-                        if (!isSpeaking) {
+                        // 첫 TTS만 애니메이션 시작 - 액티비티 상태 확인 추가
+                        if (!isSpeaking && !isDestroyed && !isFinishing) {
                             runOnUiThread {
-                                startTTSAnimation()
+                                // UI 스레드에서도 다시 한번 상태 확인
+                                if (!isDestroyed && !isFinishing) {
+                                    startTTSAnimation()
+                                }
                             }
                         }
                     }
 
                     override fun onDone(utteranceId: String?) {
                         Log.d("ChatActivity", "TTS 완료: $utteranceId")
-                        runOnUiThread {
-                            processNextTTSInQueue()
-                            // 모든 TTS가 완료되었는지 확인
-                            if (ttsQueue.isEmpty() && !isProcessingTTS) {
-                                isTtsPlaying = false
+                        // 액티비티 상태 확인 추가
+                        if (!isDestroyed && !isFinishing) {
+                            runOnUiThread {
+                                if (!isDestroyed && !isFinishing) {
+                                    processNextTTSInQueue()
+                                    // 모든 TTS가 완료되었는지 확인
+                                    if (ttsQueue.isEmpty() && !isProcessingTTS) {
+                                        isTtsPlaying = false
+                                    }
+                                }
                             }
                         }
                     }
@@ -266,8 +274,12 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                     override fun onError(utteranceId: String?) {
                         Log.e("ChatActivity", "TTS 오류: $utteranceId")
                         isTtsPlaying = false
-                        runOnUiThread {
-                            processNextTTSInQueue()
+                        if (!isDestroyed && !isFinishing) {
+                            runOnUiThread {
+                                if (!isDestroyed && !isFinishing) {
+                                    processNextTTSInQueue()
+                                }
+                            }
                         }
                     }
                 })
@@ -313,6 +325,12 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun startTTSAnimation() {
+        // 액티비티가 파괴되었거나 finishing 상태인지 확인
+        if (isDestroyed || isFinishing) {
+            Log.w("ChatActivity", "액티비티가 파괴된 상태에서 TTS 애니메이션 시작 시도 - 무시됨")
+            return
+        }
+
         if (!isSpeaking) {
             isSpeaking = true
 
@@ -320,11 +338,21 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             binding.ivCharacter.visibility = View.GONE
             binding.ivCharacterGif.visibility = View.VISIBLE
 
-            // GIF 로드 및 재생
-            Glide.with(this)
-                .asGif()
-                .load(R.drawable.rabbit_animation)
-                .into(binding.ivCharacterGif)
+            // GIF 로드 및 재생 - 액티비티 상태 재확인
+            try {
+                if (!isDestroyed && !isFinishing) {
+                    Glide.with(this)
+                        .asGif()
+                        .load(R.drawable.rabbit_animation)
+                        .into(binding.ivCharacterGif)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatActivity", "Glide 로딩 오류: ${e.message}")
+                // 오류 발생 시 상태 복원
+                binding.ivCharacterGif.visibility = View.GONE
+                binding.ivCharacter.visibility = View.VISIBLE
+                isSpeaking = false
+            }
 
             Log.d("ChatActivity", "TTS 애니메이션 시작")
         }
@@ -334,12 +362,17 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         if (isSpeaking) {
             isSpeaking = false
 
-            // 애니메이션 지연 후 정적 이미지로 복원
-            animationHandler.postDelayed({
-                binding.ivCharacterGif.visibility = View.GONE
-                binding.ivCharacter.visibility = View.VISIBLE
-                Log.d("ChatActivity", "TTS 애니메이션 종료")
-            }, 500)
+            // 액티비티 상태 확인 후 애니메이션 복원
+            if (!isDestroyed && !isFinishing) {
+                animationHandler.postDelayed({
+                    // 다시 한번 상태 확인 (딜레이 후에 상태가 바뀔 수 있음)
+                    if (!isDestroyed && !isFinishing) {
+                        binding.ivCharacterGif.visibility = View.GONE
+                        binding.ivCharacter.visibility = View.VISIBLE
+                        Log.d("ChatActivity", "TTS 애니메이션 종료")
+                    }
+                }, 500)
+            }
         }
     }
 
@@ -603,8 +636,18 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     }
 
     private fun startGenieConversation() {
-        // Genie 대화 시작 시 TTS 중지
+        // Genie 대화 시작 시 TTS 완전히 중지 및 정리
         stopCurrentTts()
+
+        // 추가적인 TTS 정리 - 모든 콜백도 무효화
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.setOnUtteranceProgressListener(null) // 리스너 제거
+        }
+
+        // 애니메이션도 즉시 중지
+        isSpeaking = false
+        animationHandler.removeCallbacksAndMessages(null)
 
         try {
             val externalDir = externalCacheDir?.absolutePath ?: ""
@@ -639,6 +682,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             }
 
             startActivity(intent)
+            finish() // 액티비티 즉시 종료
 
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 대화 시작 오류: ${e.message}", e)
@@ -649,7 +693,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             )
         }
     }
-
     // 애셋 복사 함수
     private fun copyAssetsIfNeeded() {
         val externalDir = externalCacheDir?.absolutePath ?: ""
