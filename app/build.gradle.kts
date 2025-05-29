@@ -204,7 +204,7 @@ dependencies {
     // Firebase BoM 설정
     implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
 
-    // Firebase 라이브러리 의존성 추가 (버전 명시 생략)
+    // Firebase 라이브러리 의존성 추가
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging")
 
