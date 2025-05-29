@@ -5,9 +5,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.tokkit.R
 import com.example.tokkit.data.remote.model.Comment
 
@@ -69,6 +71,7 @@ class CommentAdapter(
         val tvLikeCount: TextView = itemView.findViewById(R.id.tv_like_count)
         val btnLike: ImageButton = itemView.findViewById(R.id.btn_like)
         val btnReply: TextView = itemView.findViewById(R.id.btn_reply)
+        val ivProfile: ImageView = itemView.findViewById(R.id.iv_profile)
     }
 
     class ReplyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -77,6 +80,7 @@ class CommentAdapter(
         val tvComment: TextView = itemView.findViewById(R.id.tv_comment)
         val tvLikeCount: TextView = itemView.findViewById(R.id.tv_like_count)
         val btnLike: ImageButton = itemView.findViewById(R.id.btn_like)
+        val ivProfile: ImageView = itemView.findViewById(R.id.iv_profile)
 //        val btnReply: TextView = itemView.findViewById(R.id.btn_reply) // 대댓글 답글
     }
 
@@ -114,6 +118,13 @@ class CommentAdapter(
 
     private fun bindCommentViewHolder(holder: CommentViewHolder, comment: Comment) {
         holder.tvUsername.text = comment.username
+        Glide.with(holder.itemView.context)
+            .load(comment.profileImageUrl)
+            .placeholder(R.drawable.ic_default_profile)
+            .error(R.drawable.ic_default_profile)
+            .circleCrop()
+            .into(holder.ivProfile)
+
         holder.tvTime.text = comment.time
         holder.tvComment.text = comment.content
         holder.tvLikeCount.text = comment.likeCount.toString()
@@ -150,6 +161,14 @@ class CommentAdapter(
 
     private fun bindReplyViewHolder(holder: ReplyViewHolder, comment: Comment) {
         holder.tvUsername.text = comment.username
+        // 프로필 이미지 로드
+        Glide.with(holder.itemView.context)
+            .load(comment.profileImageUrl)
+            .placeholder(R.drawable.ic_default_profile)
+            .error(R.drawable.ic_default_profile)
+            .circleCrop()
+            .into(holder.ivProfile)
+
         holder.tvTime.text = comment.time
         holder.tvComment.text = comment.content
         holder.tvLikeCount.text = comment.likeCount.toString()

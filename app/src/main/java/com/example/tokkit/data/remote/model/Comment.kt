@@ -9,6 +9,7 @@ data class Comment(
     val isMine: Boolean,
     val isLiked: Boolean,
     val parentId: Long? = null,
+    val profileImageUrl: String?,
     val replies: MutableList<Comment> = mutableListOf()
 )
 
@@ -28,7 +29,8 @@ data class CommentResponse(
     val content: String,
     val createdAt: String,
     val isMine: Boolean,
-    val emojis: Map<String, EmojiReaction>
+    val emojis: Map<String, EmojiReaction>,
+    val profileImageUrl: String?
 )
 
 data class EmojiReaction(
