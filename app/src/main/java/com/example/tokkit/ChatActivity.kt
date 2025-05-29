@@ -45,7 +45,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private lateinit var tts: TextToSpeech
     private lateinit var genieWrapper: GenieWrapper
     private lateinit var adapter: MessageRecyclerViewAdapter
-    private var isTtsPlaying = false
 
 
     private val messages = ArrayList<ChatMessage>(1000)
@@ -54,21 +53,26 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
     private var responseTimeoutHandler = Handler(Looper.getMainLooper())
     private var responseTimeoutRunnable: Runnable? = null
 
-    // 문장 단위 TTS 처리를 위한 버퍼
-    private val sentenceBuffer = StringBuilder()
-
-    private val markdownPromptHandler = MarkdownPromptHandler()
-
-    // TTS 애니메이션 관련 변수 추가
-    private var isSpeaking = false
-    private var ttsQueue = mutableListOf<String>() // TTS 대기열
-    private var isProcessingTTS = false // TTS 처리 중인지 확인
+    private var isTtsPlaying = false
+    private var ttsQueue = mutableListOf<String>()
+    private var isProcessingTTS = false
     private val animationHandler = Handler(Looper.getMainLooper())
 
     // 응답 완료 감지를 위한 변수
     private var isResponseComplete = false
     private var responseCompleteHandler = Handler(Looper.getMainLooper())
     private var responseCompleteRunnable: Runnable? = null
+
+    // TTS 애니메이션 관련 변수
+    private var isSpeaking = false
+    private var currentlyPlayingTTS = false // 실제 TTS 재생 상태
+
+    // 문장 단위 TTS 처리를 위한 버퍼
+    private val sentenceBuffer = StringBuilder()
+
+    private val markdownPromptHandler = MarkdownPromptHandler()
+
+
 
     companion object {
         private const val WELCOME_MESSAGE = "안녕하세요! 무엇을 도와드릴까요?"
@@ -234,6 +238,7 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         return responseBuilder.toString()
     }
 
+
     private fun initializeTTS() {
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -243,11 +248,12 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                 tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
                         Log.d("ChatActivity", "TTS 시작: $utteranceId")
+                        currentlyPlayingTTS = true
                         isTtsPlaying = true
-                        // 첫 TTS만 애니메이션 시작 - 액티비티 상태 확인 추가
-                        if (!isSpeaking && !isDestroyed && !isFinishing) {
+
+                        // 액티비티 상태 확인 후 애니메이션 시작
+                        if (!isDestroyed && !isFinishing) {
                             runOnUiThread {
-                                // UI 스레드에서도 다시 한번 상태 확인
                                 if (!isDestroyed && !isFinishing) {
                                     startTTSAnimation()
                                 }
@@ -257,14 +263,18 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
                     override fun onDone(utteranceId: String?) {
                         Log.d("ChatActivity", "TTS 완료: $utteranceId")
-                        // 액티비티 상태 확인 추가
+                        currentlyPlayingTTS = false
+
                         if (!isDestroyed && !isFinishing) {
                             runOnUiThread {
                                 if (!isDestroyed && !isFinishing) {
+                                    // 다음 TTS 처리
                                     processNextTTSInQueue()
-                                    // 모든 TTS가 완료되었는지 확인
+
+                                    // 큐가 비어있고 더 이상 처리할 TTS가 없으면 애니메이션 중지
                                     if (ttsQueue.isEmpty() && !isProcessingTTS) {
                                         isTtsPlaying = false
+                                        stopTTSAnimation()
                                     }
                                 }
                             }
@@ -273,10 +283,13 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
                     override fun onError(utteranceId: String?) {
                         Log.e("ChatActivity", "TTS 오류: $utteranceId")
+                        currentlyPlayingTTS = false
                         isTtsPlaying = false
+
                         if (!isDestroyed && !isFinishing) {
                             runOnUiThread {
                                 if (!isDestroyed && !isFinishing) {
+                                    stopTTSAnimation()
                                     processNextTTSInQueue()
                                 }
                             }
@@ -304,11 +317,12 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
             // 상태 초기화
             isTtsPlaying = false
+            currentlyPlayingTTS = false
             ttsQueue.clear()
             isProcessingTTS = false
             isResponseComplete = false
 
-            // 애니메이션 중지
+            // 애니메이션 즉시 중지
             stopTTSAnimation()
 
             Log.d("ChatActivity", "TTS 중지 완료")
@@ -331,77 +345,91 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             return
         }
 
-        if (!isSpeaking) {
-            isSpeaking = true
+        // 이미 애니메이션이 실행 중이면 중복 실행 방지
+        if (isSpeaking) {
+            Log.d("ChatActivity", "TTS 애니메이션이 이미 실행 중")
+            return
+        }
 
-            // 정적 이미지 숨기고 GIF 표시
-            binding.ivCharacter.visibility = View.GONE
-            binding.ivCharacterGif.visibility = View.VISIBLE
+        isSpeaking = true
 
-            // GIF 로드 및 재생 - 액티비티 상태 재확인
-            try {
-                if (!isDestroyed && !isFinishing) {
-                    Glide.with(this)
-                        .asGif()
-                        .load(R.drawable.rabbit_animation)
-                        .into(binding.ivCharacterGif)
-                }
-            } catch (e: Exception) {
-                Log.e("ChatActivity", "Glide 로딩 오류: ${e.message}")
-                // 오류 발생 시 상태 복원
-                binding.ivCharacterGif.visibility = View.GONE
-                binding.ivCharacter.visibility = View.VISIBLE
-                isSpeaking = false
+        // 정적 이미지 숨기고 GIF 표시
+        binding.ivCharacter.visibility = View.GONE
+        binding.ivCharacterGif.visibility = View.VISIBLE
+
+        // GIF 로드 및 재생
+        try {
+            if (!isDestroyed && !isFinishing) {
+                Glide.with(this)
+                    .asGif()
+                    .load(R.drawable.rabbit_animation)
+                    .into(binding.ivCharacterGif)
+
+                Log.d("ChatActivity", "TTS 애니메이션 시작")
             }
-
-            Log.d("ChatActivity", "TTS 애니메이션 시작")
+        } catch (e: Exception) {
+            Log.e("ChatActivity", "Glide 로딩 오류: ${e.message}")
+            // 오류 발생 시 상태 복원
+            binding.ivCharacterGif.visibility = View.GONE
+            binding.ivCharacter.visibility = View.VISIBLE
+            isSpeaking = false
         }
     }
 
     private fun stopTTSAnimation() {
-        if (isSpeaking) {
-            isSpeaking = false
+        if (!isSpeaking) {
+            return // 이미 중지된 상태
+        }
 
-            // 액티비티 상태 확인 후 애니메이션 복원
-            if (!isDestroyed && !isFinishing) {
-                animationHandler.postDelayed({
-                    // 다시 한번 상태 확인 (딜레이 후에 상태가 바뀔 수 있음)
-                    if (!isDestroyed && !isFinishing) {
-                        binding.ivCharacterGif.visibility = View.GONE
-                        binding.ivCharacter.visibility = View.VISIBLE
-                        Log.d("ChatActivity", "TTS 애니메이션 종료")
-                    }
-                }, 500)
+        isSpeaking = false
+
+        // 액티비티 상태 확인 후 애니메이션 복원
+        if (!isDestroyed && !isFinishing) {
+            // 즉시 정적 이미지로 복원 (딜레이 제거)
+            binding.ivCharacterGif.visibility = View.GONE
+            binding.ivCharacter.visibility = View.VISIBLE
+            Log.d("ChatActivity", "TTS 애니메이션 종료")
+        }
+    }
+
+
+    // TTS 큐에 문장 추가하고 처리
+    private fun addToTTSQueue(text: String) {
+        if (text.trim().isNotEmpty()) {
+            ttsQueue.add(text.trim())
+            Log.d("ChatActivity", "TTS 큐에 추가: $text")
+
+            if (!isProcessingTTS && !currentlyPlayingTTS) {
+                processNextTTSInQueue()
             }
         }
     }
 
-    // TTS 큐에 문장 추가하고 처리
-    private fun addToTTSQueue(text: String) {
-        ttsQueue.add(text)
-        if (!isProcessingTTS) {
-            processNextTTSInQueue()
-        }
-    }
 
     // TTS 큐에서 다음 문장 처리
     private fun processNextTTSInQueue() {
-        if (ttsQueue.isNotEmpty()) {
+        if (ttsQueue.isNotEmpty() && !currentlyPlayingTTS) {
             isProcessingTTS = true
             val nextText = ttsQueue.removeAt(0)
+
+            Log.d("ChatActivity", "TTS 재생 시작: $nextText")
 
             val params = HashMap<String, String>()
             params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = "TTS_${System.currentTimeMillis()}"
 
+            // TTS 재생 시작
             tts.speak(nextText, TextToSpeech.QUEUE_ADD, params)
         } else {
             isProcessingTTS = false
+
             // 모든 TTS가 완료되고 응답도 완료되었으면 애니메이션 중지
-            if (isResponseComplete) {
+            if (isResponseComplete && ttsQueue.isEmpty() && !currentlyPlayingTTS) {
+                isTtsPlaying = false
                 stopTTSAnimation()
             }
         }
     }
+
 
     private fun speakWithAnimation(text: String) {
         if (::tts.isInitialized) {
@@ -507,9 +535,10 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         // 초기화
         sentenceBuffer.clear()
         fullResponse.clear()
-        ttsQueue.clear() // TTS 큐 초기화
+        ttsQueue.clear()
         isResponseComplete = false
         isProcessingTTS = false
+        currentlyPlayingTTS = false
 
         // 응답 생성 요청
         if (::genieWrapper.isInitialized) {
@@ -536,7 +565,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                                     for (i in 0 until sentences.size - 1) {
                                         val sentence = sentences[i].trim()
                                         if (sentence.isNotBlank()) {
-                                            // TTS 큐에 추가 (즉시 재생하지 않음)
                                             addToTTSQueue(sentence)
                                         }
                                     }
@@ -558,13 +586,13 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
                                     sentenceBuffer.clear()
                                 }
 
-                                // TTS 큐가 비어있으면 즉시 애니메이션 중지
-                                if (ttsQueue.isEmpty() && !isProcessingTTS) {
-                                    stopTTSAnimation()
+                                // TTS 큐가 비어있고 현재 재생 중이 아니면 애니메이션 중지
+                                if (ttsQueue.isEmpty() && !currentlyPlayingTTS && !isProcessingTTS) {
                                     isTtsPlaying = false
+                                    stopTTSAnimation()
                                 }
                             }
-                            responseCompleteHandler.postDelayed(responseCompleteRunnable!!, 1000)
+                            responseCompleteHandler.postDelayed(responseCompleteRunnable!!, 1500) // 타이머 약간 증가
                         }
                     }
                 })
