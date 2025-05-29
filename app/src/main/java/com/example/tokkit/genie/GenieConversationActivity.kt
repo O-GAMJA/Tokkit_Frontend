@@ -54,6 +54,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     // TTS 상태 관리
     private var isTtsPlaying = false
 
+    // 응답 중단 관리
+    private var isResponseStopped = false
+
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
 
@@ -340,6 +343,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     private fun sendMessage(message: String) {
         // 새로운 질문 시작 시 기존 TTS 중지
         stopCurrentTts()
+        isResponseStopped = false
 
         // ConversationManager를 통해 메시지 추가
         val userMessage = ChatMessage(message, MessageSender.USER)
@@ -354,6 +358,12 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
             genieWrapper.getResponseForPrompt(message, object : StringCallback {
                 override fun onNewString(response: String) {
                     runOnUiThread {
+                        // 응답이 중단되었으면 무시
+                        if (isResponseStopped) {
+                            Log.d("GenieChat", "응답 중단됨, 토큰 무시: $response")
+                            return@runOnUiThread
+                        }
+
                         // 누적 응답에 새 응답 추가
                         fullResponse.append(response)
                         sentenceBuffer.append(response)
@@ -374,7 +384,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                             if (sentences.size > 1) {
                                 for (i in 0 until sentences.size - 1) {
                                     val sentence = sentences[i].trim()
-                                    if (sentence.isNotBlank()) {
+                                    if (sentence.isNotBlank()&& !isResponseStopped) {
                                         speakText(sentence)
                                     }
                                 }
@@ -389,15 +399,17 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                         responseTimeoutRunnable?.let { responseTimeoutHandler.removeCallbacks(it) }
 
                         // 새 대기 설정 - 완전히 응답이 끝났을 때 마지막 미완성 문장 처리
-                        responseTimeoutRunnable = Runnable {
-                            val lastSentence = sentenceBuffer.toString().trim()
-                            if (lastSentence.isNotBlank()) {
-                                speakText(lastSentence)
-                                sentenceBuffer.clear()
+                        responseTimeoutRunnable = Runnable { // 중단 상태 확인
+                            if (!isResponseStopped) {
+                                val lastSentence = sentenceBuffer.toString().trim()
+                                if (lastSentence.isNotBlank()) {
+                                    speakText(lastSentence)
+                                    sentenceBuffer.clear()
+                                }
+                                // 응답 완료 후에도 한 번 더 스크롤
+                                scrollToBottom()
+                                isTtsPlaying = false
                             }
-                            // 응답 완료 후에도 한 번 더 스크롤
-                            scrollToBottom()
-                            isTtsPlaying = false
 
                         }
                         responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
@@ -405,6 +417,29 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                 }
             })
         }
+    }
+
+    // 응답 중단 처리
+    private fun stopCurrentResponse() {
+        Log.d("GenieChat", "응답 중단 시작")
+
+        // TTS 중지
+        stopCurrentTts()
+
+        // 응답 중단 플래그 설정
+        isResponseStopped = true
+
+        // 응답 관련 상태 초기화
+        fullResponse.clear()
+        sentenceBuffer.clear()
+
+        //모든 대기 중인 콜백 제거
+        responseTimeoutRunnable?.let {
+            responseTimeoutHandler.removeCallbacks(it)
+            responseTimeoutRunnable = null
+        }
+
+        Log.d("GenieChat", "응답 중단 완료")
     }
 
     //TTS 재생
@@ -629,6 +664,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
     private fun deleteMessage(position: Int) {
         if (position >= 0 && position < messages.size) {
+            // 메시지 삭제 시 진행 중인 답변과 TTS 중지
+            stopCurrentResponse()
+
             // ConversationManager에서 메시지 삭제
             ConversationManager.removeMessageAt(position)
 
