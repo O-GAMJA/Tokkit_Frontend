@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.example.tokkit.databinding.ActivityChatBinding
+import com.example.tokkit.databinding.ActivityGenieChatBinding
 import com.example.tokkit.genie.ChatMessage
 import com.example.tokkit.genie.ConversationManager
 import com.example.tokkit.genie.GenieConversationActivity
@@ -87,21 +88,36 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
 
         // Intent에서 OCR 텍스트 가져오기
         val ocrText = intent.getStringExtra("OCR_TEXT")
+        Log.d("ChatActivity", "OCR 텍스트 받음: ${if (ocrText.isNullOrEmpty()) "없음" else "있음"}")
+
+        // 저장된 대화 내용을 먼저 로드
+        Log.d("ChatActivity", "대화 내용 로드 시작")
+        ConversationManager.loadConversation(this)
 
         // Genie 초기화
         initializeGenie()
 
         // OCR 텍스트가 있는 경우 Genie에 설정
         if (!ocrText.isNullOrEmpty()) {
-            genieWrapper.setOcrText(ocrText)
+            if (::genieWrapper.isInitialized) {
+                genieWrapper.setOcrText(ocrText)
+                Log.d("ChatActivity", "OCR 텍스트 설정 완료")
 
-            // 사용자에게 OCR 텍스트를 참고한다는 메시지 표시
-            val message = ChatMessage("다음 학습 노트 내용을 참고하여 답변드리겠습니다:\n\n$ocrText", MessageSender.BOT)
-            ConversationManager.addMessage(message)
+                // 기존 대화 내용 확인
+                val existingMessages = ConversationManager.getAllMessages()
+                val hasOcrMessage = existingMessages.any {
+                    it.mSender == MessageSender.BOT &&
+                            it.mMessage.contains("학습 노트 내용을 참고하여")
+                }
+
+                // OCR 참고 메시지가 없으면 추가 (내용은 포함하지 않음)
+                if (!hasOcrMessage) {
+                    val message = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다!", MessageSender.BOT)
+                    ConversationManager.addMessage(message)
+                    Log.d("ChatActivity", "OCR 참고 메시지 추가")
+                }
+            }
         }
-
-        // 저장된 대화 내용 로드
-        ConversationManager.loadConversation(this)
 
         // TTS 초기화
         initializeTTS()
@@ -124,7 +140,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         // 채팅 모드 변경 - GenieConversationActivity로 전환
         binding.btnChatMode.setOnClickListener {
             startGenieConversation()
-            finish()
         }
 
         // 마이크 버튼 클릭 - 음성 인식 시작
@@ -137,12 +152,16 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             createMarkdownNote()
         }
 
-        // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
+        // 기존 대화 내용 처리
         val existingMessages = ConversationManager.getAllMessages()
+        Log.d("ChatActivity", "기존 메시지 개수: ${existingMessages.size}")
+
         if (existingMessages.isEmpty()) {
+            Log.d("ChatActivity", "새로운 대화 시작 - 환영 메시지 추가")
             val welcomeMessage = ChatMessage(WELCOME_MESSAGE, MessageSender.BOT)
             ConversationManager.addMessage(welcomeMessage)
         } else {
+            Log.d("ChatActivity", "기존 대화 로드됨: ${existingMessages.size}개 메시지")
             // ConversationManager에서 기존 대화 내용 로드
             loadMessagesFromManager()
         }
@@ -150,7 +169,6 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         // 초기 캐릭터 이미지 설정
         setupCharacterAnimation()
     }
-
     private fun setupCharacterAnimation() {
         // 기본 정적 이미지 표시
         binding.ivCharacter.visibility = View.VISIBLE
@@ -677,6 +695,9 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
         isSpeaking = false
         animationHandler.removeCallbacksAndMessages(null)
 
+        // 액티비티 전환 전에 먼저 대화 저장
+        ConversationManager.saveConversation(this)
+
         try {
             val externalDir = externalCacheDir?.absolutePath ?: ""
 
@@ -710,7 +731,11 @@ class ChatActivity : AppCompatActivity(), ConversationManager.ConversationChange
             }
 
             startActivity(intent)
-            finish() // 액티비티 즉시 종료
+
+            // 약간의 딜레이 후 finish() 호출
+            Handler(Looper.getMainLooper()).postDelayed({
+                finish()
+            }, 100) // 100ms 딜레이
 
         } catch (e: Exception) {
             Log.e("ChatActivity", "Genie 대화 시작 오류: ${e.message}", e)

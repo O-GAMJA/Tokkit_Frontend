@@ -144,16 +144,16 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
             // 모델 초기화 후에 OCR 텍스트 설정
             if (!tempOcrText.isNullOrEmpty()) {
+                Log.d("GenieChat", "OCR 텍스트 설정")
                 genieWrapper.setOcrText(tempOcrText!!)
-
-                // OCR 텍스트를 참고한다는 메시지 표시 (내용 포함 x)
-                val ocrMessage = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다", MessageSender.BOT)
-                ConversationManager.addMessage(ocrMessage)
             }
 
             // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
             val existingMessages = ConversationManager.getAllMessages()
+            Log.d("GenieChat", "기존 메시지 개수: ${existingMessages.size}")
+
             if (existingMessages.isEmpty()) {
+                Log.d("GenieChat", "새로운 대화 시작")
                 val welcomeMessage = ChatMessage(WELCOME_MESSAGE, MessageSender.BOT)
                 ConversationManager.addMessage(welcomeMessage)
             } else {
