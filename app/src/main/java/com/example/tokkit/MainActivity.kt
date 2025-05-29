@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onNewIntent(intent)
         setIntent(intent)
 
+        handleTagSearchIntent(intent)
         val goToReview = intent.getBooleanExtra("GO_TO_REVIEW", false)
         if (goToReview) {
             showFragment(TAG_REVIEW)

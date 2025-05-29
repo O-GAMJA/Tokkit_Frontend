@@ -10,6 +10,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.system.Os
 import android.util.Log
 import android.view.View
@@ -49,6 +50,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
     // 문장 단위 TTS 처리를 위한 버퍼
     private val sentenceBuffer = StringBuilder()
+
+    // TTS 상태 관리
+    private var isTtsPlaying = false
 
     private val markdownPromptHandler = MarkdownPromptHandler()
     private var isListening = false
@@ -100,11 +104,8 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
         }
 
         // TTS 초기화
-        tts = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale.US // 필요한 경우 Locale.US 등으로 변경
-            }
-        }
+        initializeTts()
+
 
         // 음성 권한 요청
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -143,16 +144,16 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
             // 모델 초기화 후에 OCR 텍스트 설정
             if (!tempOcrText.isNullOrEmpty()) {
+                Log.d("GenieChat", "OCR 텍스트 설정")
                 genieWrapper.setOcrText(tempOcrText!!)
-
-                // OCR 텍스트를 참고한다는 메시지 표시 (내용 포함 x)
-                val ocrMessage = ChatMessage("학습 노트 내용을 참고하여 답변드리겠습니다", MessageSender.BOT)
-                ConversationManager.addMessage(ocrMessage)
             }
 
             // 기존 대화 내용이 있는지 확인하고 없으면 환영 메시지 추가
             val existingMessages = ConversationManager.getAllMessages()
+            Log.d("GenieChat", "기존 메시지 개수: ${existingMessages.size}")
+
             if (existingMessages.isEmpty()) {
+                Log.d("GenieChat", "새로운 대화 시작")
                 val welcomeMessage = ChatMessage(WELCOME_MESSAGE, MessageSender.BOT)
                 ConversationManager.addMessage(welcomeMessage)
             } else {
@@ -205,6 +206,56 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                 iconResId = R.drawable.ic_bot
             )
             finish()
+        }
+    }
+
+    private fun initializeTts() {
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                // 언어 설정
+                val result = tts.setLanguage(Locale.US)
+
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("GenieChat", "TTS 언어 설정 실패")
+                } else {
+                    Log.d("GenieChat", "TTS 초기화 성공")
+                }
+
+                // TTS 완료 리스너 설정
+                tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {
+                        Log.d("GenieChat", "TTS 시작: $utteranceId")
+                        isTtsPlaying = true
+                    }
+
+                    override fun onDone(utteranceId: String?) {
+                        Log.d("GenieChat", "TTS 완료: $utteranceId")
+                        // 큐에 다른 항목이 없으면 상태 변경
+                        runOnUiThread {
+                            // 약간의 딜레이 후 상태 확인 (큐에 다른 항목이 있을 수 있음)
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                if (!tts.isSpeaking) {
+                                    isTtsPlaying = false
+                                    Log.d("GenieChat", "모든 TTS 완료")
+                                }
+                            }, 100)
+                        }
+                    }
+
+                    override fun onError(utteranceId: String?) {
+                        Log.e("GenieChat", "TTS 오류: $utteranceId")
+                        isTtsPlaying = false
+                    }
+
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?, errorCode: Int) {
+                        Log.e("GenieChat", "TTS 오류: $utteranceId, 코드: $errorCode")
+                        isTtsPlaying = false
+                    }
+                })
+            } else {
+                Log.e("GenieChat", "TTS 초기화 실패")
+            }
         }
     }
 
@@ -287,6 +338,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
     }
 
     private fun sendMessage(message: String) {
+        // 새로운 질문 시작 시 기존 TTS 중지
+        stopCurrentTts()
+
         // ConversationManager를 통해 메시지 추가
         val userMessage = ChatMessage(message, MessageSender.USER)
         ConversationManager.addMessage(userMessage)
@@ -321,7 +375,7 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                                 for (i in 0 until sentences.size - 1) {
                                     val sentence = sentences[i].trim()
                                     if (sentence.isNotBlank()) {
-                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, null)
+                                        speakText(sentence)
                                     }
                                 }
 
@@ -338,17 +392,69 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
                         responseTimeoutRunnable = Runnable {
                             val lastSentence = sentenceBuffer.toString().trim()
                             if (lastSentence.isNotBlank()) {
-                                tts.speak(lastSentence, TextToSpeech.QUEUE_ADD, null, null)
+                                speakText(lastSentence)
                                 sentenceBuffer.clear()
                             }
                             // 응답 완료 후에도 한 번 더 스크롤
                             scrollToBottom()
+                            isTtsPlaying = false
+
                         }
                         responseTimeoutHandler.postDelayed(responseTimeoutRunnable!!, 500)
                     }
                 }
             })
         }
+    }
+
+    //TTS 재생
+    private fun speakText(text: String) {
+        if (::tts.isInitialized && text.isNotBlank()) {
+            isTtsPlaying = true
+
+            // API 레벨에 따른 처리
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                // API 21 이상
+                val utteranceId = "tts_${System.currentTimeMillis()}"
+                tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
+                Log.d("GenieChat", "TTS 재생 시작: $text (ID: $utteranceId)")
+            } else {
+                // API 21 미만
+                val params = HashMap<String, String>()
+                params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = "tts_${System.currentTimeMillis()}"
+                tts.speak(text, TextToSpeech.QUEUE_ADD, params)
+                Log.d("GenieChat", "TTS 재생 시작 (구버전): $text")
+            }
+        }
+    }
+
+
+    //현재 TTS 중지
+    private fun stopCurrentTts() {
+        if (::tts.isInitialized) {
+            Log.d("GenieChat", "TTS 중지 시도: isTtsPlaying = $isTtsPlaying")
+
+            // TTS 완전히 중지
+            tts.stop()
+
+            // 더 확실한 큐 비우기
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                // API 21 이상에서는 빈 문자열로 큐 플래시
+                tts.speak("", TextToSpeech.QUEUE_FLUSH, null, "stop_utterance")
+            }
+
+            isTtsPlaying = false
+            Log.d("GenieChat", "TTS 중지 완료")
+        }
+
+        // 대기 중인 응답 타임아웃도 취소
+        responseTimeoutRunnable?.let {
+            responseTimeoutHandler.removeCallbacks(it)
+            Log.d("GenieChat", "응답 타임아웃 취소됨")
+        }
+
+        // 문장 버퍼도 클리어
+        sentenceBuffer.clear()
     }
 
     // 자동 스크롤 메서드 (부드러운 스크롤)
@@ -395,6 +501,9 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
     // 백그라운드에서 노트 생성
     private fun createMarkdownNoteInBackground() {
+        //노트 생성 시작 시 TTS 중지
+        stopCurrentTts()
+
         // ConversationManager에서 대화 내용 가져오기
         val conversation = ConversationManager.getConversationText()
 
@@ -544,11 +653,18 @@ class GenieConversationActivity : AppCompatActivity(), ConversationManager.Conve
 
     override fun onPause() {
         super.onPause()
+
+        // 액티비티가 중지될 때 TTS도 중지
+        stopCurrentTts()
+
         // 활동이 중지될 때 대화 상태 저장
         ConversationManager.saveConversation(this)
     }
 
     override fun onDestroy() {
+        // TTS 완전히 정리
+        stopCurrentTts()
+
         // ConversationManager 리스너 제거
         ConversationManager.removeListener(this)
 
